@@ -22,6 +22,5 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
       - run: pnpm run ci
-        with:
-          env:
-            NIMIQ_SECRET: ${{ secrets.NIMIQ_SECRET }}
+        env:
+          NIMIQ_SECRET: ${{ secrets.NIMIQ_SECRET }}

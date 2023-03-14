@@ -27,4 +27,5 @@ jobs:
           publish: pnpm run release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NIMIQ_SECRET: ${{ secrets.NIMIQ_SECRET }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

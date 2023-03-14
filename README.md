@@ -23,7 +23,7 @@ const client = new Client("https://seed1.v2.nimiq-testnet.com:8648/?secret={TOKE
 await client.blockchain.getActiveValidators();
 
 // call policies methods
-await client.blockchain.getPolicyConstants();
+await client.policy.getPolicyConstants();
 ```
 
 Check out the [typing file](./src/types/modules.d.ts) for all available methods.

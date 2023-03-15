@@ -1,6 +1,6 @@
 import { PolicyMethods, BlockchainMethods } from "./modules";
 
-type Methods = PolicyMethods & BlockchainMethods
+export type Methods = PolicyMethods & BlockchainMethods
 export type MethodName = keyof Methods
 
 export type RpcRequest<M extends MethodName> = {

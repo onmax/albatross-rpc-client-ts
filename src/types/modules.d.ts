@@ -1,4 +1,4 @@
-import { Validator, PolicyConstants, Validato } from "./common"
+import { Validator, PolicyConstants, Validator } from "./common"
 import { BlockchainMethods, PolicyMethods } from "./modules"
 
 type MethodConfig<Params extends any[], Result, Metadata> = {

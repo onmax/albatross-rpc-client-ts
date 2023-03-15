@@ -1,12 +1,13 @@
 {
   "name": "nimiq-rpc-client-ts",
-  "version": "0.0.4",
+  "version": "0.0.1",
   "description": "A Nimiq RPC client for TypeScript",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
   "license": "MIT",
-  "private": "false",
+  "author": "onmax",
+  "private": false,
   "scripts": {
     "dev": "vitest",
     "test": "vitest run",
@@ -15,7 +16,6 @@
     "ci": "pnpm lint && pnpm test && pnpm build",
     "release": "pnpm lint && pnpm test && pnpm build && changeset publish"
   },
-  "author": "onmax",
   "devDependencies": {
     "@changesets/cli": "^2.26.0",
     "@total-typescript/ts-reset": "^0.4.2",

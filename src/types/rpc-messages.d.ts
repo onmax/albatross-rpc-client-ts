@@ -1,6 +1,6 @@
-import { PolicyMethods, BlockchainMethods } from "./modules";
+import { PolicyMethods, BlockchainMethods, ConsensusMethods, MempoolMethods, NetworkMethods, ValidatorMethods, WalletMethods, ZkpComponentMethods } from "./modules";
 
-export type Methods = PolicyMethods & BlockchainMethods
+export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods
 export type MethodName = keyof Methods
 
 export type RpcRequest<M extends MethodName> = {

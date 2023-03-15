@@ -3,6 +3,14 @@ export type Coin = number
 
 export const STAKING_CONTRACT_ADDRESS: Address = 'NQ38 STAK 1NG0 0000 0000 C0NT RACT 0000 0000'
 
+export type BlockNumber = number /* u32 */
+export type EpochIndex = number /* u32 */
+export type BatchIndex = number /* u32 */
+export type GenesisSupply = number /* u64 */
+export type GenesisTime = number /* u64 */
+export type CurrentTime = number /* u64 */
+export type Hash = string
+
 export type PolicyConstants = {
     stakingContractAddress: string,
     coinbaseAddress: string,
@@ -69,6 +77,8 @@ export type Transaction = {
     proof: string;
     executionResult: boolean;
 }
+
+export type RawTransaction = string;
 
 export enum BlockType {
     MICRO = 'micro',
@@ -169,6 +179,68 @@ export type Validator = {
 }
 
 export type BlockchainState<T> = T & {
-    blockNumber: number;
+    blockNumber: BlockNumber;
     blockHash: string;
+}
+
+export type Slot = {
+    slotNumber: number; // u16
+    validator: Address;
+    publicKey: string;
+}
+
+export type SlashedSlots = {
+    blockNumber: BlockNumber; // u32
+    lostRewards: number[]; // u32[]
+    disabled: number[]; // u32[]
+}
+
+export type ParkedSet = {
+    blockNumber: BlockNumber;
+    validators: Address[];
+}
+export type Inherent = {
+    ty: number; // u8
+    blockNumber: BlockNumber; // u32
+    timestamp: number; // u64
+    target: Address;
+    value: Coin;
+    data: string; // Might be u8[] or number[] in TS
+    hash: Hash;
+}
+
+export type MempoolInfo = {
+    _0?: number; // u32
+    _1?: number; // u32
+    _2?: number; // u32
+    _5?: number; // u32
+    _10?: number; // u32
+    _20?: number; // u32
+    _50?: number; // u32
+    _100?: number; // u32
+    _200?: number; // u32
+    _500?: number; // u32
+    _1000?: number; // u32
+    _2000?: number; // u32
+    _5000?: number; // u32
+    _10000?: number; // u32
+    total: number; // u32
+    buckets: number[]; // u32[]
+}
+
+export type WalletAccount = {
+    address: Address,
+    publicKey: string,
+    privateKey: string,
+}
+
+export type Signature = {
+    signature: string,
+    publicKey: string,
+}
+
+export type ZKPState = {
+    latestHeaderHash: Hash
+    latestBlockNumber: BlockNumber
+    latestProof?: string
 }

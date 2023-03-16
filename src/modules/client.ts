@@ -1,6 +1,11 @@
 import fetch from 'node-fetch';
 import { InteractionName, RpcRequest, RpcResponse, RpcResponseError } from "../types/rpc-messages";
 
+
+type CallReturn<T extends InteractionName> =  RpcResponse<T>["result"] extends {metadata: null}
+    ? RpcResponse<T>["result"]["data"]
+    : RpcResponse<T>["result"]
+
 export class RpcClient {
     private url: URL;
     private id: number = 0;
@@ -9,7 +14,7 @@ export class RpcClient {
         this.url = url;
     }
 
-    protected async call<T extends InteractionName>(method: T, params: RpcRequest<T>["params"]) {
+    protected async call<T extends InteractionName>(method: T, params: RpcRequest<T>["params"]): Promise<CallReturn<T>> {
         const response = new Promise<RpcResponse<T>>(async (resolve, reject) => {
             return fetch(this.url.href, {
                 method: 'POST',
@@ -44,7 +49,10 @@ export class RpcClient {
             throw new Error("Response is not successful");
         }
     
-        return await response.then(response => response.result);
+        return await response.then(response => {
+            if (!response.result.metadata) return response.result.data
+            return response.result
+        });
     }
 
     // TODO <T extends EventName>

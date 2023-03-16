@@ -1,8 +1,11 @@
 import { RawTransaction } from "../types/common";
 import { RpcClient } from "./client";
 
+type PushTransactionParams = { transaction: RawTransaction, withHighPriority?: boolean };
+type MempoolContentParams = { includeTransactions: boolean };
+
 export class MempoolClient extends RpcClient {
-    constructor(url: string) {
+    constructor(url: URL) {
         super(url);
     }
 
@@ -12,18 +15,12 @@ export class MempoolClient extends RpcClient {
      * @param transaction Serialized transaction
      * @returns Transaction hash
      */
-    public pushTransaction(transaction: RawTransaction) {
-        return super.call("pushTransaction", [transaction]);
-    }
-
-    /**
-     * Pushes the given serialized transaction to the local mempool with high priority
-     * 
-     * @param transaction Serialized transaction
-     * @returns Transaction hash
-     */
-    public pushHighPriorityTransaction(transaction: RawTransaction) {
-        return super.call("pushHighPriorityTransaction", [transaction]);
+    public pushTransaction({ transaction, withHighPriority }: PushTransactionParams) {
+        if (withHighPriority) {
+            return super.call("pushHighPriorityTransaction", [transaction]);
+        } else {
+            return super.call("pushTransaction", [transaction]);
+        }
     }
 
     /**
@@ -32,7 +29,7 @@ export class MempoolClient extends RpcClient {
      * @param includeTransactions
      * @returns 
      */
-    public mempoolContent(includeTransactions: boolean) {
+    public mempoolContent({ includeTransactions }: MempoolContentParams) {
         return super.call("mempoolContent", [includeTransactions]);
     }
 

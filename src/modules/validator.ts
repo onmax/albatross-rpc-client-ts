@@ -1,14 +1,11 @@
 import { RpcClient } from "./client";
 
+type SetAutomaticReactivationParams = { automaticReactivation: boolean };
+
 export class ValidatorClient extends RpcClient {
-    constructor(url: string) {
+    constructor(url: URL) {
         super(url);
     }
-
-    // 'getAddress': MethodConfig<[], Address, null>,
-    // 'getSigningKey': MethodConfig<[], String, null>,
-    // 'getVotingKey': MethodConfig<[], String, null>,
-    // 'setAutomaticReactivation': MethodConfig<[/* automatic_reactivation */Boolean], null, null>,
 
     /**
      * Returns our validator address.
@@ -34,7 +31,7 @@ export class ValidatorClient extends RpcClient {
     /**
      * Updates the configuration setting to automatically reactivate our validator
      */
-    public async setAutomaticReactivation(automatic_reactivation: boolean) {
-        return this.call("setAutomaticReactivation", [automatic_reactivation]);
+    public async setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams) {
+        return this.call("setAutomaticReactivation", [automaticReactivation]);
     }
 }

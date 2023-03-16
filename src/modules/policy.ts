@@ -1,8 +1,14 @@
 import { BlockNumber } from "../types/common";
 import { RpcClient } from "./client";
 
+type JustBlockNumber = { blockNumber: BlockNumber };
+type JustEpochIndex = { epochIndex: number };
+type JustBatchIndex = { batchIndex: number };
+type BlockNumberWithIndex = { blockNumber: BlockNumber, justIndex?: boolean };
+type SupplyAtParams = { genesisSupply: number, genesisTime: number, currentTime: number };
+
 export class PolicyClient extends RpcClient {
-    constructor(url: string) {
+    constructor(url: URL) {
         super(url);
     }
 
@@ -14,44 +20,35 @@ export class PolicyClient extends RpcClient {
     }
 
     /**
-     * Gets the epoch number at a given block number (height).
+     * Gets the epoch number at a given `block_number` (height)
      * 
      * @param blockNumber The block number (height) to query.
+     * @param justIndex The epoch index is the number of a block relative to the epoch it is in.
+     * For example, the first block of any epoch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height).
      */
-    public async getEpochAt(blockNumber: BlockNumber) {
-        return this.call("getEpochAt", [blockNumber]);
-    }
-
-    /**
-     * Gets the epoch index at a given block number. The epoch index is the number of a block relative
-     * to the epoch it is in. For example, the first block of any epoch always has an epoch index of 0.
-     * 
-     * @param blockNumber The block number (height) to query.
-     * @returns The epoch index at the given block number (height).
-     */
-    public async getEpochIndexAt(blockNumber: BlockNumber) {
-        return this.call("getEpochIndexAt", [blockNumber]);
+    public async getEpochAt({ blockNumber, justIndex }: BlockNumberWithIndex) {
+        if (justIndex) {
+            return this.call("getEpochIndexAt", [blockNumber]);
+        } else {
+            return this.call("getEpochAt", [blockNumber]);
+        }
     }
 
     /**
      * Gets the batch number at a given `block_number` (height)
      * 
      * @param blockNumber The block number (height) to query.
-     * @returns The batch number at the given block number (height).
+     * @param justIndex The batch index is the number of a block relative to the batch it is in.
+     * For example, the first block of any batch always has an epoch index of 0.
+     * @returns The epoch number at the given block number (height).
      */
-    public async getBatchAt(blockNumber: BlockNumber) {
-        return this.call("getBatchAt", [blockNumber]);
-    }
-
-    /**
-     * Gets the batch index at a given block number. The batch index is the number of a block relative
-     * to the batch it is in. For example, the first block of any batch always has an batch index of 0.
-     * @param blockNumber The block number (height) to query.
-     * @returns The batch index at the given block number (height). 
-     */
-    public async getBatchIndexAt(blockNumber: BlockNumber) {
-        return this.call("getBatchIndexAt", [blockNumber]);
+    public async getBatchAt({ blockNumber, justIndex }: BlockNumberWithIndex) {
+        if (justIndex) {
+            return this.call("getBatchIndexAt", [blockNumber]);
+        } else {
+            return this.call("getBatchAt", [blockNumber]);
+        }
     }
 
     /**
@@ -60,7 +57,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns The number (height) of the next election macro block after a given block number (height).
      */
-    public async getElectionBlockAfter(blockNumber: BlockNumber) {
+    public async getElectionBlockAfter({ blockNumber }: JustBlockNumber) {
         return this.call("getElectionBlockAfter", [blockNumber]);
     }
 
@@ -71,7 +68,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding election macro block before a given block number (height).
      */
-    public async getElectionBlockBefore(blockNumber: BlockNumber) {
+    public async getElectionBlockBefore({ blockNumber }: JustBlockNumber) {
         return this.call("getElectionBlockBefore", [blockNumber]);
     }
 
@@ -82,7 +79,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns 
      */
-    public async getLastElectionBlock(blockNumber: BlockNumber) {
+    public async getLastElectionBlock({ blockNumber }: JustBlockNumber) {
         return this.call("getLastElectionBlock", [blockNumber]);
     }
 
@@ -92,7 +89,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
      */
-    public async getIsElectionBlockAt(blockNumber: BlockNumber) {
+    public async getIsElectionBlockAt({ blockNumber }: JustBlockNumber) {
         return this.call("getIsElectionBlockAt", [blockNumber]);
     }
 
@@ -102,7 +99,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next macro block after a given block number (height).
      */
-    public async getMacroBlockAfter(blockNumber: BlockNumber) {
+    public async getMacroBlockAfter({ blockNumber }: JustBlockNumber) {
         return this.call("getMacroBlockAfter", [blockNumber]);
     }
 
@@ -112,7 +109,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding macro block before a given block number (height).
      */
-    public async getMacroBlockBefore(blockNumber: BlockNumber) {
+    public async getMacroBlockBefore({ blockNumber }: JustBlockNumber) {
         return this.call("getMacroBlockBefore", [blockNumber]);
     }
 
@@ -123,7 +120,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the last macro block at a given block number (height).
      */
-    public async getLastMacroBlock(blockNumber: BlockNumber) {
+    public async getLastMacroBlock({ blockNumber }: JustBlockNumber) {
         return this.call("getLastMacroBlock", [blockNumber]);
     }
 
@@ -133,7 +130,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is a macro block.
      */
-    public async getIsMacroBlockAt(blockNumber: BlockNumber) {
+    public async getIsMacroBlockAt({ blockNumber }: JustBlockNumber) {
         return this.call("getIsMacroBlockAt", [blockNumber]);
     }
 
@@ -143,7 +140,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next micro block after a given block number (height).
      */
-    public async getIsMicroBlockAt(blockNumber: BlockNumber) {
+    public async getIsMicroBlockAt({ blockNumber }: JustBlockNumber) {
         return this.call("getIsMicroBlockAt", [blockNumber]);
     }
 
@@ -153,7 +150,7 @@ export class PolicyClient extends RpcClient {
      * @param epochIndex The epoch index to query.
      * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
      */
-    public async getFirstBlockOf(epochIndex: BlockNumber) {
+    public async getFirstBlockOf({ epochIndex }: JustEpochIndex) {
         return this.call("getFirstBlockOf", [epochIndex]);
     }
 
@@ -163,7 +160,7 @@ export class PolicyClient extends RpcClient {
      * @param batchIndex The batch index to query.
      * @returns The block number of the first block of the given batch (which is always a micro block).
      */
-    public async getFirstBlockOfBatch(batchIndex: BlockNumber) {
+    public async getFirstBlockOfBatch({ batchIndex }: JustBatchIndex) {
         return this.call("getFirstBlockOfBatch", [batchIndex]);
     }
 
@@ -173,7 +170,7 @@ export class PolicyClient extends RpcClient {
      * @param epochIndex The epoch index to query.
      * @returns The block number of the election macro block of the given epoch (which is always the last block).
      */
-    public async getElectionBlockOf(epochIndex: BlockNumber) {
+    public async getElectionBlockOf({ epochIndex }: JustEpochIndex) {
         return this.call("getElectionBlockOf", [epochIndex]);
     }
 
@@ -183,7 +180,7 @@ export class PolicyClient extends RpcClient {
      * @param batchIndex The batch index to query.
      * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
      */
-    public async getMacroBlockOf(batchIndex: BlockNumber) {
+    public async getMacroBlockOf({ batchIndex }: JustBatchIndex) {
         return this.call("getMacroBlockOf", [batchIndex]);
     }
 
@@ -194,7 +191,7 @@ export class PolicyClient extends RpcClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the batch at a given block number (height) is the first batch
      */
-    public async getFirstBatchOfEpoch(blockNumber: BlockNumber) {
+    public async getFirstBatchOfEpoch({ blockNumber }: JustBlockNumber) {
         return this.call("getFirstBatchOfEpoch", [blockNumber]);
     }
 
@@ -210,7 +207,7 @@ export class PolicyClient extends RpcClient {
      * @param currentTime timestamp to calculate supply at
      * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
      */
-    public async getSupplyAt(genesisSupply: number, genesisTime: number, currentTime: number) {
+    public async getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams) {
         return this.call("getSupplyAt", [genesisSupply, genesisTime, currentTime]);
     }
 }

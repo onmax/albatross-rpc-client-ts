@@ -1,7 +1,7 @@
 import { RpcClient } from "./client";
 
 export class NetworkClient extends RpcClient {
-    constructor(url: string) {
+    constructor(url: URL) {
         super(url);
     }
 

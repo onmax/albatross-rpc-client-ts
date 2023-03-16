@@ -1,18 +1,15 @@
-import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { BlockchainState } from "../types/modules";
 import { RpcResponseResult } from "../types/rpc-messages";
 import { RpcClient } from "./client";
 
-type GetBlockByNumberParams = { blockNumber: BlockNumber; includeTransactions?: boolean };
-type GetBlockByHashParams = { hash: Hash; includeTransactions?: boolean };
+type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber}) & { includeTransactions?: boolean };
 type GetLatestBlockParams = { includeTransactions?: boolean };
 type GetSlotAtParams = { blockNumber: BlockNumber, offsetOpt?: number };
-type GetTransactionByHashParams = { hash: Hash };
-type GetTransactionsByBlockNumberParams = { blockNumber: BlockNumber };
-type GetInherentsByBlockNumberParams = { blockNumber: BlockNumber };
-type GetTransactionsByBatchNumberParams = { batchNumber: BatchIndex };
-type GetInherentsByBatchNumberParams = { batchNumber: BatchIndex };
 type GetTransactionsByAddressParams = { address: Address, max?: number, justHashes?: boolean };
+type GetTransactionByParams = { hash: Hash } | { blockNumber: BlockNumber } | { batchNumber: BatchIndex } | GetTransactionsByAddressParams;
+type GetInherentsByBatchNumberParams = { batchNumber: BatchIndex };
+type GetInherentsByParams = { batchNumber: BatchIndex } | { blockNumber: BlockNumber };
 type GetAccountByAddressParams = { address: Address };
 type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean };
 type GetStakerByAddressParams = { address: Address };
@@ -22,7 +19,9 @@ type SubscribeForLogsByAddressesAndTypesParams = { addresses: Address[], types: 
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
-
+type ResultGetTransactionsBy<T> = Promise<T extends { hash: Hash }
+? Transaction : T extends { address: Address }
+    ? ResultGetTransactionsByAddress<T> : Transaction[]>
 export class BlockchainClient extends RpcClient {
     constructor(url: URL) {
         super(url);
@@ -50,27 +49,23 @@ export class BlockchainClient extends RpcClient {
     }
 
     /**
-     * Tries to fetch a block given its hash. It has an option to include the transactions in the block, which defaults to false.
+     * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
      */
-    public async getBlockByHash({ hash, includeTransactions }: GetBlockByHashParams): Promise<MicroBlock> {
-        return this.call("getBlockByHash", [hash, includeTransactions]);
-    }
-    
-    /**
-     * Tries to fetch a block given its number. It has an option to include the transactions in the
-     * block, which defaults to false. Note that this function will only fetch blocks that are part
-     * of the main chain.
-     */
-    public async getBlockByNumber({ blockNumber, includeTransactions }: GetBlockByNumberParams): Promise<MicroBlock> {
-        return this.call("getBlockByNumber", [blockNumber, includeTransactions]);
+    public async getBlockBy<T extends GetBlockByParams>(p = { includeTransactions: false } as T):
+        Promise<T extends { includeTransactions: true } ? MicroBlock : PartialMicroBlock> {
+            if ('hash' in p) {
+                return this.call("getBlockByHash", [p.hash, p.includeTransactions]);
+            }
+            return this.call("getBlockByNumber", [p.blockNumber, p.includeTransactions]);
     }
     
     /**
      * Returns the block at the head of the main chain. It has an option to include the
      * transactions in the block, which defaults to false.
      */
-    public async getLatestBlock({ includeTransactions }: GetLatestBlockParams): Promise<MicroBlock> {
-        return this.call("getLatestBlock", [includeTransactions]);
+    public async getLatestBlock<T extends GetLatestBlockParams>(p = { includeTransactions: false } as T):
+        Promise<T extends { includeTransactions: true } ? MicroBlock : PartialMicroBlock> {
+        return this.call("getLatestBlock", [p.includeTransactions]);
     }
     
     /**
@@ -81,58 +76,44 @@ export class BlockchainClient extends RpcClient {
     public async getSlotAt({ blockNumber, offsetOpt }: GetSlotAtParams): Promise<WithMetadata<Slot>> {
         return this.call("getSlotAt", [blockNumber, offsetOpt]);
     }
-    
-    /**
-     * Tries to fetch a transaction (including reward transactions) given its hash.
-     */
-    public async getTransactionByHash({ hash }: GetTransactionByHashParams): Promise<Transaction> {
-        return this.call("getTransactionByHash", [hash]);
-    }
-    
-    /**
-     * Returns all the transactions (including reward transactions) for the given block number. Note
-     * that this only considers blocks in the main chain.
-     */
-    public async getTransactionsByBlockNumber({ blockNumber }: GetTransactionsByBlockNumberParams): Promise<Transaction[]> {
-        return this.call("getTransactionsByBlockNumber", [blockNumber]);
-    }
 
     /**
-     * Returns all the inherents (including reward inherents) for the given block number. Note
-     * that this only considers blocks in the main chain.
-     */
-    public async getInherentsByBlockNumber({ blockNumber }: GetInherentsByBlockNumberParams): Promise<Inherent[]> {
-        return this.call("getInherentsByBlockNumber", [blockNumber]);
-    }
-
-    /**
-     * Returns all the transactions (including reward transactions) for the given batch number. Note
-     * that this only considers blocks in the main chain
-     */
-    public async getTransactionsByBatchNumber({ batchNumber }: GetTransactionsByBatchNumberParams): Promise<Transaction[]> {
-        return this.call("getTransactionsByBatchNumber", [batchNumber]);
-    }
-
-    /**
-     * Returns all the inherents (including reward inherents) for the given batch number. Note
-     * that this only considers blocks in the main chain.
-     */
-    public async getInherentsByBatchNumber({ batchNumber }: GetInherentsByBatchNumberParams): Promise<Inherent[]> {
-        return this.call("getInherentsByBatchNumber", [batchNumber]);
-    }
-
-    /**
-     * Returns the latest transactions for a given address. All the transactions
+     * Fetchs the transaction(s) given the parameters. The parameters can be a hash, a block number, a batch number or an address.
+     * 
+     * In case of address, it returns the latest transactions for a given address. All the transactions
      * where the given address is listed as a recipient or as a sender are considered. Reward
      * transactions are also returned. It has an option to specify the maximum number of transactions
      * to fetch, it defaults to 500.
      */
-    public async getTransactionsByAddress<T extends GetTransactionsByAddressParams>({ address, max, justHashes }: T): Promise<ResultGetTransactionsByAddress<T>> {
-        if (justHashes === true) {
-            return this.call("getTransactionHashesByAddress", [address, max]) as Promise<ResultGetTransactionsByAddress<T>>;
-        } else {
-            return this.call("getTransactionsByAddress", [address, max]) as Promise<ResultGetTransactionsByAddress<T>>;
+    public async getTransactionBy<T extends GetTransactionByParams>(p: T): Promise<ResultGetTransactionsBy<T>> {
+        if ('hash' in p) {
+            return this.call("getTransactionByHash", [p.hash]) as ResultGetTransactionsBy<T>;
+        } else if ('blockNumber' in p) {
+            return this.call("getTransactionsByBlockNumber", [p.blockNumber]) as ResultGetTransactionsBy<T>;
+        } else if ('batchNumber' in p) {
+            return this.call("getTransactionsByBatchNumber", [p.batchNumber]) as ResultGetTransactionsBy<T>;
+        } else if ('address' in p) {
+            if (p.justHashes === true) {
+                return this.call("getTransactionHashesByAddress", [p.address, p.max]) as ResultGetTransactionsBy<T>;
+            } else {
+                return this.call("getTransactionsByAddress", [p.address, p.max]) as ResultGetTransactionsBy<T>;
+            }
         }
+        throw new Error("Invalid parameters");
+    }
+
+    /**
+     * Returns all the inherents (including reward inherents) for the parameter. Note
+     * that this only considers blocks in the main chain.
+     */
+    public async getInherentsBy<T extends GetInherentsByParams>(p: T):
+        Promise<T extends { blockNumber: BlockNumber } ? Inherent[] : Inherent> {
+        if ('blockNumber' in p) {
+            return this.call("getInherentsByBlockNumber", [p.blockNumber]) as Promise<T extends { blockNumber: BlockNumber } ? Inherent[] : Inherent>;
+        } else if ('batchNumber' in p) {
+            return this.call("getInherentsByBatchNumber", [p.batchNumber]) as Promise<T extends { blockNumber: BlockNumber } ? Inherent[] : Inherent>;
+        }
+        throw new Error("Invalid parameters");
     }
 
     /**
@@ -176,8 +157,10 @@ export class BlockchainClient extends RpcClient {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    public async getValidatorByAddress({ address, includeStakers: include_stakers }: GetValidatorByAddressParams): Promise<WithMetadata<Validator>> {
-        return this.call("getValidatorByAddress", [address, include_stakers]);
+    public async getValidatorByAddress<T extends GetValidatorByAddressParams>(p = { includeStakers: false } as T):
+        Promise<WithMetadata<T extends { includeStakers: true } ? Validator : PartialValidator>> {
+
+        return this.call("getValidatorByAddress", [p.address, p.includeStakers]);
     }
 
     /**

@@ -7,38 +7,26 @@ function getClient() {
     url.searchParams.append('secret', secret);
     return new Client(url)
 }
-// this.blocks = {
-//     current: blockchain.getBlockNumber.bind(blockchain),
-//     byHash: blockchain.getBlockByHash.bind(blockchain),
-//     byNumber: blockchain.getBlockByNumber.bind(blockchain),
-//     latest: blockchain.getLatestBlock.bind(blockchain),
-//     election: {
-//         after: policy.getElectionBlockAfter.bind(policy),
-//         before: policy.getElectionBlockBefore.bind(policy),
-//         last: policy.getLastElectionBlock.bind(policy),
-//         get: policy.getElectionBlockOf.bind(policy),
-//         subscribe: blockchain.subscribeForValidatorElectionByAddress.bind(blockchain),
-//     },
-//     isElection: policy.getIsElectionBlockAt.bind(policy),
-//     macro: {
-//         after: policy.getMacroBlockAfter.bind(policy),
-//         before: policy.getMacroBlockBefore.bind(policy),
-//         last: policy.getLastMacroBlock.bind(policy),
-//         get: policy.getMacroBlockOf.bind(policy),
-//     },
-//     isMacro: policy.getIsMacroBlockAt.bind(policy),
-//     isMicro: policy.getIsMicroBlockAt.bind(policy),
-//     subscribe: blockchain.subscribeForBlocks.bind(blockchain),
-// };
-describe('Test for blocks module', async () => {
-    const { blocks } = await getClient();
-    const randomTxHash = await blocks.latest({ includeTransactions: true }).then((data) => data.transactions[0].hash);
-    it('.current ok', async () => expect(await blocks.current()).toBeGreaterThanOrEqual(0));
-    it('.byHash ok', async () => {
 
-    });
-    it('.byNumber ok', async () => expect(await blocks.byNumber({blockNumber: 1})).toContain('hash'));
-    it('.byNumber ok with txs', async () => expect(await blocks.byNumber({ blockNumber: 1, includeTransactions: true })).toContain('transactions'));
-    it('.latest ok', async () => expect(await blocks.latest({ includeTransactions: false })).toContain('hash'));
-    it('.latest ok with txs', async () => expect(await blocks.latest({ includeTransactions: true })).toContain('transactions'));
+describe('Test for blocks module', async () => {
+    const { block } = getClient();
+    // Get a hash from Staking contract which we know has transactions
+    // const randomTxHash = ...
+    it('.current ok', async () => expect(await block.current()).toBeGreaterThanOrEqual(0));
+    // it('.by hash ok', async () => expect(await block.by({ hash: randomTxHash })).toHaveProperty('hash'));
+    it('.by blockNumber ok', async () => expect(await block.by({ blockNumber: 0 })).toHaveProperty('hash'));
+    it('.by blockNumber w/txs ok', async () => expect(await block.by({ blockNumber: 0, includeTransactions: true })).toHaveProperty('hash'));
+    it('.latest ok', async () => expect(await block.latest()).toHaveProperty('hash'));
+    it('.latest ok w/txs', async () => expect(await block.latest({includeTransactions: true})).toHaveProperty('transactions'));
+    it('.election.after ok', async () => expect(await block.election.after({blockNumber: 0})).toBeGreaterThanOrEqual(0));
+    it('.election.before ok', async () => expect(await block.election.before({blockNumber: 10})).toBeGreaterThanOrEqual(0));
+    it('.election.last ok', async () => expect(await block.election.last({blockNumber: 10})).toBeGreaterThanOrEqual(0));
+    it('.election.get ok', async () => expect(await block.election.get({epochIndex: 1})).toBeGreaterThanOrEqual(0));
+    it('.isElection ok', async () => expect(typeof (await block.isElection({blockNumber: 1}))).toBe("boolean"));
+    it('.macro.after ok', async () => expect(await block.macro.after({blockNumber: 0})).toBeGreaterThanOrEqual(0));
+    it('.macro.before ok', async () => expect(await block.macro.before({blockNumber: 10})).toBeGreaterThanOrEqual(0));
+    it('.macro.last ok', async () => expect(await block.macro.last({blockNumber: 10})).toBeGreaterThanOrEqual(0));
+    it('.macro.get ok', async () => expect(await block.macro.get({batchIndex: 1})).toBeGreaterThanOrEqual(0));
+    it('.isMacro ok', async () => expect(typeof (await block.isMacro({blockNumber: 0}))).toBe("boolean"));
+    it('.isMicro ok', async () => expect(typeof (await block.isMicro({blockNumber: 0}))).toBe("boolean"));
 });

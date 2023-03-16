@@ -83,7 +83,7 @@ export enum BlockType {
     MACRO = 'macro',
 }
 
-export type MicroBlock = {
+export type PartialMicroBlock = {
     type: BlockType.MICRO;
     hash: string;
     size: number;
@@ -100,7 +100,6 @@ export type MicroBlock = {
     stateHash: string;
     bodyHash: string;
     historyHash: string;
-    transactions?: Transaction[];
     producer: {
         slotNumber: number;
         validator: Address;
@@ -117,6 +116,10 @@ export type MicroBlock = {
             };
         };
     };
+}
+
+export type MicroBlock = PartialMicroBlock & {
+    transactions: Transaction[];
 }
 
 export type MacroBlock = {
@@ -156,15 +159,13 @@ export type MacroBlock = {
     };
 }
 
-export type Block = MicroBlock | MacroBlock
-
 export type Staker = {
     address: Address;
     balance: Coin;
     delegation?: Address;
 }
 
-export type Validator = {
+export type PartialValidator = {
     address: Address;
     signingKey: string;
     votingKey: string;
@@ -174,6 +175,10 @@ export type Validator = {
     numStakers: number;
     inactivityFlag?: number;
     stakers?: Staker[];
+}
+
+export type Validator = {
+
 }
 
 export type Slot = {

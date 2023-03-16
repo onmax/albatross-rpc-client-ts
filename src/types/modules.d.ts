@@ -38,7 +38,7 @@ export type BlockchainMethods = {
     'getCurrentSlashedSlots': RpcInteraction<[], SlashedSlot[], BlockchainState>,
     'getPreviousSlashedSlots': RpcInteraction<[], SlashedSlot[], BlockchainState>,
     'getParkedValidators': RpcInteraction<[], Validator[], BlockchainState>,
-    'getValidatorByAddress': RpcInteraction<[Address, /* include_stakers */Maybe<Boolean>], Validator, BlockchainState>,
+    'getValidatorByAddress': RpcInteraction<[Address, /* include_stakers */Maybe<Boolean>], Validator | PartialValidator, BlockchainState>,
     'getStakerByAddress': RpcInteraction<[Address], Staker, BlockchainState>,
 }
 

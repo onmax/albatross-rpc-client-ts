@@ -1,22 +1,22 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
-import { Address } from "./types/common";
+import { AccountType, Address } from "./types/common";
 
 type GetStakerByAddressParams = { address: Address };
 
 export class Client {
-    public blocks;
-    public batches;
-    public epochs;
-    public transactions;
-    public inherents;
+    public block;
+    public batch;
+    public epoch;
+    public transaction;
+    public inherent;
     public account;
-    public validators;
+    public validator;
     public slots;
     public mempool;
     public stakes;
     public staker;
     public peers;
-    public constants;
+    public constant;
     public htlc;
     public vesting;
     public zeroKnowledgeProof;
@@ -29,7 +29,7 @@ export class Client {
         const mempool = new MempoolClient(url);
         const network = new NetworkClient(url);
         const policy = new PolicyClient(url);
-        const validator = new ValidatorClient(url);
+        const validator_ = new ValidatorClient(url);
         const wallet = new WalletClient(url);
         const zkpComponent = new ZkpComponentClient(url);
 
@@ -39,15 +39,14 @@ export class Client {
             mempool,
             network,
             policy,
-            validator,
+            validator: validator_,
             wallet,
             zkpComponent,
         }
 
-        this.blocks = {
+        this.block = {
             current: blockchain.getBlockNumber.bind(blockchain),
-            byHash: blockchain.getBlockByHash.bind(blockchain),
-            byNumber: blockchain.getBlockByNumber.bind(blockchain),
+            by: blockchain.getBlockBy.bind(blockchain),
             latest: blockchain.getLatestBlock.bind(blockchain),
             election: {
                 after: policy.getElectionBlockAfter.bind(policy),
@@ -72,24 +71,21 @@ export class Client {
             subscribe: blockchain.subscribeForLogsByAddressesAndTypes.bind(blockchain),
         }
 
-        this.batches = {
+        this.batch = {
             current: blockchain.getBatchNumber.bind(blockchain),
             at: policy.getBatchAt.bind(policy),
             firstBlock: policy.getFirstBlockOf.bind(policy),
         }
 
-        this.epochs = {
+        this.epoch = {
             current: blockchain.getEpochNumber.bind(blockchain),
             at: policy.getEpochAt.bind(policy),
             firstBlock: policy.getFirstBlockOf.bind(policy),
             firstBatch: policy.getFirstBatchOfEpoch.bind(policy),
         }
         
-        this.transactions = {
-            byHash: blockchain.getTransactionByHash.bind(blockchain),
-            byBlockNumber: blockchain.getTransactionsByBlockNumber.bind(blockchain),
-            byBatchNumber: blockchain.getTransactionsByBatchNumber.bind(blockchain),
-            byAddress: blockchain.getTransactionsByAddress.bind(blockchain),
+        this.transaction = {
+            by: blockchain.getTransactionBy.bind(blockchain),
             push: mempool.pushTransaction.bind(mempool),
             minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
             create: consensus.createTransaction.bind(consensus),
@@ -132,6 +128,7 @@ export class Client {
         }
 
         this.staker = {
+            byAddress: blockchain.getStakerByAddress.bind(blockchain),
             create: consensus.createNewStakerTransaction.bind(consensus),
             send: consensus.sendNewStakerTransaction.bind(consensus),
             update: {
@@ -140,9 +137,8 @@ export class Client {
             }
         }
 
-        this.inherents = {
-            byBlockNumber: blockchain.getInherentsByBlockNumber.bind(blockchain),
-            byBatchNumber: blockchain.getInherentsByBatchNumber.bind(blockchain),
+        this.inherent = {
+            by: blockchain.getInherentsBy.bind(blockchain),
         }
 
         this.account = {
@@ -156,16 +152,15 @@ export class Client {
             isLocked: wallet.isAccountLocked.bind(wallet),
             sign: wallet.sign.bind(wallet),
             verify: wallet.verifySignature.bind(wallet),
-            isStaker: this.isStaker
         }
 
-        this.validators = {
+        this.validator = {
             byAddress: blockchain.getValidatorByAddress.bind(blockchain),
-            setAutomaticReactivation: validator.setAutomaticReactivation.bind(validator),
+            setAutomaticReactivation: validator_.setAutomaticReactivation.bind(validator_),
             nimiq: {
-                address: validator.getAddress.bind(blockchain),
-                signingKey: validator.getSigningKey.bind(blockchain),
-                votingKey: validator.getVotingKey.bind(blockchain),
+                address: validator_.getAddress.bind(blockchain),
+                signingKey: validator_.getSigningKey.bind(blockchain),
+                votingKey: validator_.getVotingKey.bind(blockchain),
             },
             active: blockchain.getActiveValidators.bind(blockchain),
             parked: blockchain.getParkedValidators.bind(blockchain),
@@ -217,7 +212,7 @@ export class Client {
             consensusEstablished: consensus.isConsensusEstablished.bind(network),
         }
 
-        this.constants = {
+        this.constant = {
             params: policy.getPolicyConstants.bind(policy),
             supply: policy.getSupplyAt.bind(policy),
         }
@@ -225,13 +220,5 @@ export class Client {
         this.zeroKnowledgeProof = {
             state: zkpComponent.getZKPState.bind(zkpComponent),
         }
-    }
-
-    /**
-     * Returns true if the given address is a staker.
-     */
-    private async isStaker({ address }: GetStakerByAddressParams) {
-        const res = await this.transactions.byAddress({ address });
-        return true; // TODO: Check if the address is a staker.
     }
 }

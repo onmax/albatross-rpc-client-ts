@@ -10,28 +10,28 @@ export class ValidatorClient extends RpcClient {
     /**
      * Returns our validator address.
      */
-    public async getAddress() {
+    public async getAddress(): Promise<String> {
         return this.call("getAddress", []);
     }
 
     /**
      * Returns our validator signing key
      */
-    public async getSigningKey() {
+    public async getSigningKey(): Promise<String> {
         return this.call("getSigningKey", []);
     }
 
     /**
      * Returns our validator voting key
      */
-    public async getVotingKey() {
+    public async getVotingKey(): Promise<String> {
         return this.call("getVotingKey", []);
     }
 
     /**
      * Updates the configuration setting to automatically reactivate our validator
      */
-    public async setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams) {
+    public async setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams): Promise<null> {
         return this.call("setAutomaticReactivation", [automaticReactivation]);
     }
 }

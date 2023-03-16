@@ -5,7 +5,7 @@ export class ZkpComponentClient extends RpcClient {
         super(url);
     }
 
-    public async getZKPState() {
+    public async getZKPState(): Promise<String> {
         return this.call("getZKPState", []);
     }
 }

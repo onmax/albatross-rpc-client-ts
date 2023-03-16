@@ -1,4 +1,4 @@
-import { Address, Signature } from "../types/common";
+import { Address, Signature, WalletAccount } from "../types/common";
 import { RpcClient } from "./client";
 
 type ImportKeyParams = { keyData: string; passphrase?: string };
@@ -15,39 +15,39 @@ export class WalletClient extends RpcClient {
         super(url);
     }
 
-    public async importRawKey({ keyData, passphrase }: ImportKeyParams) {
+    public async importRawKey({ keyData, passphrase }: ImportKeyParams): Promise<Address> {
         return this.call("importRawKey", [keyData, passphrase]);
     }
 
-    public async isAccountImported({ address }: IsAccountImportedParams) {
+    public async isAccountImported({ address }: IsAccountImportedParams): Promise<Boolean> {
         return this.call("isAccountImported", [address]);
     }
 
-    public async listAccounts() {
+    public async listAccounts(): Promise<Address[]> {
         return this.call("listAccounts", []);
     }
 
-    public async lockAccount({ address }: LockAccountParams) {
+    public async lockAccount({ address }: LockAccountParams): Promise<null> {
         return this.call("lockAccount", [address]);
     }
 
-    public async createAccount({ passphrase }: CreateAccountParams) {
+    public async createAccount({ passphrase }: CreateAccountParams): Promise<WalletAccount> {
         return this.call("createAccount", [passphrase]);
     }
 
-    public async unlockAccount({ address, passphrase, duration }: UnlockAccountParams) {
+    public async unlockAccount({ address, passphrase, duration }: UnlockAccountParams): Promise<Boolean> {
         return this.call("unlockAccount", [address, passphrase, duration]);
     }
 
-    public async isAccountLocked({ address }: IsAccountLockedParams) {
+    public async isAccountLocked({ address }: IsAccountLockedParams): Promise<Boolean> {
         return this.call("isAccountLocked", [address]);
     }
 
-    public async sign({ message, address, passphrase, isHex }: SignParams) {
+    public async sign({ message, address, passphrase, isHex }: SignParams): Promise<Signature> {
         return this.call("sign", [message, address, passphrase, isHex]);
     }
 
-    public async verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams) {
+    public async verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams): Promise<Boolean> {
         return this.call("verifySignature", [message, publicKey, signature, isHex]);
     }
 }

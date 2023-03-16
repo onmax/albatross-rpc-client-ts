@@ -1,4 +1,6 @@
-import { Address, BatchIndex, BlockNumber, Hash } from "../types/common";
+import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { BlockchainState } from "../types/modules";
+import { RpcResponseResult } from "../types/rpc-messages";
 import { RpcClient } from "./client";
 
 type GetBlockByNumberParams = { blockNumber: BlockNumber; includeTransactions?: boolean };
@@ -18,6 +20,9 @@ type SubscribeForHeadBlockParams = { filter: 'HASHES' | 'FULL' | 'OMIT_TRANSACTI
 type SubscribeForValidatorElectionByAddressParams = { address: Address };
 type SubscribeForLogsByAddressesAndTypesParams = { addresses: Address[], types: any[] };
 
+type WithMetadata<T> = { data: T, metadata: BlockchainState };
+type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
+
 export class BlockchainClient extends RpcClient {
     constructor(url: URL) {
         super(url);
@@ -26,28 +31,28 @@ export class BlockchainClient extends RpcClient {
     /**
      * Returns the block number for the current head.
      */
-    public async getBlockNumber() {
+    public async getBlockNumber(): Promise<BlockNumber> {
         return this.call("getBlockNumber", []);
     }
 
     /**
      * Returns the batch number for the current head.
      */
-    public async getBatchNumber() {
+    public async getBatchNumber(): Promise<BatchIndex> {
         return this.call("getBatchNumber", []);
     }
 
     /**
      * Returns the epoch number for the current head.
      */
-    public async getEpochNumber() {
+    public async getEpochNumber(): Promise<BatchIndex> {
         return this.call("getEpochNumber", []);
     }
 
     /**
      * Tries to fetch a block given its hash. It has an option to include the transactions in the block, which defaults to false.
      */
-    public async getBlockByHash({ hash, includeTransactions }: GetBlockByHashParams) {
+    public async getBlockByHash({ hash, includeTransactions }: GetBlockByHashParams): Promise<MicroBlock> {
         return this.call("getBlockByHash", [hash, includeTransactions]);
     }
     
@@ -56,7 +61,7 @@ export class BlockchainClient extends RpcClient {
      * block, which defaults to false. Note that this function will only fetch blocks that are part
      * of the main chain.
      */
-    public async getBlockByNumber({ blockNumber, includeTransactions }: GetBlockByNumberParams) {
+    public async getBlockByNumber({ blockNumber, includeTransactions }: GetBlockByNumberParams): Promise<MicroBlock> {
         return this.call("getBlockByNumber", [blockNumber, includeTransactions]);
     }
     
@@ -64,7 +69,7 @@ export class BlockchainClient extends RpcClient {
      * Returns the block at the head of the main chain. It has an option to include the
      * transactions in the block, which defaults to false.
      */
-    public async getLatestBlock({ includeTransactions }: GetLatestBlockParams) {
+    public async getLatestBlock({ includeTransactions }: GetLatestBlockParams): Promise<MicroBlock> {
         return this.call("getLatestBlock", [includeTransactions]);
     }
     
@@ -73,14 +78,14 @@ export class BlockchainClient extends RpcClient {
      * offset is optional, it will default to getting the offset for the existing block
      * at the given height.
      */
-    public async getSlotAt({ blockNumber, offsetOpt }: GetSlotAtParams) {
+    public async getSlotAt({ blockNumber, offsetOpt }: GetSlotAtParams): Promise<WithMetadata<Slot>> {
         return this.call("getSlotAt", [blockNumber, offsetOpt]);
     }
     
     /**
      * Tries to fetch a transaction (including reward transactions) given its hash.
      */
-    public async getTransactionByHash({ hash }: GetTransactionByHashParams) {
+    public async getTransactionByHash({ hash }: GetTransactionByHashParams): Promise<Transaction> {
         return this.call("getTransactionByHash", [hash]);
     }
     
@@ -88,7 +93,7 @@ export class BlockchainClient extends RpcClient {
      * Returns all the transactions (including reward transactions) for the given block number. Note
      * that this only considers blocks in the main chain.
      */
-    public async getTransactionsByBlockNumber({ blockNumber }: GetTransactionsByBlockNumberParams) {
+    public async getTransactionsByBlockNumber({ blockNumber }: GetTransactionsByBlockNumberParams): Promise<Transaction[]> {
         return this.call("getTransactionsByBlockNumber", [blockNumber]);
     }
 
@@ -96,7 +101,7 @@ export class BlockchainClient extends RpcClient {
      * Returns all the inherents (including reward inherents) for the given block number. Note
      * that this only considers blocks in the main chain.
      */
-    public async getInherentsByBlockNumber({ blockNumber }: GetInherentsByBlockNumberParams) {
+    public async getInherentsByBlockNumber({ blockNumber }: GetInherentsByBlockNumberParams): Promise<Inherent[]> {
         return this.call("getInherentsByBlockNumber", [blockNumber]);
     }
 
@@ -104,7 +109,7 @@ export class BlockchainClient extends RpcClient {
      * Returns all the transactions (including reward transactions) for the given batch number. Note
      * that this only considers blocks in the main chain
      */
-    public async getTransactionsByBatchNumber({ batchNumber }: GetTransactionsByBatchNumberParams) {
+    public async getTransactionsByBatchNumber({ batchNumber }: GetTransactionsByBatchNumberParams): Promise<Transaction[]> {
         return this.call("getTransactionsByBatchNumber", [batchNumber]);
     }
 
@@ -112,7 +117,7 @@ export class BlockchainClient extends RpcClient {
      * Returns all the inherents (including reward inherents) for the given batch number. Note
      * that this only considers blocks in the main chain.
      */
-    public async getInherentsByBatchNumber({ batchNumber }: GetInherentsByBatchNumberParams) {
+    public async getInherentsByBatchNumber({ batchNumber }: GetInherentsByBatchNumberParams): Promise<Inherent[]> {
         return this.call("getInherentsByBatchNumber", [batchNumber]);
     }
 
@@ -122,25 +127,25 @@ export class BlockchainClient extends RpcClient {
      * transactions are also returned. It has an option to specify the maximum number of transactions
      * to fetch, it defaults to 500.
      */
-    public async getTransactionsByAddress({ address, max, justHashes }: GetTransactionsByAddressParams) {
-        if (justHashes) {
-            return this.call("getTransactionHashesByAddress", [address, max]);
+    public async getTransactionsByAddress<T extends GetTransactionsByAddressParams>({ address, max, justHashes }: T): Promise<ResultGetTransactionsByAddress<T>> {
+        if (justHashes === true) {
+            return this.call("getTransactionHashesByAddress", [address, max]) as Promise<ResultGetTransactionsByAddress<T>>;
         } else {
-            return this.call("getTransactionsByAddress", [address, max]);
+            return this.call("getTransactionsByAddress", [address, max]) as Promise<ResultGetTransactionsByAddress<T>>;
         }
     }
 
     /**
      * Tries to fetch the account at the given address.
      */
-    public async getAccountByAddress({ address }: GetAccountByAddressParams) {
+    public async getAccountByAddress({ address }: GetAccountByAddressParams): Promise<WithMetadata<Account>> {
         return this.call("getAccountByAddress", [address]);
     }
 
      /**
      * Returns a collection of the currently active validator's addresses and balances.
      */
-     public async getActiveValidators() {
+     public async getActiveValidators(): Promise<WithMetadata<Validator[]>> {
         return this.call("getActiveValidators", []);
     }
 
@@ -148,7 +153,7 @@ export class BlockchainClient extends RpcClient {
      * Returns information about the currently slashed slots. This includes slots that lost rewards
      * and that were disabled.
      */
-    public async getCurrentSlashedSlots() {
+    public async getCurrentSlashedSlots(): Promise<WithMetadata<SlashedSlot[]>> {
         return this.call("getCurrentSlashedSlots", []);
     }
 
@@ -156,14 +161,14 @@ export class BlockchainClient extends RpcClient {
      * Returns information about the slashed slots of the previous batch. This includes slots that
      * lost rewards and that were disabled.
      */
-    public async getPreviousSlashedSlots() {
+    public async getPreviousSlashedSlots(): Promise<WithMetadata<SlashedSlot[]>> {
         return this.call("getPreviousSlashedSlots", []);
     }
 
     /**
      * Returns information about the currently parked validators.
      */
-    public async getParkedValidators() {
+    public async getParkedValidators(): Promise<WithMetadata<Validator[]>> {
         return this.call("getParkedValidators", []);
     }
 
@@ -171,14 +176,14 @@ export class BlockchainClient extends RpcClient {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    public async getValidatorByAddress({ address, includeStakers: include_stakers }: GetValidatorByAddressParams) {
+    public async getValidatorByAddress({ address, includeStakers: include_stakers }: GetValidatorByAddressParams): Promise<WithMetadata<Validator>> {
         return this.call("getValidatorByAddress", [address, include_stakers]);
     }
 
     /**
      * Tries to fetch a staker information given its address.
      */
-    public async isStaker({ address }: GetStakerByAddressParams) {
+    public async getStakerByAddress({ address }: GetStakerByAddressParams): Promise<WithMetadata<Staker>> {
         return this.call("getStakerByAddress", [address]);
     }
 

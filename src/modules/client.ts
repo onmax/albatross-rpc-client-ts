@@ -55,7 +55,7 @@ export class RpcClient {
         });
     }
 
-    // TODO <T extends EventName>
+    // TODO Improve typing in subscriptions
     protected async subscribe<T extends InteractionName>(event: T, params: RpcRequest<T>["params"]) {
         const eventSource = new EventSource(this.url.href);
         return {

@@ -232,6 +232,6 @@ export class Client {
      */
     private async isStaker({ address }: GetStakerByAddressParams) {
         const res = await this.transactions.byAddress({ address });
-        return res.data !== null;
+        return true; // TODO: Check if the address is a staker.
     }
 }

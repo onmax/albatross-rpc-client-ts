@@ -1,4 +1,4 @@
-import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlots, Staker, Transaction, Validator, WalletAccount } from "./common"
+import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Staker, Transaction, Validator, WalletAccount } from "./common"
 
 // Metadatas
 export type BlockchainState = { 
@@ -22,9 +22,9 @@ export type BlockchainMethods = {
     'getBlockNumber': RpcInteraction<[], BlockNumber>,
     'getBatchNumber': RpcInteraction<[], BatchIndex>,
     'getEpochNumber': RpcInteraction<[], EpochIndex>,
-    'getBlockByHash': RpcInteraction<[Hash, /* include_transactions */Maybe<Boolean>], Validator[]>,
-    'getBlockByNumber': RpcInteraction<[BlockNumber, /* include_transactions */Maybe<Boolean>], Validator[]>,
-    'getLatestBlock': RpcInteraction<[/* include_transactions */Maybe<Boolean>], MicroBlock[]>,
+    'getBlockByHash': RpcInteraction<[Hash, /* include_transactions */Maybe<Boolean>], MicroBlock>,
+    'getBlockByNumber': RpcInteraction<[BlockNumber, /* include_transactions */Maybe<Boolean>], MicroBlock>,
+    'getLatestBlock': RpcInteraction<[/* include_transactions */Maybe<Boolean>], MicroBlock>,
     'getSlotAt': RpcInteraction<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
     'getTransactionByHash': RpcInteraction<[Hash], Transaction>,
     'getTransactionsByBlockNumber': RpcInteraction<[BlockNumber], Transaction[]>,
@@ -35,8 +35,8 @@ export type BlockchainMethods = {
     'getTransactionsByAddress': RpcInteraction<[Address, /* max u16 */Maybe<number>], Transaction[]>,
     'getAccountByAddress': RpcInteraction<[Address], Account, BlockchainState>,
     'getActiveValidators': RpcInteraction<[], Validator[], BlockchainState>,
-    'getCurrentSlashedSlots': RpcInteraction<[], SlashedSlots[], BlockchainState>,
-    'getPreviousSlashedSlots': RpcInteraction<[], SlashedSlots[], BlockchainState>,
+    'getCurrentSlashedSlots': RpcInteraction<[], SlashedSlot[], BlockchainState>,
+    'getPreviousSlashedSlots': RpcInteraction<[], SlashedSlot[], BlockchainState>,
     'getParkedValidators': RpcInteraction<[], Validator[], BlockchainState>,
     'getValidatorByAddress': RpcInteraction<[Address, /* include_stakers */Maybe<Boolean>], Validator, BlockchainState>,
     'getStakerByAddress': RpcInteraction<[Address], Staker, BlockchainState>,

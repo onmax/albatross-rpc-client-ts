@@ -1,8 +1,6 @@
 export type Address = `NQ${number} ${string}`
 export type Coin = number
 
-export const STAKING_CONTRACT_ADDRESS: Address = 'NQ38 STAK 1NG0 0000 0000 C0NT RACT 0000 0000'
-
 export type BlockNumber = number /* u32 */
 export type EpochIndex = number /* u32 */
 export type BatchIndex = number /* u32 */
@@ -178,18 +176,13 @@ export type Validator = {
     stakers?: Staker[];
 }
 
-export type BlockchainState<T> = T & {
-    blockNumber: BlockNumber;
-    blockHash: string;
-}
-
 export type Slot = {
     slotNumber: number; // u16
     validator: Address;
     publicKey: string;
 }
 
-export type SlashedSlots = {
+export type SlashedSlot = {
     blockNumber: BlockNumber; // u32
     lostRewards: number[]; // u32[]
     disabled: number[]; // u32[]

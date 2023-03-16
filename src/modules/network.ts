@@ -8,21 +8,21 @@ export class NetworkClient extends RpcClient {
     /**
      * The peer ID for our local peer.
      */
-    public async getPeerId() {
+    public async getPeerId(): Promise<String> {
         return this.call("getPeerId", []);
     }
 
     /**
      * Returns the number of peers. 
      */
-    public async getPeerCount() {
+    public async getPeerCount(): Promise<number> {
         return this.call("getPeerCount", []);
     }
 
     /**
      * Returns a list with the IDs of all our peers.
      */
-    public async getPeerList() {
+    public async getPeerList(): Promise<String[]> {
         return this.call("getPeerList", []);
     }
 }

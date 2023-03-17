@@ -1,3 +1,4 @@
+import { ZKPState } from "../types/common";
 import { RpcClient } from "./client";
 
 export class ZkpComponentClient extends RpcClient {
@@ -5,7 +6,12 @@ export class ZkpComponentClient extends RpcClient {
         super(url);
     }
 
-    public async getZKPState(): Promise<String> {
-        return this.call("getZKPState", []);
+    public async getZkpState(): Promise<ZKPState> {
+        return this.call("getZkpState", []).then(d => ({
+                latestHeaderHash: d['latest-header-number'],
+                latestBlockNumber: d['latest-block-number'],
+                latestProof: d['latest-proof'],
+            })
+        );
     }
 }

@@ -1,4 +1,4 @@
-import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Staker, Transaction, Validator, WalletAccount } from "./common"
+import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, Slot, SlashedSlot, Staker, Transaction, Validator, WalletAccount, ZKPState } from "./common"
 
 // Metadatas
 export type BlockchainState = { 
@@ -37,7 +37,7 @@ export type BlockchainMethods = {
     'getActiveValidators': RpcInteraction<[], Validator[], BlockchainState>,
     'getCurrentSlashedSlots': RpcInteraction<[], SlashedSlot[], BlockchainState>,
     'getPreviousSlashedSlots': RpcInteraction<[], SlashedSlot[], BlockchainState>,
-    'getParkedValidators': RpcInteraction<[], Validator[], BlockchainState>,
+    'getParkedValidators': RpcInteraction<[], { blockNumber: BlockNumber, validators: Validator[]}, BlockchainState>,
     'getValidatorByAddress': RpcInteraction<[Address, /* include_stakers */Maybe<Boolean>], Validator | PartialValidator, BlockchainState>,
     'getStakerByAddress': RpcInteraction<[Address], Staker, BlockchainState>,
 }
@@ -148,6 +148,12 @@ export type WalletMethods = {
     'verifySignature': RpcInteraction<[/* message */String, /* public_key */PublicKey, /* signature */Signature, /* is_hex */Boolean], Boolean>,
 }
 
+export type ZKPStateKebab = {
+    'latest-header-number': Hash
+    'latest-block-number': BlockNumber
+    'latest-proof'?: string
+}
+
 export type ZkpComponentMethods = {
-    'getZKPState': RpcInteraction<[], ZKPState>,
+    'getZkpState': RpcInteraction<[], ZKPStateKebab>,
 }

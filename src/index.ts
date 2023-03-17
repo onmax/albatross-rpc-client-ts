@@ -157,7 +157,7 @@ export class Client {
         this.validator = {
             byAddress: blockchain.getValidatorByAddress.bind(blockchain),
             setAutomaticReactivation: validator_.setAutomaticReactivation.bind(validator_),
-            nimiq: {
+            node: { // The node is a validator itself, which we have access to
                 address: validator_.getAddress.bind(blockchain),
                 signingKey: validator_.getSigningKey.bind(blockchain),
                 votingKey: validator_.getVotingKey.bind(blockchain),
@@ -193,7 +193,7 @@ export class Client {
         }
 
         this.slots = {
-            current: blockchain.getSlotAt.bind(blockchain),
+            at: blockchain.getSlotAt.bind(blockchain),
             slashed: {
                 current: blockchain.getCurrentSlashedSlots.bind(blockchain),
                 previous: blockchain.getPreviousSlashedSlots.bind(blockchain),
@@ -218,7 +218,7 @@ export class Client {
         }
 
         this.zeroKnowledgeProof = {
-            state: zkpComponent.getZKPState.bind(zkpComponent),
+            state: zkpComponent.getZkpState.bind(zkpComponent),
         }
     }
 }

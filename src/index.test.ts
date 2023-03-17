@@ -8,7 +8,7 @@ function getClient() {
     return new Client(url)
 }
 
-describe('Test for blocks module', async () => {
+describe('Test for block module', async () => {
     const { block } = getClient();
     // Get a hash from Staking contract which we know has transactions
     // const randomTxHash = ...
@@ -29,4 +29,102 @@ describe('Test for blocks module', async () => {
     it('.macro.get ok', async () => expect(await block.macro.get({batchIndex: 1})).toBeGreaterThanOrEqual(0));
     it('.isMacro ok', async () => expect(typeof (await block.isMacro({blockNumber: 0}))).toBe("boolean"));
     it('.isMicro ok', async () => expect(typeof (await block.isMicro({blockNumber: 0}))).toBe("boolean"));
+});
+
+describe('Test for batch module', async () => {
+    const { batch } = getClient();
+    it('.current ok', async () => expect(await batch.current()).toBeGreaterThanOrEqual(0));
+    it('.at ok', async () => expect(await batch.at({blockNumber: 0})).toBeGreaterThanOrEqual(0));
+    it('.firstBlock ok', async () => expect(await batch.firstBlock({epochIndex: 1})).toBeGreaterThanOrEqual(0));
+});
+
+describe('Test for epoch module', async () => {
+    const { epoch } = getClient();
+    it('.current ok', async () => expect(await epoch.current()).toBeGreaterThanOrEqual(0));
+    it('.at ok', async () => expect(await epoch.at({blockNumber: 0})).toBeGreaterThanOrEqual(0));
+    it('.firstBlock ok', async () => expect(await epoch.firstBlock({epochIndex: 1})).toBeGreaterThanOrEqual(0));
+    it('.firstBatch ok', async () => expect(typeof (await epoch.firstBatch({blockNumber: 65}))).toBe("boolean"));
+});
+
+describe.skip('Test for transaction module', async () => {
+    // const { transaction } = getClient();
+    // TODO transaction.by
+    // TODO transaction.push
+    // TODO Returns method not found
+    // it('.minFeePerByte ok', async () => expect(await transaction.minFeePerByte()).toBeGreaterThanOrEqual(0));
+    // TODO transaction.create
+    // TODO transaction.send
+});
+
+describe.skip('Test for vesting module', async () => {
+    // const { vesting } = getClient();
+    // TODO
+});
+
+describe.skip('Test for htlc module', async () => {
+    // const { htlc } = getClient();
+    // TODO
+});
+
+describe.skip('Test for stakes module', async () => {
+    // const { stakes } = getClient();
+    // TODO
+});
+
+describe.skip('Test for staker module', async () => {
+    // const { staker } = getClient();
+    // TODO
+});
+
+describe('Test for inherent module', async () => {
+    const { inherent } = getClient();
+    // return inherent[]
+    it('.by blockNumber', async () => expect(await inherent.by({blockNumber: 0})).toBeInstanceOf(Array));
+    it('.by batchNumber', async () => expect(await inherent.by({batchNumber: 0})).toBeInstanceOf(Array));
+});
+
+describe('Test for validator module', async () => {
+    const { validator } = getClient();
+    // TODO validator.byAddress
+    // TODO validator.setAutomaticReactivation
+    // TODO Figure out how validator.node works
+    it('.active ok', async () => expect((await validator.active()).data).toBeInstanceOf(Array));
+    it('.parked ok', async () => expect((await validator.parked()).data.validators).toBeInstanceOf(Array));
+    // TODO validator.action
+});
+
+describe('Test for slots module', async () => {
+    const { slots } = getClient();
+    // TODO Currently failing in server all of them
+    // it('.current ok', async () => expect(await slots.at({blockNumber: 1})).haveOwnProperty('slotNumber'));
+    it('.slashed.current ok', async () => expect((await slots.slashed.current()).data).haveOwnProperty('blockNumber'));
+    it('.slashed.previous ok', async () => expect((await slots.slashed.previous()).data).haveOwnProperty('blockNumber'));
+});
+
+describe.skip('Test for mempool module', async () => {
+    const { mempool } = getClient();
+    // TODO .info is failing
+    // it('.info ok', async () => expect(await mempool.info()).toHaveProperty('size'));
+    // TODO .content is failing
+    // it('.content ok', async () => expect(await mempool.content()).toHaveProperty('transactions'));
+});
+
+describe('Test for peers module', async () => {
+    const { peers } = getClient();
+    it('.id ok', async () => expect(typeof (await peers.id())).toBe('string'));
+    it('.count ok', async () => expect(await peers.count()).toBeGreaterThanOrEqual(0));
+    it('.peers ok', async () => expect(await peers.peers()).toBeInstanceOf(Array));
+    it('.consensusEstablished ok', async () => expect(await peers.consensusEstablished()).toBe(true));
+});
+
+describe('Test for constant module', async () => {
+    const { constant } = getClient();
+    const oneYearAgo = new Date().getTime() - 31536000000;
+    it('.params ok', async () => expect(await constant.params()).toHaveProperty('stakingContractAddress'));
+    it('.supply ok', async () => expect(await constant.supply({genesisSupply: 100000, genesisTime: oneYearAgo, currentTime: new Date().getTime()})).toBeGreaterThanOrEqual(0));
+});
+
+describe('Test for zeroKnowledgeProof module', async () => {
+    const { zeroKnowledgeProof } = getClient();
+    it('.state ok', async () => expect(await zeroKnowledgeProof.state()).toHaveProperty('latestHeaderHash'));
 });

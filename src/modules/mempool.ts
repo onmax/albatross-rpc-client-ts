@@ -29,7 +29,7 @@ export class MempoolClient extends RpcClient {
      * @param includeTransactions
      * @returns 
      */
-    public mempoolContent({ includeTransactions }: MempoolContentParams): Promise<(Hash | Transaction)[]> {
+    public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false}): Promise<(Hash | Transaction)[]> {
         return super.call("mempoolContent", [includeTransactions]);
     }
 

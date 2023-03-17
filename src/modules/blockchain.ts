@@ -106,12 +106,11 @@ export class BlockchainClient extends RpcClient {
      * Returns all the inherents (including reward inherents) for the parameter. Note
      * that this only considers blocks in the main chain.
      */
-    public async getInherentsBy<T extends GetInherentsByParams>(p: T):
-        Promise<T extends { blockNumber: BlockNumber } ? Inherent[] : Inherent> {
+    public async getInherentsBy<T extends GetInherentsByParams>(p: T): Promise<Inherent[]> {
         if ('blockNumber' in p) {
-            return this.call("getInherentsByBlockNumber", [p.blockNumber]) as Promise<T extends { blockNumber: BlockNumber } ? Inherent[] : Inherent>;
+            return this.call("getInherentsByBlockNumber", [p.blockNumber]);
         } else if ('batchNumber' in p) {
-            return this.call("getInherentsByBatchNumber", [p.batchNumber]) as Promise<T extends { blockNumber: BlockNumber } ? Inherent[] : Inherent>;
+            return this.call("getInherentsByBatchNumber", [p.batchNumber]);
         }
         throw new Error("Invalid parameters");
     }
@@ -149,7 +148,7 @@ export class BlockchainClient extends RpcClient {
     /**
      * Returns information about the currently parked validators.
      */
-    public async getParkedValidators(): Promise<WithMetadata<Validator[]>> {
+    public async getParkedValidators(): Promise<WithMetadata<{ blockNumber: BlockNumber, validators: Validator[]}>> {
         return this.call("getParkedValidators", []);
     }
 

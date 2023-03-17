@@ -39,14 +39,9 @@ Check out the [typing file](./src/index.ts) for all available methods.
 In the [`Rust RPC Client`](https://github.com/nimiq/core-rs-albatross/tree/albatross/rpc-server/src/dispatchers) things are structure differently and you can use that structure if you want prefer it.
 
 ```typescript
-function getClient() {
-    const secret = process.env.NIMIQ_SECRET || '';
-    const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
-    url.searchParams.append('secret', secret);
-    return new Client(url)
-}
-getClient._modules.blockchain.getBlockNumber()
-getClient._modules.network.getPeerCount()
+// getClient() defined before
+getClient()._modules.blockchain.getBlockNumber()
+getClient()._modules.network.getPeerCount()
 ```
 
 ## Need help?

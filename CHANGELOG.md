@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.4
+
+### Patch Changes
+
+- 98411d4: tests and types
+
 ## 0.0.3
 
 ### Patch Changes

@@ -1,12 +1,21 @@
 import WebSocket from 'ws';
 import { Blob } from 'buffer';
-import { StreamName, RpcRequest } from "../types/rpc-messages";
+import { StreamName, RpcRequest, StreamResponse, MethodResponse } from "../types/rpc-messages";
 
-type Subscription = {
-    next: (callback: (data: any) => void) => void;
+type Subscription<T extends StreamName, ShowMetadata extends boolean> = {
+    next: (callback: (data: CallbackParam<T, ShowMetadata>) => void) => void;
     error: (callback: (error: any) => void) => void;
     close: () => void;
+
+    // The subscriptionId is only available after the subscription is opened
+    // By default it is set to -1
+    getSubscriptionId: () => number;
 }
+
+type CallbackParam<T extends StreamName, ShowMetadata extends boolean> = 
+    ShowMetadata extends true
+        ? StreamResponse<T>['params']['result']
+        : StreamResponse<T>['params']['result']['data']
 
 export class WebSocketClient {
     private url: URL;
@@ -21,29 +30,20 @@ export class WebSocketClient {
     }
 
     // TODO Improve typing in subscriptions
-    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"]): Promise<Subscription> {
+    async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata): Promise<Subscription<T, ShowMetadata>> {
         const ws = new WebSocket(this.url.href);
+        let subscriptionId : number;
         
-        console.log(this.url.href, JSON.stringify({
-            jsonrpc: '2.0',
-            method: event,
-            params,
-            id: this.id++,
-        }))
-
-        const options: Subscription = {
-            next: (callback: (data: any) => void) => {
+        const options: Subscription<T, ShowMetadata> = {
+            next: (callback: (data: CallbackParam<T, ShowMetadata>) => void) => {
                 ws.onmessage = async (event) => {
-                    console.log(`EVENT: ${JSON.stringify(event)}`);
-                    let payload;
-                    if (event.data instanceof Blob) {
-                        payload = this.textDecoder.decode(await event.data.arrayBuffer());
-                    } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
-                        payload = this.textDecoder.decode(event.data);
-                    } else {
-                        payload = event.data;
+                    const payload = await this.parsePayload<T>(event);
+                    if ('result' in payload) {
+                        subscriptionId = payload.result;
+                        return;
                     }
-                    callback(payload);
+                    const data = (withMetadata ? payload.params.result : payload.params.result.data) as CallbackParam<T, ShowMetadata>;
+                    callback(data);
                 }
             },
             error: (callback: (error: any) => void) => {
@@ -53,7 +53,8 @@ export class WebSocketClient {
             },
             close: () => {  
                 ws.close();
-            }
+            },
+            getSubscriptionId: () => subscriptionId,
         }
         
         return new Promise((resolve) => {
@@ -67,5 +68,22 @@ export class WebSocketClient {
                 resolve(options);
             }
         });
+    }
+
+    private async parsePayload<T extends StreamName>(event: WebSocket.MessageEvent): Promise<StreamResponse<T> | MethodResponse<'streamOpened'>> {
+        let payloadStr: string;
+        if (event.data instanceof Blob) {
+            payloadStr = this.textDecoder.decode(await event.data.arrayBuffer());
+        } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
+            payloadStr = this.textDecoder.decode(event.data);
+        } else {
+            throw new Error('Unexpected data type');
+        }
+
+        try {
+            return JSON.parse(payloadStr) as StreamResponse<T> | MethodResponse<'streamOpened'>;
+        } catch (e) {
+            throw new Error(`Unexpected payload: ${payloadStr}`);
+        }
     }
 }

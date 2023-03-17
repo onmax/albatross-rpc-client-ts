@@ -43,6 +43,12 @@ export type BlockchainMethods = {
     'getStakerByAddress': Interaction<[Address], Staker, BlockchainState>,
 }
 
+// When you open a stream, the server will return a subscription number
+// which we will ignore for now
+export type StreamOpened = {
+    'streamOpened': Interaction<[], number>
+}
+
 export type BlockchainStreams = {
     'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock[]>,
     'subscribeForHeadBlockHash': Interaction<[], Hash>,

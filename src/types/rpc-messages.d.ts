@@ -1,6 +1,6 @@
 import { PolicyMethods, BlockchainMethods, ConsensusMethods, MempoolMethods, NetworkMethods, ValidatorMethods, WalletMethods, ZkpComponentMethods, BlockchainStreams } from "./modules";
 
-export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods
+export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods & StreamOpened
 export type MethodName = keyof Methods
 
 export type Streams = BlockchainStreams
@@ -13,23 +13,28 @@ export type RpcRequest<M extends InteractionName> = {
     id: number
 }
 
-export type ResponsePayload<M extends Methods, Streams> = {
+export type MethodResponsePayload<M extends Methods> = {
     data: M['result'];
     metadata: M['metadata'];
 } & {}
 
 export type MethodResponse<M extends MethodName> = {
     jsonrpc: string,
-    result: ResponsePayload<Methods[M]>
+    result: M extends 'streamOpened' ? number : MethodResponsePayload<Methods[M]>,
     id: number
 }
 
-export type StreamResponse<M extends StreamName> = {
+export type StreamResponsePayload<S extends Streams> = {
+    data: S['result'];
+    metadata: S['metadata'];
+} & {}
+
+export type StreamResponse<S extends StreamName> = {
     jsonrpc: string,
-    method: M,
+    method: S,
     params: {
         subscription: number,
-        result: ResponsePayload<Streams[M]>
+        result: StreamResponsePayload<Streams[S]>
     }
 }
 

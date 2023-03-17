@@ -16,11 +16,11 @@ export class Client {
         this.webSocketClient = new WebSocketClient(url);
     }
 
-    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"]): Promise<CallReturn<T>> {
-        return this.httpClient.call(method, params);
+    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], withMetadata: boolean = false): Promise<CallReturn<T>> {
+        return this.httpClient.call(method, params, withMetadata);
     }
 
-    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"]) {
-        return this.webSocketClient.subscribe(event, params);
+    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], withMetadata: boolean = false) {
+        return this.webSocketClient.subscribe(event, params, withMetadata);
     }
 }

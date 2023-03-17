@@ -238,10 +238,9 @@ console.log('Starting...');
 async function main() {
     const client = getClient();
     const stakingContract = (await client.constant.params()).stakingContractAddress;
-    const { next, close } = await client.logs.subscribe({ addresses: [stakingContract], types: [LogType.HtlcCreate] });
+    const { next, close } = await client.logs.subscribe({ addresses: [], types: [] })
     next((data) => {
-        console.log('NEW event')
-        console.log(data);
+    console.log(data);
         console.log('')
         console.log('')
     });

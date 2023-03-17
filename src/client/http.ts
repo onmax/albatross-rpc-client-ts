@@ -1,9 +1,11 @@
 import fetch from 'node-fetch';
 import { MethodName, RpcRequest, MethodResponse, MethodResponseError } from "../types/rpc-messages";
 
-type CallReturn<T extends MethodName> =  MethodResponse<T>["result"] extends {metadata: null}
+type CallReturn<T extends MethodName, ShowMetadata extends boolean> =  MethodResponse<T>["result"] extends {metadata: null}
     ? MethodResponse<T>["result"]["data"]
-    : MethodResponse<T>["result"]
+    : ShowMetadata extends true
+        ? MethodResponse<T>["result"]
+        : MethodResponse<T>["result"]["data"]
 
 export class HttpClient {
     private url: URL;
@@ -13,7 +15,7 @@ export class HttpClient {
         this.url = url;
     }
 
-    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"]): Promise<CallReturn<T>> {
+    async call<T extends MethodName, ShowMetadata extends boolean>(method: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata): Promise<CallReturn<T, ShowMetadata>> {
         const response = new Promise<MethodResponse<T>>(async (resolve, reject) => {
             return fetch(this.url.href, {
                 method: 'POST',
@@ -49,7 +51,7 @@ export class HttpClient {
         }
     
         return await response.then(response => {
-            if (!response.result.metadata) return response.result.data
+            if (!withMetadata || !response.result.metadata) return response.result.data
             return response.result
         });
     }

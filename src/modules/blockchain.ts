@@ -1,5 +1,6 @@
 import { Client } from "../client/client";
-import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { Subscription } from "../client/web-socket";
+import { Account, Address, BlockType, BatchIndex, BlockNumber, Hash, Inherent, MacroBlock, MicroBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/logs-types";
 import { BlockchainState } from "../types/modules";
 
@@ -12,15 +13,20 @@ type GetInherentsByParams = { batchNumber: BatchIndex } | { blockNumber: BlockNu
 type GetAccountByAddressParams = { address: Address, withMetadata?: boolean };
 type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean };
 type GetStakerByAddressParams = { address: Address };
-type SubscribeForHeadBlockParams = { filter: 'HASHES' | 'FULL' | 'OMIT_TRANSACTIONS' };
+type SubscribeForHeadBlockParams = { filter: 'HASH' | 'FULL' | 'PARTIAL' };
 type SubscribeForValidatorElectionByAddressParams = { address: Address };
 type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[], withMetadata?: boolean };
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
 type ResultGetTransactionsBy<T> = Promise<T extends { hash: Hash }
-? Transaction : T extends { address: Address }
-    ? ResultGetTransactionsByAddress<T> : Transaction[]>
+    ? Transaction : T extends { address: Address }
+        ? ResultGetTransactionsByAddress<T> : Transaction[]>
+
+type BlockSubscription<T extends SubscribeForHeadBlockParams> = Subscription<
+    T["filter"] extends 'HASH' ? 'subscribeForHeadBlockHash' : 'subscribeForHeadBlock', false, T["filter"] extends 'FULL' ? true : false
+>;
+                
 export class BlockchainClient extends Client {
     constructor(url: URL) {
         super(url);
@@ -126,7 +132,7 @@ export class BlockchainClient extends Client {
      /**
      * Returns a collection of the currently active validator's addresses and balances.
      */
-     public async getActiveValidators<T extends { withMetadata: boolean }>({ withMetadata }: T):
+     public async getActiveValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
         Promise<T extends { withMetadata: true } ? WithMetadata<Validator[]> : Validator[]> {
         return this.call("getActiveValidators", [], withMetadata);
     }
@@ -135,7 +141,7 @@ export class BlockchainClient extends Client {
      * Returns information about the currently slashed slots. This includes slots that lost rewards
      * and that were disabled.
      */
-    public async getCurrentSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T):
+    public async getCurrentSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
         Promise<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]> {
         return this.call("getCurrentSlashedSlots", [], withMetadata);
     }
@@ -144,7 +150,7 @@ export class BlockchainClient extends Client {
      * Returns information about the slashed slots of the previous batch. This includes slots that
      * lost rewards and that were disabled.
      */
-    public async getPreviousSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T):
+    public async getPreviousSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
         Promise<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]> {
             return this.call("getPreviousSlashedSlots", [], withMetadata);
     }
@@ -152,7 +158,7 @@ export class BlockchainClient extends Client {
     /**
      * Returns information about the currently parked validators.
      */
-    public async getParkedValidators<T extends { withMetadata: boolean }>({ withMetadata }: T):
+    public async getParkedValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
         Promise<T extends { withMetadata: true } ? WithMetadata<{ blockNumber: BlockNumber, validators: Validator[]}> : { blockNumber: BlockNumber, validators: Validator[]}> {
         return this.call("getParkedValidators", [], withMetadata);
     }
@@ -179,14 +185,14 @@ export class BlockchainClient extends Client {
     /**
      * Subscribes to new block events.
      */
-    public async subscribeForBlocks({ filter }: SubscribeForHeadBlockParams) {
+    public async subscribeForBlocks<T extends SubscribeForHeadBlockParams>({ filter }: T): Promise<BlockSubscription<T>> {
         switch (filter) {
             case "FULL":
-                return this.subscribe("subscribeForHeadBlock", [/*includeTransactions*/true]);
-            case "OMIT_TRANSACTIONS":
-                return this.subscribe("subscribeForHeadBlock", [/*includeTransactions*/false]);
-            case "HASHES":
-                return this.subscribe("subscribeForHeadBlockHash", []);
+                return this.subscribe("subscribeForHeadBlock", [/*includeTransactions*/true]) as unknown as Promise<BlockSubscription<T>>
+            case "PARTIAL":
+                return this.subscribe("subscribeForHeadBlock", [/*includeTransactions*/false]) as unknown as Promise<BlockSubscription<T>>
+            case "HASH":
+                return this.subscribe("subscribeForHeadBlockHash", []) as unknown as Promise<BlockSubscription<T>>
         }
     }
 
@@ -202,7 +208,8 @@ export class BlockchainClient extends Client {
      * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
      * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
      */
-    public async subscribeForLogsByAddressesAndTypes(p: SubscribeForLogsByAddressesAndTypesParams = { addresses: [], types: [], withMetadata: false }) {
-        return this.subscribe("subscribeForLogsByAddressesAndTypes", [p.addresses || [], p.types || []], p.withMetadata);
+    public async subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams>(p = { withMetadata: false } as T):
+        Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends { withMetadata: true } ? true : false>> {
+            return this.subscribe("subscribeForLogsByAddressesAndTypes", [p?.addresses || [], p?.types || []], p?.withMetadata);
     }
 }

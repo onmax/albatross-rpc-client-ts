@@ -1,5 +1,5 @@
-import { Account, Address, BatchIndex, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
-import { LogsByAddressesAndTypes } from "./logs";
+import { Account, Address, BatchIndex, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PartialMicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
+import { BlockLog, LogsByAddressesAndTypes } from "./logs";
 
 // Metadatas
 export type BlockchainState = { 
@@ -50,10 +50,10 @@ export type StreamOpened = {
 }
 
 export type BlockchainStreams = {
-    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock[]>,
+    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock | PartialMicroBlock | MacroBlock | PartialMacroBlock>,
     'subscribeForHeadBlockHash': Interaction<[], Hash>,
     'subscribeForValidatorElectionByAddress': Interaction<[Address], Validator, BlockchainState>,
-    'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/string[]], LogsByAddressesAndTypes, BlockchainState>,
+    'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/string[]], BlockLog, BlockchainState>,
 }
 
 export type ConsensusMethods = {

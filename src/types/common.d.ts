@@ -122,7 +122,7 @@ export type MicroBlock = PartialMicroBlock & {
     transactions: Transaction[];
 }
 
-export type MacroBlock = {
+export type PartialMacroBlock = {
     type: BlockType.MACRO;
     hash: string;
     size: number;
@@ -139,9 +139,12 @@ export type MacroBlock = {
     stateHash: string;
     bodyHash: string;
     historyHash: string;
-    transactions?: Transaction[];
     isElectionBlock: boolean;
     parentElectionHash: string;
+}
+
+export type MacroBlock = PartialMacroBlock & {
+    transactions: Transaction[];
     lostRewardSet?: any[];
     disabledSet?: any[];
     slots?: {

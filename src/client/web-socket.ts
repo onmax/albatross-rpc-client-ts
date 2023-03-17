@@ -1,9 +1,10 @@
-import WebSocket from 'ws';
 import { Blob } from 'buffer';
-import { StreamName, RpcRequest, StreamResponse, MethodResponse } from "../types/rpc-messages";
+import WebSocket from 'ws';
+import { MacroBlock, MicroBlock, PartialMacroBlock, PartialMicroBlock } from '../types/common';
+import { MethodResponse, RpcRequest, StreamName, StreamResponse } from "../types/rpc-messages";
 
-type Subscription<T extends StreamName, ShowMetadata extends boolean> = {
-    next: (callback: (data: CallbackParam<T, ShowMetadata>) => void) => void;
+export type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+    next: (callback: (data: CallbackParam<T, ShowMetadata, IncludeBody>) => void) => void;
     error: (callback: (error: any) => void) => void;
     close: () => void;
 
@@ -12,10 +13,14 @@ type Subscription<T extends StreamName, ShowMetadata extends boolean> = {
     getSubscriptionId: () => number;
 }
 
-type CallbackParam<T extends StreamName, ShowMetadata extends boolean> = 
-    ShowMetadata extends true
-        ? StreamResponse<T>['params']['result']
-        : StreamResponse<T>['params']['result']['data']
+type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
+    T extends 'subscribeForHeadBlock'
+        ? IncludeBody extends true
+            ? MicroBlock | MacroBlock
+            : PartialMicroBlock | PartialMacroBlock
+        : ShowMetadata extends true
+            ? StreamResponse<T>['params']['result']
+            : StreamResponse<T>['params']['result']['data']
 
 export class WebSocketClient {
     private url: URL;
@@ -29,7 +34,6 @@ export class WebSocketClient {
         this.textDecoder = new TextDecoder()
     }
 
-    // TODO Improve typing in subscriptions
     async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata): Promise<Subscription<T, ShowMetadata>> {
         const ws = new WebSocket(this.url.href);
         let subscriptionId : number;

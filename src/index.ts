@@ -158,7 +158,7 @@ class Client {
         this.validator = {
             byAddress: blockchain.getValidatorByAddress.bind(blockchain),
             setAutomaticReactivation: validator_.setAutomaticReactivation.bind(validator_),
-            node: { // The node is a validator itself, which we have access to
+            selfNode: { // The node is a validator itself, which we have access to
                 address: validator_.getAddress.bind(blockchain),
                 signingKey: validator_.getSigningKey.bind(blockchain),
                 votingKey: validator_.getVotingKey.bind(blockchain),
@@ -238,15 +238,6 @@ console.log('Starting...');
 async function main() {
     const client = getClient();
     const stakingContract = (await client.constant.params()).stakingContractAddress;
-    const { next, close } = await client.logs.subscribe({ addresses: [], types: [] })
-    next((data) => {
-    console.log(data);
-        console.log('')
-        console.log('')
-    });
-    setTimeout(() => {
-        close();
-    }, 100000);
 }
 
 main();

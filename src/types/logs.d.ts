@@ -1,8 +1,7 @@
 import { Inherent } from "./common";
 
-export type BlockType = "applied-block" | "reverted-block"
 export type BlockLog = {
-    type:         BlockType;
+    type:         "applied-block" | "reverted-block";
     inherents:    Inherent[];
     timestamp:    number;
     transactions: {
@@ -10,8 +9,9 @@ export type BlockLog = {
         logs: Log[];
     }[];
 }
+
 export type LogsByAddressesAndTypes = {
-    type:              string;
+    type:              BlockType;
     from?:             string;
     fee?:              number;
     to?:               string;

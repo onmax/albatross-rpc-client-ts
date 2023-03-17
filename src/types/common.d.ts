@@ -10,8 +10,8 @@ export type CurrentTime = number /* u64 */
 export type Hash = string
 
 export type PolicyConstants = {
-    stakingContractAddress: string,
-    coinbaseAddress: string,
+    stakingContractAddress: Address,
+    coinbaseAddress: Address,
     transactionValidityWindow: number,
     maxSizeMicroBody: number,
     version: number,

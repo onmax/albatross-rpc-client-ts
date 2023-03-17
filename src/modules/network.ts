@@ -1,6 +1,6 @@
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
-export class NetworkClient extends RpcClient {
+export class NetworkClient extends Client {
     constructor(url: URL) {
         super(url);
     }

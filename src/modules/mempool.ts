@@ -1,10 +1,10 @@
 import { Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
 type PushTransactionParams = { transaction: RawTransaction, withHighPriority?: boolean };
 type MempoolContentParams = { includeTransactions: boolean };
 
-export class MempoolClient extends RpcClient {
+export class MempoolClient extends Client {
     constructor(url: URL) {
         super(url);
     }

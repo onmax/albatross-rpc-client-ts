@@ -1,7 +1,7 @@
 import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { BlockchainState } from "../types/modules";
 import { RpcResponseResult } from "../types/rpc-messages";
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
 type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber}) & { includeTransactions?: boolean };
 type GetLatestBlockParams = { includeTransactions?: boolean };
@@ -15,14 +15,14 @@ type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean 
 type GetStakerByAddressParams = { address: Address };
 type SubscribeForHeadBlockParams = { filter: 'HASHES' | 'FULL' | 'OMIT_TRANSACTIONS' };
 type SubscribeForValidatorElectionByAddressParams = { address: Address };
-type SubscribeForLogsByAddressesAndTypesParams = { addresses: Address[], types: any[] };
+type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: any[] };
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
 type ResultGetTransactionsBy<T> = Promise<T extends { hash: Hash }
 ? Transaction : T extends { address: Address }
     ? ResultGetTransactionsByAddress<T> : Transaction[]>
-export class BlockchainClient extends RpcClient {
+export class BlockchainClient extends Client {
     constructor(url: URL) {
         super(url);
     }
@@ -195,7 +195,7 @@ export class BlockchainClient extends RpcClient {
      * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
      * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
      */
-    public async subscribeForLogsByAddressesAndTypes({ addresses, types }: SubscribeForLogsByAddressesAndTypesParams) {
-        return this.subscribe("subscribeForLogsByAddressesAndTypes", [addresses, types]);
+    public async subscribeForLogsByAddressesAndTypes(p: SubscribeForLogsByAddressesAndTypesParams = { addresses: [], types: [] }) {
+        return this.subscribe("subscribeForLogsByAddressesAndTypes", [p.addresses || [], p.types || []]);
     }
 }

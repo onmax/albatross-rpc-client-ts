@@ -1,8 +1,8 @@
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
 type SetAutomaticReactivationParams = { automaticReactivation: boolean };
 
-export class ValidatorClient extends RpcClient {
+export class ValidatorClient extends Client {
     constructor(url: URL) {
         super(url);
     }

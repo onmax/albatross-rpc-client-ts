@@ -1,5 +1,5 @@
 import { Address, Signature, WalletAccount } from "../types/common";
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
 type ImportKeyParams = { keyData: string; passphrase?: string };
 type IsAccountImportedParams = { address: Address };
@@ -10,7 +10,7 @@ type CreateAccountParams = { passphrase?: string };
 type SignParams = { message: string, address: Address, passphrase: string, isHex: boolean };
 type VerifySignatureParams = { message: string, publicKey: string, signature: Signature, isHex: boolean };
 
-export class WalletClient extends RpcClient {
+export class WalletClient extends Client {
     constructor(url: URL) {
         super(url);
     }

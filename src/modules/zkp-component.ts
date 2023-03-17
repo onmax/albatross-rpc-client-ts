@@ -1,7 +1,7 @@
 import { ZKPState } from "../types/common";
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
-export class ZkpComponentClient extends RpcClient {
+export class ZkpComponentClient extends Client {
     constructor(url: URL) {
         super(url);
     }

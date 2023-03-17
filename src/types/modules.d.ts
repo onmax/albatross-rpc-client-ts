@@ -1,4 +1,4 @@
-import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, Slot, SlashedSlot, Staker, Transaction, Validator, WalletAccount, ZKPState } from "./common"
+import { Account, Address, BatchIndex, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PolicyConstants, RawTransaction, Signature, Slot, SlashedSlot, Staker, Transaction, Validator, WalletAccount, ZKPState } from "./common"
 
 // Metadatas
 export type BlockchainState = { 

@@ -1,6 +1,6 @@
 import { type } from "os";
 import { Address, BlockNumber, Coin, Hash, RawTransaction, Transaction } from "../types/common";
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
 type RawTransactionInfoParams = { rawTransaction: string };
 type Action = 'create' | 'send';
@@ -22,7 +22,7 @@ type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, 
 type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin, validityStartHeight: BlockNumber };
 type DeleteValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin, value: Coin, validityStartHeight: BlockNumber };
 
-export class ConsensusClient extends RpcClient {
+export class ConsensusClient extends Client {
     constructor(url: URL) {
         super(url);
     }

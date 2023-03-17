@@ -1,5 +1,5 @@
 import { BlockNumber, PolicyConstants } from "../types/common";
-import { RpcClient } from "./client";
+import { Client } from "../client/client";
 
 type JustBlockNumber = { blockNumber: BlockNumber };
 type JustEpochIndex = { epochIndex: number };
@@ -7,7 +7,7 @@ type JustBatchIndex = { batchIndex: number };
 type BlockNumberWithIndex = { blockNumber: BlockNumber, justIndex?: boolean };
 type SupplyAtParams = { genesisSupply: number, genesisTime: number, currentTime: number };
 
-export class PolicyClient extends RpcClient {
+export class PolicyClient extends Client {
     constructor(url: URL) {
         super(url);
     }

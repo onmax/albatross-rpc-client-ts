@@ -38,3 +38,7 @@ const client = new Client("https://seed1.v2.nimiq-testnet.com:8648/?secret={TOKE
 client._modules.blockchain.getBlockNumber()
 client._modules.network.getPeerCount()
 ```
+
+## Need help?
+
+Check the tests for examples on how to use the client [here](./src/index.test.ts).

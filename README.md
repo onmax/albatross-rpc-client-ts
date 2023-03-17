@@ -32,7 +32,7 @@ await getClient().block.current()
 await getClient().peer.list()
 ```
 
-Check out the [typing file](./src/index.ts) for all available methods.
+Check out the [client class file](./src/index.ts) for all available methods.
 
 #### Using the Nimiq RPC Client structure
 

@@ -1,7 +1,7 @@
-import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
-import { BlockchainState } from "../types/modules";
-import { RpcResponseResult } from "../types/rpc-messages";
 import { Client } from "../client/client";
+import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { LogType } from "../types/logs-types";
+import { BlockchainState } from "../types/modules";
 
 type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber}) & { includeTransactions?: boolean };
 type GetLatestBlockParams = { includeTransactions?: boolean };
@@ -15,7 +15,7 @@ type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean 
 type GetStakerByAddressParams = { address: Address };
 type SubscribeForHeadBlockParams = { filter: 'HASHES' | 'FULL' | 'OMIT_TRANSACTIONS' };
 type SubscribeForValidatorElectionByAddressParams = { address: Address };
-type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: any[] };
+type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[] };
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];

@@ -1,11 +1,9 @@
 import fetch from 'node-fetch';
-import { InteractionName, RpcRequest, RpcResponse, RpcResponseError } from "../types/rpc-messages";
-import { RpcClient } from './client';
+import { MethodName, RpcRequest, MethodResponse, MethodResponseError } from "../types/rpc-messages";
 
-
-type CallReturn<T extends InteractionName> =  RpcResponse<T>["result"] extends {metadata: null}
-    ? RpcResponse<T>["result"]["data"]
-    : RpcResponse<T>["result"]
+type CallReturn<T extends MethodName> =  MethodResponse<T>["result"] extends {metadata: null}
+    ? MethodResponse<T>["result"]["data"]
+    : MethodResponse<T>["result"]
 
 export class HttpClient {
     private url: URL;
@@ -15,8 +13,8 @@ export class HttpClient {
         this.url = url;
     }
 
-    async call<T extends InteractionName>(method: T, params: RpcRequest<T>["params"]): Promise<CallReturn<T>> {
-        const response = new Promise<RpcResponse<T>>(async (resolve, reject) => {
+    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"]): Promise<CallReturn<T>> {
+        const response = new Promise<MethodResponse<T>>(async (resolve, reject) => {
             return fetch(this.url.href, {
                 method: 'POST',
                 headers: {
@@ -39,8 +37,8 @@ export class HttpClient {
             })
             .then(response => response.json())
             .then(data => {
-                const typedData = data as RpcResponse<T> | RpcResponseError
-                if ('result' in typedData) resolve(typedData as RpcResponse<T>)
+                const typedData = data as MethodResponse<T> | MethodResponseError
+                if ('result' in typedData) resolve(typedData as MethodResponse<T>)
                 if ('error' in typedData) reject(`${typedData.error.message}: ${typedData.error.data}`)
                 reject(`Unexpected format of data ${JSON.stringify(data)}`)
               })

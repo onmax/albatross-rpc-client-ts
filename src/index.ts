@@ -1,9 +1,10 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
-import { AccountType, Address } from "./types/common";
+import { Address } from "./types/common";
+import { LogType } from "./types/logs-types";
 
 type GetStakerByAddressParams = { address: Address };
 
-export class Client {
+class Client {
     public block;
     public batch;
     public epoch;
@@ -222,3 +223,31 @@ export class Client {
         }
     }
 }
+
+export { Client, LogType };
+
+function getClient() {
+    const secret = process.env.NIMIQ_SECRET || '';
+    const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
+    url.searchParams.append('secret', secret);
+    return new Client(url)
+}
+
+console.log('Starting...');
+
+async function main() {
+    const client = getClient();
+    const stakingContract = (await client.constant.params()).stakingContractAddress;
+    const { next, close } = await client.logs.subscribe({ addresses: [stakingContract], types: [LogType.HtlcCreate] });
+    next((data) => {
+        console.log('NEW event')
+        console.log(data);
+        console.log('')
+        console.log('')
+    });
+    setTimeout(() => {
+        close();
+    }, 100000);
+}
+
+main();

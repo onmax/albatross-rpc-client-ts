@@ -38,24 +38,29 @@ describe('Test for block module', async () => {
 describe('Test for subscriptions', async () => {
     const client = getClient();
     it('subscribe to new full blocks', async () => {
-        const { next } = await client.block.subscribe({filter: 'FULL'})
+        const { next, close } = await client.block.subscribe({filter: 'FULL'})
         next(data => expect(data).toHaveProperty('transactions'))
+        close()
     })
     it('subscribe to new partial blocks', async () => {
-        const { next } = await client.block.subscribe({filter: 'PARTIAL'})
+        const { next, close } = await client.block.subscribe({filter: 'PARTIAL'})
         next(data => expect(data).toHaveProperty('hash'))
+        close()
     })
     it('subscribe to new hashes blocks', async () => {
-        const { next } = await client.block.subscribe({filter: 'HASH'})
+        const { next, close } = await client.block.subscribe({filter: 'HASH'})
         next(data => expect(data).toBeInstanceOf(String))
+        close()
     })
     it('subscribe to logs', async () => {
-        const { next } = await client.logs.subscribe()
+        const { next, close } = await client.logs.subscribe()
         next(data => expect(data).toHaveProperty('hash'))
+        close()
     })
     it('subscribe to logs metadata', async () => {
-        const { next } = await client.logs.subscribe({withMetadata: true})
+        const { next, close } = await client.logs.subscribe({withMetadata: true})
         next(data => expect(data).toHaveProperty('metadata'))
+        close()
     })
 })
 

@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.5
+
+### Patch Changes
+
+- 0ef4f8f: Subscriptions with types
+
 ## 0.0.4
 
 ### Patch Changes

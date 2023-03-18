@@ -159,6 +159,9 @@ export type MacroBlock = PartialMacroBlock & {
     };
 }
 
+export type PartialBlock = PartialMicroBlock | PartialMicroBlock
+export type Block = MicroBlock | MacroBlock
+
 export type Staker = {
     address: Address;
     balance: Coin;

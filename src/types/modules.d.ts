@@ -1,5 +1,5 @@
-import { Account, Address, BatchIndex, BlockNumber, Coin, EpochIndex, Hash, Inherent, MacroBlock, MempoolInfo, MicroBlock, PartialMicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
-import { BlockLog, LogsByAddressesAndTypes } from "./logs";
+import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, PartialBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
+import { BlockLog } from "./logs";
 
 // Metadatas
 export type BlockchainState = { 
@@ -23,9 +23,9 @@ export type BlockchainMethods = {
     'getBlockNumber': Interaction<[], BlockNumber>,
     'getBatchNumber': Interaction<[], BatchIndex>,
     'getEpochNumber': Interaction<[], EpochIndex>,
-    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], MicroBlock | MacroBlock>,
-    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], MicroBlock | MacroBlock>,
-    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock | MacroBlock>,
+    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], Block>,
+    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], Block>,
+    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block>,
     'getSlotAt': Interaction<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
     'getTransactionByHash': Interaction<[Hash], Transaction>,
     'getTransactionsByBlockNumber': Interaction<[BlockNumber], Transaction[]>,
@@ -50,7 +50,7 @@ export type StreamOpened = {
 }
 
 export type BlockchainStreams = {
-    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock | PartialMicroBlock | MacroBlock | PartialMacroBlock>,
+    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block | PartialBlock>,
     'subscribeForHeadBlockHash': Interaction<[], Hash>,
     'subscribeForValidatorElectionByAddress': Interaction<[Address], Validator, BlockchainState>,
     'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/string[]], BlockLog, BlockchainState>,

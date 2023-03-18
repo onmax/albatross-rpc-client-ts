@@ -1,6 +1,6 @@
 import { Client } from "../client/client";
 import { Subscription } from "../client/web-socket";
-import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { Account, Address, BatchIndex, Block, BlockNumber, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockchainState } from "../types/modules";
 
@@ -57,7 +57,7 @@ export class BlockchainClient extends Client {
      * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
      */
     public async getBlockBy<T extends GetBlockByParams>(p = { includeTransactions: false } as T):
-        Promise<T extends { includeTransactions: true } ? MicroBlock : PartialMicroBlock> {
+        Promise<T extends { includeTransactions: true } ? Block : PartialBlock> {
             if ('hash' in p) {
                 return this.call("getBlockByHash", [p.hash, p.includeTransactions]);
             }
@@ -69,7 +69,7 @@ export class BlockchainClient extends Client {
      * transactions in the block, which defaults to false.
      */
     public async getLatestBlock<T extends GetLatestBlockParams>(p = { includeTransactions: false } as T):
-        Promise<T extends { includeTransactions: true } ? MicroBlock : PartialMicroBlock> {
+        Promise<T extends { includeTransactions: true } ? Block : PartialBlock> {
         return this.call("getLatestBlock", [p.includeTransactions]);
     }
     

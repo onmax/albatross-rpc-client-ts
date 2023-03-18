@@ -1,4 +1,4 @@
-import { Account, Address, BatchIndex, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, MicroBlock, PartialMicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
+import { Account, Address, BatchIndex, BlockNumber, Coin, EpochIndex, Hash, Inherent, MacroBlock, MempoolInfo, MicroBlock, PartialMicroBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
 import { BlockLog, LogsByAddressesAndTypes } from "./logs";
 
 // Metadatas
@@ -23,9 +23,9 @@ export type BlockchainMethods = {
     'getBlockNumber': Interaction<[], BlockNumber>,
     'getBatchNumber': Interaction<[], BatchIndex>,
     'getEpochNumber': Interaction<[], EpochIndex>,
-    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], MicroBlock>,
-    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], MicroBlock>,
-    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock>,
+    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], MicroBlock | MacroBlock>,
+    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], MicroBlock | MacroBlock>,
+    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock | MacroBlock>,
     'getSlotAt': Interaction<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
     'getTransactionByHash': Interaction<[Hash], Transaction>,
     'getTransactionsByBlockNumber': Interaction<[BlockNumber], Transaction[]>,

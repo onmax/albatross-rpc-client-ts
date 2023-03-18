@@ -225,3 +225,31 @@ class Client {
 }
 
 export { Client, LogType, BlockType };
+
+
+function getClient() {
+    const secret = process.env.NIMIQ_SECRET || '';
+    // const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
+    const url = new URL(`http://localhost:10200`);
+    url.searchParams.append('secret', secret);
+    return new Client(url)
+}
+
+async function main() {
+    const client = getClient()
+    const {next} = await client.block.subscribe({filter: 'FULL'})
+    next((block) => {
+        if (block.type === BlockType.MACRO && block.isElectionBlock) {
+            console.log('Election block', block)
+        }
+        console.log('Block', block.type, block.number)
+    })
+    const {next: next2} = await client.logs.subscribe({})
+    next2((log) => {
+        if (log.type === 'reverted-block') {
+            console.log('Reverted block', log)
+        }
+    })
+}
+
+main()

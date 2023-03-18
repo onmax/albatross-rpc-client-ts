@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.8
+
+### Patch Changes
+
+- 1d9ca47: letter
+
 ## 0.0.7
 
 ### Patch Changes

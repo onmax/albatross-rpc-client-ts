@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.7
+
+### Patch Changes
+
+- dad9f84: block types
+
 ## 0.0.6
 
 ### Patch Changes

@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.6
+
+### Patch Changes
+
+- 33e577c: fixed types in block
+
 ## 0.0.5
 
 ### Patch Changes

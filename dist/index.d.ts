@@ -143,7 +143,7 @@ type MicroBlock = PartialMicroBlock & {
     transactions: Transaction[];
 }
 
-type PartialMacroBlock$1 = {
+type PartialMacroBlock = {
     type: BlockType.MACRO;
     hash: string;
     size: number;
@@ -164,7 +164,7 @@ type PartialMacroBlock$1 = {
     parentElectionHash: string;
 }
 
-type MacroBlock$1 = PartialMacroBlock$1 & {
+type MacroBlock = PartialMacroBlock & {
     transactions: Transaction[];
     lostRewardSet?: any[];
     disabledSet?: any[];
@@ -182,6 +182,9 @@ type MacroBlock$1 = PartialMacroBlock$1 & {
         };
     };
 }
+
+type PartialBlock = PartialMicroBlock | PartialMacroBlock
+type Block = MicroBlock | MacroBlock
 
 type Staker = {
     address: Address;
@@ -302,9 +305,9 @@ type BlockchainMethods = {
     'getBlockNumber': Interaction<[], BlockNumber>,
     'getBatchNumber': Interaction<[], BatchIndex>,
     'getEpochNumber': Interaction<[], EpochIndex>,
-    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], MicroBlock>,
-    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], MicroBlock>,
-    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock>,
+    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], Block>,
+    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], Block>,
+    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block>,
     'getSlotAt': Interaction<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
     'getTransactionByHash': Interaction<[Hash], Transaction>,
     'getTransactionsByBlockNumber': Interaction<[BlockNumber], Transaction[]>,
@@ -323,7 +326,7 @@ type BlockchainMethods = {
 }
 
 type BlockchainStreams = {
-    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], MicroBlock | PartialMicroBlock | MacroBlock | PartialMacroBlock>,
+    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block | PartialBlock>,
     'subscribeForHeadBlockHash': Interaction<[], Hash>,
     'subscribeForValidatorElectionByAddress': Interaction<[Address], Validator, BlockchainState>,
     'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/string[]], BlockLog, BlockchainState>,
@@ -482,7 +485,7 @@ type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined
     close: () => void;
     getSubscriptionId: () => number;
 };
-type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = T extends 'subscribeForHeadBlock' ? IncludeBody extends true ? MicroBlock | MacroBlock$1 : PartialMicroBlock | PartialMacroBlock$1 : ShowMetadata extends true ? StreamResponse<T>['params']['result'] : StreamResponse<T>['params']['result']['data'];
+type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = T extends 'subscribeForHeadBlock' ? IncludeBody extends true ? MicroBlock | MacroBlock : PartialMicroBlock | PartialMacroBlock : ShowMetadata extends true ? StreamResponse<T>['params']['result'] : StreamResponse<T>['params']['result']['data'];
 
 type CallReturn<T extends MethodName> = MethodResponse<T>["result"] extends {
     metadata: null;
@@ -582,14 +585,14 @@ declare class BlockchainClient extends Client$1 {
      */
     getBlockBy<T extends GetBlockByParams>(p?: T): Promise<T extends {
         includeTransactions: true;
-    } ? MicroBlock : PartialMicroBlock>;
+    } ? Block : PartialBlock>;
     /**
      * Returns the block at the head of the main chain. It has an option to include the
      * transactions in the block, which defaults to false.
      */
     getLatestBlock<T extends GetLatestBlockParams>(p?: T): Promise<T extends {
         includeTransactions: true;
-    } ? MicroBlock : PartialMicroBlock>;
+    } ? Block : PartialBlock>;
     /**
      * Returns the information for the slot owner at the given block height and offset. The
      * offset is optional, it will default to getting the offset for the existing block
@@ -1338,12 +1341,12 @@ declare class Client {
             includeTransactions?: boolean | undefined;
         }>(p?: T) => Promise<T extends {
             includeTransactions: true;
-        } ? MicroBlock : PartialMicroBlock>;
+        } ? Block : PartialBlock>;
         latest: <T_1 extends {
             includeTransactions?: boolean | undefined;
         }>(p?: T_1) => Promise<T_1 extends {
             includeTransactions: true;
-        } ? MicroBlock : PartialMicroBlock>;
+        } ? Block : PartialBlock>;
         election: {
             after: ({ blockNumber }: {
                 blockNumber: number;
@@ -1390,7 +1393,7 @@ declare class Client {
         subscribe: <T_3 extends {
             filter: "HASH" | "FULL" | "PARTIAL";
         }>({ filter }: T_3) => Promise<{
-            next: (callback: (data: (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") extends infer T_4 ? T_4 extends (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") ? T_4 extends "subscribeForHeadBlock" ? (T_3["filter"] extends "FULL" ? true : false) extends infer T_5 ? T_5 extends (T_3["filter"] extends "FULL" ? true : false) ? T_5 extends true ? MicroBlock | MacroBlock$1 : PartialMicroBlock | PartialMacroBlock$1 : never : never : BlockchainStreams[T_4]["result"] : never : never) => void) => void;
+            next: (callback: (data: (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") extends infer T_4 ? T_4 extends (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") ? T_4 extends "subscribeForHeadBlock" ? (T_3["filter"] extends "FULL" ? true : false) extends infer T_5 ? T_5 extends (T_3["filter"] extends "FULL" ? true : false) ? T_5 extends true ? MicroBlock | MacroBlock : PartialMicroBlock | PartialMacroBlock : never : never : BlockchainStreams[T_4]["result"] : never : never) => void) => void;
             error: (callback: (error: any) => void) => void;
             close: () => void;
             getSubscriptionId: () => number;

@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.9
+
+### Patch Changes
+
+- 5e5510d: build
+
 ## 0.0.8
 
 ### Patch Changes

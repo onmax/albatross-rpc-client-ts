@@ -1,6 +1,6 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
-import { Address } from "./types/common";
-import { LogType } from "./types/logs-types";
+import { Address, MacroBlock } from "./types/common";
+import { BlockType, LogType } from "./types/enums";
 
 type GetStakerByAddressParams = { address: Address };
 
@@ -143,7 +143,7 @@ class Client {
         }
 
         this.account = {
-            byAddress: blockchain.getAccountByAddress.bind(blockchain),
+            byAddress: blockchain.getAccountBy.bind(blockchain),
             importRawKey: wallet.importRawKey.bind(wallet),
             create: wallet.createAccount.bind(wallet),
             isImported: wallet.isAccountImported.bind(wallet),
@@ -156,7 +156,7 @@ class Client {
         }
 
         this.validator = {
-            byAddress: blockchain.getValidatorByAddress.bind(blockchain),
+            byAddress: blockchain.getValidatorBy.bind(blockchain),
             setAutomaticReactivation: validator_.setAutomaticReactivation.bind(validator_),
             selfNode: { // The node is a validator itself, which we have access to
                 address: validator_.getAddress.bind(blockchain),
@@ -224,20 +224,4 @@ class Client {
     }
 }
 
-export { Client, LogType };
-
-function getClient() {
-    const secret = process.env.NIMIQ_SECRET || '';
-    const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
-    url.searchParams.append('secret', secret);
-    return new Client(url)
-}
-
-console.log('Starting...');
-
-async function main() {
-    const client = getClient();
-    const stakingContract = (await client.constant.params()).stakingContractAddress;
-}
-
-main();
+export { Client, LogType, BlockType };

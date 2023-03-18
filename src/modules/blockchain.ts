@@ -1,7 +1,7 @@
 import { Client } from "../client/client";
 import { Subscription } from "../client/web-socket";
-import { Account, Address, BlockType, BatchIndex, BlockNumber, Hash, Inherent, MacroBlock, MicroBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
-import { LogType } from "../types/logs-types";
+import { Account, Address, BatchIndex, BlockNumber, Hash, Inherent, MicroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { LogType } from "../types/enums";
 import { BlockchainState } from "../types/modules";
 
 type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber}) & { includeTransactions?: boolean };
@@ -14,7 +14,7 @@ type GetAccountByAddressParams = { address: Address, withMetadata?: boolean };
 type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean };
 type GetStakerByAddressParams = { address: Address };
 type SubscribeForHeadBlockParams = { filter: 'HASH' | 'FULL' | 'PARTIAL' };
-type SubscribeForValidatorElectionByAddressParams = { address: Address };
+type SubscribeForValidatorElectionByAddressParams = { address: Address, withMetadata?: boolean };
 type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[], withMetadata?: boolean };
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
@@ -124,7 +124,7 @@ export class BlockchainClient extends Client {
     /**
      * Tries to fetch the account at the given address.
      */
-    public async getAccountByAddress<T extends GetAccountByAddressParams>({ address, withMetadata }: T):
+    public async getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T):
         Promise<T extends { withMetadata: true } ? WithMetadata<Account> : Account> {
         return this.call("getAccountByAddress", [address], withMetadata);
     }
@@ -167,7 +167,7 @@ export class BlockchainClient extends Client {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    public async getValidatorByAddress<T extends GetValidatorByAddressParams>(p = { includeStakers: false } as T):
+    public async getValidatorBy<T extends GetValidatorByAddressParams>(p = { includeStakers: false } as T):
         Promise<T extends { withMetadata: true }
             ? WithMetadata<T extends { includeStakers: true } ? Validator : PartialValidator>
             :   T extends { includeStakers: true } ? Validator : PartialValidator> {
@@ -199,8 +199,9 @@ export class BlockchainClient extends Client {
     /**
      * Subscribes to pre epoch validators events.
      */
-    public async subscribeForValidatorElectionByAddress({ address }: SubscribeForValidatorElectionByAddressParams) {
-        return this.subscribe("subscribeForValidatorElectionByAddress", [address]);
+    public async subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams>(p = { withMetadata: false } as T):
+        Promise<Subscription<"subscribeForValidatorElectionByAddress", T extends { withMetadata: true } ? true : false>> {
+        return this.subscribe("subscribeForValidatorElectionByAddress", [p.address], p.withMetadata);
     }
 
     /**

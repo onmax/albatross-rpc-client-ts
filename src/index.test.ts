@@ -62,6 +62,7 @@ describe('Test for subscriptions', async () => {
         next(data => expect(data).toHaveProperty('metadata'))
         close()
     })
+    // We don't test for blocks.election.subscribe since those blocks are emitted every 8 hours
 })
 
 describe('Test for batch module', async () => {
@@ -111,21 +112,23 @@ describe.skip('Test for staker module', async () => {
 
 describe('Test for inherent module', async () => {
     const { inherent } = getClient();
-    // return inherent[]
     it('.by blockNumber', async () => expect(await inherent.by({blockNumber: 0})).toBeInstanceOf(Array));
     it('.by batchNumber', async () => expect(await inherent.by({batchNumber: 0})).toBeInstanceOf(Array));
 });
 
 describe('Test for validator module', async () => {
     const { validator } = getClient();
-    // TODO validator.byAddress
-    // TODO validator.setAutomaticReactivation
-    // TODO Figure out how validator.node works
-    it('.active ok', async () => expect((await validator.active())).toBeInstanceOf(Array));
+    const validatorAddresses = await validator.active();
+    it('.active ok', async () => expect(validatorAddresses).toBeInstanceOf(Array));
+    const validatorInfo = validatorAddresses[0];
+    it('.byAddress ok', async () => expect(await validator.byAddress({ address: validatorInfo.address })).toHaveProperty('address'));
     it('.active metadata ok', async () => expect((await validator.active({withMetadata: true})).data).toBeInstanceOf(Array));
     it('.parked ok', async () => expect((await validator.parked()).validators).toBeInstanceOf(Array));
     it('.parked metadata ok', async () => expect((await validator.parked({withMetadata: true})).data.validators).toBeInstanceOf(Array));
+    // TODO Figure out how validator.selfNode works
+    // it.only('.selfNode.address ok', async () => expect(await validator.selfNode.address()).toHaveProperty('address'));
     // TODO validator.action
+    // TODO validator.setAutomaticReactivation
 });
 
 describe('Test for slots module', async () => {
@@ -167,3 +170,4 @@ describe('Test for zeroKnowledgeProof module', async () => {
     const { zeroKnowledgeProof } = getClient();
     it('.state ok', async () => expect(await zeroKnowledgeProof.state()).toHaveProperty('latestHeaderHash'));
 });
+

@@ -1,3 +1,5 @@
+import { BlockType } from "./enums"
+
 export type Address = `NQ${number} ${string}`
 export type Coin = number
 
@@ -77,11 +79,6 @@ export type Transaction = {
 }
 
 export type RawTransaction = string;
-
-export enum BlockType {
-    MICRO = 'micro',
-    MACRO = 'macro',
-}
 
 export type PartialMicroBlock = {
     type: BlockType.MICRO;
@@ -181,7 +178,15 @@ export type PartialValidator = {
 }
 
 export type Validator = {
-
+    address: Address;
+    signingKey: string;
+    votingKey: string;
+    rewardAddress: Address;
+    signalData?: string;
+    balance: Coin;
+    numStakers: number;
+    inactivityFlag?: number;
+    stakers?: Staker[];
 }
 
 export type Slot = {

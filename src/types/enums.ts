@@ -1,3 +1,8 @@
+export enum BlockType {
+    MICRO = 'micro',
+    MACRO = 'macro',
+}
+
 export enum LogType {
     PayFee = "pay-fee",
     Transfer = "transfer",

@@ -1,6 +1,6 @@
 import { Blob } from 'buffer';
 import WebSocket from 'ws';
-import { MacroBlock, MicroBlock, PartialMacroBlock, PartialMicroBlock } from '../types/common';
+import { Block, PartialBlock } from '../types/common';
 import { MethodResponse, RpcRequest, StreamName, StreamResponse } from "../types/rpc-messages";
 
 export type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
@@ -16,8 +16,8 @@ export type Subscription<T extends StreamName, ShowMetadata extends boolean | un
 type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
     T extends 'subscribeForHeadBlock'
         ? IncludeBody extends true
-            ? MicroBlock | MacroBlock
-            : PartialMicroBlock | PartialMacroBlock
+            ? Block
+            : PartialBlock
         : ShowMetadata extends true
             ? StreamResponse<T>['params']['result']
             : StreamResponse<T>['params']['result']['data']

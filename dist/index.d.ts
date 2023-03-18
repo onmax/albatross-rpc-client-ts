@@ -485,7 +485,7 @@ type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined
     close: () => void;
     getSubscriptionId: () => number;
 };
-type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = T extends 'subscribeForHeadBlock' ? IncludeBody extends true ? MicroBlock | MacroBlock : PartialMicroBlock | PartialMacroBlock : ShowMetadata extends true ? StreamResponse<T>['params']['result'] : StreamResponse<T>['params']['result']['data'];
+type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = T extends 'subscribeForHeadBlock' ? IncludeBody extends true ? Block : PartialBlock : ShowMetadata extends true ? StreamResponse<T>['params']['result'] : StreamResponse<T>['params']['result']['data'];
 
 type CallReturn<T extends MethodName> = MethodResponse<T>["result"] extends {
     metadata: null;
@@ -1393,7 +1393,7 @@ declare class Client {
         subscribe: <T_3 extends {
             filter: "HASH" | "FULL" | "PARTIAL";
         }>({ filter }: T_3) => Promise<{
-            next: (callback: (data: (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") extends infer T_4 ? T_4 extends (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") ? T_4 extends "subscribeForHeadBlock" ? (T_3["filter"] extends "FULL" ? true : false) extends infer T_5 ? T_5 extends (T_3["filter"] extends "FULL" ? true : false) ? T_5 extends true ? MicroBlock | MacroBlock : PartialMicroBlock | PartialMacroBlock : never : never : BlockchainStreams[T_4]["result"] : never : never) => void) => void;
+            next: (callback: (data: (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") extends infer T_4 ? T_4 extends (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") ? T_4 extends "subscribeForHeadBlock" ? (T_3["filter"] extends "FULL" ? true : false) extends infer T_5 ? T_5 extends (T_3["filter"] extends "FULL" ? true : false) ? T_5 extends true ? Block : PartialBlock : never : never : BlockchainStreams[T_4]["result"] : never : never) => void) => void;
             error: (callback: (error: any) => void) => void;
             close: () => void;
             getSubscriptionId: () => number;

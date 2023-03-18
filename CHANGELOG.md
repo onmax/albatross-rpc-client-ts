@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.11
+
+### Patch Changes
+
+- b741922: export tyeps
+
 ## 0.0.10
 
 ### Patch Changes

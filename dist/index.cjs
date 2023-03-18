@@ -1622,31 +1622,6 @@ var Client2 = class {
     };
   }
 };
-function getClient() {
-  const secret = process.env.NIMIQ_SECRET || "";
-  const url = new URL(`http://localhost:10200`);
-  url.searchParams.append("secret", secret);
-  return new Client2(url);
-}
-function main() {
-  return __async(this, null, function* () {
-    const client = getClient();
-    const { next } = yield client.block.subscribe({ filter: "FULL" });
-    next((block) => {
-      if (block.type === "macro" /* MACRO */ && block.isElectionBlock) {
-        console.log("Election block", block);
-      }
-      console.log("Block", block.type, block.number);
-    });
-    const { next: next2 } = yield client.logs.subscribe({});
-    next2((log) => {
-      if (log.type === "reverted-block") {
-        console.log("Reverted block", log);
-      }
-    });
-  });
-}
-main();
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
   BlockType,

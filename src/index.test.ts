@@ -10,11 +10,11 @@ function getClient() {
 
 describe('Test for block module', async () => {
     const { block } = getClient();
-    // Get a hash from Staking contract which we know has transactions
-    // const randomTxHash = ...
-    it('.current ok', async () => expect(await block.current()).toBeGreaterThanOrEqual(0));
-    // it('.by hash ok', async () => expect(await block.by({ hash: randomTxHash })).toHaveProperty('hash'));
-    it('.by blockNumber ok', async () => expect(await block.by({ blockNumber: 0 })).toHaveProperty('hash'));
+    const current = await block.current();
+    const blockData = await block.by({ blockNumber: current });
+    it('.current ok', async () => expect(await current).toBeGreaterThanOrEqual(0));
+    it('.by blockNumber ok', async () => expect(blockData).toHaveProperty('hash'));
+    it.only('.by hash ok', async () => expect(await block.by({ hash: blockData.hash })).toHaveProperty('hash'));
     it('.by blockNumber w/txs ok', async () => expect(await block.by({ blockNumber: 0, includeTransactions: true })).toHaveProperty('hash'));
     it('.latest ok', async () => expect(await block.latest()).toHaveProperty('hash'));
     it('.latest ok w/txs', async () => expect(await block.latest({includeTransactions: true})).toHaveProperty('transactions'));

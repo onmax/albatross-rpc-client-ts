@@ -1,5 +1,5 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
-import { Address, MacroBlock } from "./types/common";
+import { Address, MacroBlock, MicroBlock } from "./types/common";
 import { BlockType, LogType } from "./types/enums";
 
 type GetStakerByAddressParams = { address: Address };
@@ -224,5 +224,5 @@ class Client {
     }
 }
 
-export { Client, LogType, BlockType };
+export { Client, LogType, BlockType, MacroBlock, MicroBlock };
 

@@ -224,5 +224,5 @@ class Client {
     }
 }
 
-export { Client, LogType, BlockType, MacroBlock, MicroBlock };
+export { Client, LogType, BlockType, type MacroBlock, type MicroBlock };
 

@@ -1,4 +1,4 @@
-declare enum BlockType {
+declare enum BlockType$1 {
     MICRO = "micro",
     MACRO = "macro"
 }
@@ -26,13 +26,21 @@ declare enum LogType {
     RevertContract = "revert-contract",
     FailedTransaction = "failed-transaction"
 }
+declare enum AccountType$1 {
+    BASIC = "basic",
+    VESTING = "vesting",
+    HTLC = "htlc"
+}
 
 type Address = `NQ${number} ${string}`
 type Coin = number
 
 type BlockNumber = number /* u32 */
 type EpochIndex = number /* u32 */
-type BatchIndex = number /* u64 */
+type BatchIndex = number /* u32 */
+type GenesisSupply$1 = number /* u64 */
+type GenesisTime$1 = number /* u64 */
+type CurrentTime$1 = number /* u64 */
 type Hash = string
 
 type PolicyConstants = {
@@ -47,12 +55,6 @@ type PolicyConstants = {
     blocksPerEpoch: number,
     validatorDeposit: number,
     totalSupply: number,
-}
-
-declare enum AccountType {
-    BASIC = 'basic',
-    VESTING = 'vesting',
-    HTLC = 'htlc',
 }
 
 type BasicAccount = {
@@ -105,7 +107,7 @@ type Transaction = {
 type RawTransaction = string;
 
 type PartialMicroBlock = {
-    type: BlockType.MICRO;
+    type: BlockType$1.MICRO;
     hash: string;
     size: number;
     batch: number;
@@ -144,7 +146,7 @@ type MicroBlock = PartialMicroBlock & {
 }
 
 type PartialMacroBlock = {
-    type: BlockType.MACRO;
+    type: BlockType$1.MACRO;
     hash: string;
     size: number;
     batch: number;
@@ -218,6 +220,11 @@ type SlashedSlot = {
     lostRewards: number[]; // u32[]
     disabled: number[]; // u32[]
 }
+
+type ParkedSet = {
+    blockNumber: BlockNumber;
+    validators: Address[];
+}
 type Inherent = {
     ty: number; // u8
     blockNumber: BlockNumber; // u32
@@ -272,6 +279,17 @@ type BlockLog = {
         hash: string;
         logs: Log[];
     }[];
+}
+
+type LogsByAddressesAndTypes = {
+    type:              BlockType;
+    from?:             string;
+    fee?:              number;
+    to?:               string;
+    amount?:           number;
+    stakerAddress?:    string;
+    validatorAddress?: string;
+    value?:            number;
 }
 
 // Metadatas
@@ -1929,4 +1947,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { BlockType, Client, LogType };
+export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType$1 as BlockType, Client, Coin, CurrentTime$1 as CurrentTime, EpochIndex, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, Hash, HtlcAccount, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };

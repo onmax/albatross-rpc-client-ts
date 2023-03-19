@@ -1400,6 +1400,12 @@ var LogType = /* @__PURE__ */ ((LogType2) => {
   LogType2["FailedTransaction"] = "failed-transaction";
   return LogType2;
 })(LogType || {});
+var AccountType = /* @__PURE__ */ ((AccountType2) => {
+  AccountType2["BASIC"] = "basic";
+  AccountType2["VESTING"] = "vesting";
+  AccountType2["HTLC"] = "htlc";
+  return AccountType2;
+})(AccountType || {});
 
 // src/index.ts
 var Client2 = class {
@@ -1586,6 +1592,7 @@ var Client2 = class {
   }
 };
 export {
+  AccountType,
   BlockType,
   Client2 as Client,
   LogType

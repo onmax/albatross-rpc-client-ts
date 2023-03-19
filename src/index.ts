@@ -1,7 +1,7 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
-import { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState} from './types/common';
+import type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState} from './types/common';
 import { BlockType, LogType, AccountType } from "./types/enums";
-import { BlockLog, LogsByAddressesAndTypes } from './types/logs';
+import type { BlockLog, LogsByAddressesAndTypes } from './types/logs';
 
 type GetStakerByAddressParams = { address: Address };
 

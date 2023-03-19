@@ -50,6 +50,7 @@ var __async = (__this, __arguments, generator) => {
 // src/index.ts
 var src_exports = {};
 __export(src_exports, {
+  AccountType: () => AccountType,
   BlockType: () => BlockType,
   Client: () => Client2,
   LogType: () => LogType
@@ -1437,6 +1438,12 @@ var LogType = /* @__PURE__ */ ((LogType2) => {
   LogType2["FailedTransaction"] = "failed-transaction";
   return LogType2;
 })(LogType || {});
+var AccountType = /* @__PURE__ */ ((AccountType2) => {
+  AccountType2["BASIC"] = "basic";
+  AccountType2["VESTING"] = "vesting";
+  AccountType2["HTLC"] = "htlc";
+  return AccountType2;
+})(AccountType || {});
 
 // src/index.ts
 var Client2 = class {
@@ -1624,6 +1631,7 @@ var Client2 = class {
 };
 // Annotate the CommonJS export names for ESM import in node:
 0 && (module.exports = {
+  AccountType,
   BlockType,
   Client,
   LogType

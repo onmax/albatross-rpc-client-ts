@@ -138,12 +138,7 @@ export type MacroBlock = PartialMacroBlock & {
     transactions: Transaction[];
     lostRewardSet: any[];
     disabledSet: any[];
-    slots: {
-        firstSlotNumber: number;
-        numSlots: number;
-        publicKey: string;
-        validator: Address;
-    }[];
+    slots: Slot[];
     justification: {
         round: number;
         sig: {

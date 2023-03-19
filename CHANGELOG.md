@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.15
+
+### Patch Changes
+
+- 36a51c3: oopsie
+
 ## 0.0.14
 
 ### Patch Changes

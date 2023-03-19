@@ -1,5 +1,12 @@
 # nimiq-rpc-client-ts
 
+## 0.0.12
+
+### Patch Changes
+
+- 60cf7c6: Small improvments
+- cb6c94f: more types
+
 ## 0.0.11
 
 ### Patch Changes

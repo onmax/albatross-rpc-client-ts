@@ -178,7 +178,8 @@ export type Validator = PartialValidator & {
 }
 
 export type Slot = {
-    slotNumber: number; // u16
+    firstSlotNumber: number; // u16
+    numSlots: number; // u16
     validator: Address;
     publicKey: string;
 }

@@ -126,8 +126,8 @@ type PartialMicroBlock = {
         validator: Address;
         publicKey: string;
     };
-    forkProofs?: any[];
-    justification?: {
+    forkProofs: any[];
+    justification: {
         micro: string;
     } | {
         skip: {
@@ -166,15 +166,15 @@ type PartialMacroBlock = {
 
 type MacroBlock = PartialMacroBlock & {
     transactions: Transaction[];
-    lostRewardSet?: any[];
-    disabledSet?: any[];
-    slots?: {
+    lostRewardSet: any[];
+    disabledSet: any[];
+    slots: {
         firstSlotNumber: number;
         numSlots: number;
         publicKey: string;
         validator: Address;
     }[];
-    justification?: {
+    justification: {
         round: number;
         sig: {
             signature: string;
@@ -197,21 +197,12 @@ type PartialValidator$1 = {
     signingKey: string;
     votingKey: string;
     rewardAddress: Address;
-    signalData?: string;
     balance: Coin;
     numStakers: number;
-    inactivityFlag?: number;
-    stakers?: Staker[];
 }
 
-type Validator = {
-    address: Address;
-    signingKey: string;
-    votingKey: string;
-    rewardAddress: Address;
+type Validator = PartialValidator$1 & {
     signalData?: string;
-    balance: Coin;
-    numStakers: number;
     inactivityFlag?: number;
     stakers?: Staker[];
 }

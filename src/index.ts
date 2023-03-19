@@ -1,8 +1,7 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
-import * as Common from './types/common';
-import { Address } from "./types/common";
-import { BlockType, LogType } from "./types/enums";
-import * as Logs from './types/logs';
+import { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState} from './types/common';
+import { BlockType, LogType, AccountType } from "./types/enums";
+import { BlockLog, LogsByAddressesAndTypes } from './types/logs';
 
 type GetStakerByAddressParams = { address: Address };
 
@@ -226,5 +225,7 @@ class Client {
     }
 }
 
-export { Client, LogType, BlockType, type Common, type Logs };
-
+export { Client };
+export { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState};
+export { BlockType, LogType, AccountType };
+export { BlockLog, LogsByAddressesAndTypes };

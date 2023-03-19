@@ -25,12 +25,6 @@ export type PolicyConstants = {
     totalSupply: number,
 }
 
-export enum AccountType {
-    BASIC = 'basic',
-    VESTING = 'vesting',
-    HTLC = 'htlc',
-}
-
 export type BasicAccount = {
     type: AccountType.BASIC;
     address: Address;

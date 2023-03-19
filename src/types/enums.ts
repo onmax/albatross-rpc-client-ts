@@ -27,3 +27,9 @@ export enum LogType {
     RevertContract = "revert-contract",
     FailedTransaction = "failed-transaction",
 }
+
+export enum AccountType {
+    BASIC = 'basic',
+    VESTING = 'vesting',
+    HTLC = 'htlc',
+}

@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.13
+
+### Patch Changes
+
+- 4e0c56a: fixed types
+
 ## 0.0.12
 
 ### Patch Changes

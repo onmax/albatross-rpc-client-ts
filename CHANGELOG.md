@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.16
+
+### Patch Changes
+
+- 643719c: slot type
+
 ## 0.0.15
 
 ### Patch Changes

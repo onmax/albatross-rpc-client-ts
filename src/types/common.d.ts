@@ -136,8 +136,8 @@ export type PartialMacroBlock = {
 
 export type MacroBlock = PartialMacroBlock & {
     transactions: Transaction[];
-    lostRewardSet: any[];
-    disabledSet: any[];
+    lostRewardSet: number[];
+    disabledSet: number[];
     slots: Slot[];
     justification: {
         round: number;

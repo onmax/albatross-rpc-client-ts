@@ -67,8 +67,9 @@ class Client {
             isMacro: policy.getIsMacroBlockAt.bind(policy),
             isMicro: policy.getIsMicroBlockAt.bind(policy),
             subscribe: blockchain.subscribeForBlocks.bind(blockchain),
+            perBatch: policy.getPolicyConstants().then(({blocksPerBatch}) => blocksPerBatch),
         };
-
+        
         this.logs = {
             subscribe: blockchain.subscribeForLogsByAddressesAndTypes.bind(blockchain),
         }
@@ -77,13 +78,24 @@ class Client {
             current: blockchain.getBatchNumber.bind(blockchain),
             at: policy.getBatchAt.bind(policy),
             firstBlock: policy.getFirstBlockOf.bind(policy),
+            perEpoch: policy.getPolicyConstants().then(({batchesPerEpoch}) => batchesPerEpoch),
         }
-
+        
         this.epoch = {
             current: blockchain.getEpochNumber.bind(blockchain),
             at: policy.getEpochAt.bind(policy),
             firstBlock: policy.getFirstBlockOf.bind(policy),
             firstBatch: policy.getFirstBatchOfEpoch.bind(policy),
+            blocksPerEpoch: policy.getPolicyConstants().then(({blocksPerEpoch}) => blocksPerEpoch),
+        }
+
+        this.slots = {
+            perBatch: policy.getPolicyConstants().then(({slots}) => slots),
+            at: blockchain.getSlotAt.bind(blockchain),
+            slashed: {
+                current: blockchain.getCurrentSlashedSlots.bind(blockchain),
+                previous: blockchain.getPreviousSlashedSlots.bind(blockchain),
+            }
         }
         
         this.transaction = {
@@ -192,14 +204,6 @@ class Client {
                     send: consensus.sendDeleteValidatorTransaction.bind(consensus),
                 }
             },
-        }
-
-        this.slots = {
-            at: blockchain.getSlotAt.bind(blockchain),
-            slashed: {
-                current: blockchain.getCurrentSlashedSlots.bind(blockchain),
-                previous: blockchain.getPreviousSlashedSlots.bind(blockchain),
-            }
         }
 
         this.mempool = {

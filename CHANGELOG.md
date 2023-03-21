@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.18
+
+### Patch Changes
+
+- 8c64fb4: update test
+
 ## 0.0.17
 
 ### Patch Changes

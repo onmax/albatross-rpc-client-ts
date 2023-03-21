@@ -1627,18 +1627,18 @@ var Client2 = class {
 function main() {
   return __async(this, null, function* () {
     const client = new Client2(new URL("http://localhost:10300"));
-    const validatorsRaw = `{'address': 'NQ82 709H BN21 XS8E 1CDV 097S S2HQ TEXA 4Q9Q', 'address_raw': '381315d841f690e0b1bd024fad0a38dbbca26138', 'public_key': 'c96d57fdb42a00c63fc9e52a20eb2b115d6b32339d9369a12e4faaf712582e47', 'private_key': '6768a5d95ca4d2feb28202e8a6f5419e1b39445eaf8f6ff645dcf7a0aec33dfd'}
-    {'address': 'NQ47 26S2 EK9Q PS1Y NQ4N Q7RY RUX7 L0D5 851K', 'address_raw': '11b4274d38be83fb6096c1f3fcf3c7a01a541433', 'public_key': '5fb3341e6e5d15e9ccfea76ce90f5afa5a7ea9dcfa0e4e0c5f00deaa138e86b5', 'private_key': 'd3141735f162a155201e652875e5d9a11a62e789d0199522fd726632fc8682e1'}
-    {'address': 'NQ36 0HNP 6VSN L3GQ LT3S 6PL8 SJ5C C93F RC7L', 'address_raw': '046d737756a0e18a6c7a35e88d48ac6246fcb0f4', 'public_key': '164f8ee11481fc8a6b1440eb3b497074c41519a3b1419e81630274bb7f61fff6', 'private_key': '660a182e59e07959dc2163011bb2f305ba17e9d295fca64cdc50eff4bf672bf8'}
-    {'address': 'NQ20 9KVB 3PSU EU1P JS5Y S1CG 62MV 41D7 8N3V', 'address_raw': '4cfab1df5c77037968bfd059030abd205a74587d', 'public_key': 'd8a4670ab251e403244ccf69753fde376230d0a451150cf22323c493e449e117', 'private_key': 'b7f13d701c5df3ba041a579cfd909e434571461c36188b5cb123c79549db535d'}
-    {'address': 'NQ50 DN39 3XHP UF8M SJMK AHXK PCJ4 70PY 423Q', 'address_raw': '6d8691fa37e3d15d4ab3547d3bb244382ff20878', 'public_key': '7a13010bcf3bf5f7508e61f159bbadf3a9a5fd28431c4d1df644f3d1137f0b11', 'private_key': 'b9e1514fd67a9897fbbe8182b8c5fefd930b4ebc65d8fd9ebcadfa2782ea61dd'}
-    {'address': 'NQ61 51CX JL53 0MDX TGV5 MQQK 99TE Q4AT L3FU', 'address_raw': '2859e950a3055bedc3a5ae3134a76ec115ba0dfc', 'public_key': 'ab9627822c94598cfe160ddda8dd31a2986af835ee693c4f5dc47e0e4418f952', 'private_key': 'ce797d122a9209005bdfbfaf7c06cf18e1e1e2b6d3baa071d41f6a63e5fa83fe'}
-    {'address': 'NQ73 LGQ0 1DMV U5AU JU9H 9Y22 JD3S YKLS MY5R', 'address_raw': 'a43000b6bde155c971314fc429347afce9aafcb9', 'public_key': 'a0305d6c6e6b978eb9692e5b1674b82bebb0bbcb5fb692af60b7852adeb651d7', 'private_key': '7f00ad766c9a38bd5bea6d9512800e1798b92caa01b87d791f088f3e9247397e'}
-    {'address': 'NQ07 K2GF 7H18 Q6T0 AVCD K97Q UXJP 1US1 DFSV', 'address_raw': '98a0f3c428c1b605758d9a4f8e7a570f3416bf5d', 'public_key': 'fe90fe51dc5a81412546d8ec8de7c51e682dc24b95f898d60760dda12bc90ddf', 'private_key': 'ae8d9693ffe8668f634656e2c0820b3aa0a93ab34efe838a9c2a8a2d1e11b91e'}
-    {'address': 'NQ26 VJCS Y30L SAMU C2BV US8S 87UD VRJH 364C', 'address_raw': 'ec99af8c14d2abc6097de691a41f8dee6511988c', 'public_key': '49789bf04f94b407f00a1c3ea6e5a608467d549965e98b2b4ff925e08c948ff4', 'private_key': '5fc84ac337805dd5a620d74124a8d59072fe5cbafa79dcc44c18359788b9514f'}
-    {'address': 'NQ10 ARQ6 KKAU 8DY7 EJPJ C1FQ LT6D 5G60 JME8', 'address_raw': '567069cd5c437e774af2605f8a6ccd2c0c0955c8', 'public_key': '96e342cb36fc4280e3302708c7b124f9a73fb8d01d4f69380cdac5a857f37871', 'private_key': '94e32559af3e21c48b9d9e81487ff742f4ec2de8a907b291b139f414381497bd'}
-    {'address': 'NQ42 VHT8 M32B E6CH JNK1 PF4F J01S Q8HK RKYU', 'address_raw': 'ec768a8c4b7199195a61bbc8f9003ac2233ccffc', 'public_key': 'c14b8c88813fef4d0749ffb0f877dc36709eea88485e31a76ba7d7cfc4f72d63', 'private_key': '0bc79138f6fd633218277044675c02b42f48a3ab20d8889db2a051e3eef7ff45'}
-    {'address': 'NQ95 XXJL VE7K 0JVB 92YN R4QX 4Q2Y 2MCN 10YG', 'address_raw': 'f7a54eb8f304bab48bf6c931e2605f15596083f0', 'public_key': 'ced9e6199a50773b673e820bdc4a0c8af5d85460b5b352632a92b0c3de6b38ff', 'private_key': 'a575f785f48fe5a74738a9ab4a5e882be8808698786c8386d15cecfac5fa5b80'}`;
+    const validatorsRaw = `{'address': 'NQ64 6F27 0LU6 GTNV LCRM XE1A T2XP DKUK JAMD', 'address_raw': '33c470538686edda3335f382ad8bd76cf9392aad', 'public_key': 'a5a8882d08f752ef700eb642c543baa56e872bf22c964cc49049283b3094b454', 'private_key': '7dfd93efc164d034ac54cde2b03d241414a74bf213fdb2c8934b369eac98ec2f'}
+    {'address': 'NQ48 K1YC 8DEK XFU8 82XX BP54 5GPH GXDS ADMJ', 'address_raw': '987ec435d3f3f8840bde5dca42c2f1879ba536b2', 'public_key': '5fb57a489d53ff1e5f39b4954c69969c788cfa4f30048d90c34c1e5b4c9bb187', 'private_key': 'fc8a910648234d22ffb56d3e68ba4ee2457b28418763a76971bf1121830b152d'}
+    {'address': 'NQ62 C10Q S3SG 9SB6 YJY5 DCT4 XMXV 8KQB CXEN', 'address_raw': '60418d0f504e966fcbe56b364f57dd44f0b679d6', 'public_key': 'da9b436844cd17f6d0038cc4c6885e9ab016a684aabc1fef6d23909bf62475c5', 'private_key': '8ae4a48d8e0e9a0cefadc95c4917607e46d47d4aa92791d6a6e9c9847e496e54'}
+    {'address': 'NQ09 GYXG 6TNL KKMB AHV2 CB4M 7SF5 NQDL 32EE', 'address_raw': '87fd036ed49ceab547a262c953e9e5b61b4189ce', 'public_key': '604e244d40920f5f0e3c68ff9bd9119b993d87bee6057ed9691206c1ed93f51f', 'private_key': 'dbb3bec2ec5993252cbd8ecc6194f8c64af62ca84076f7130ac83e34ca1ad937'}
+    {'address': 'NQ97 26E4 68BH 1F7V AED4 JDRJ NKR5 S9QE AX1M', 'address_raw': '119c4321710bcfd539a493732b4f25d270e57835', 'public_key': '4da4388e46df86da8b5fa7f43ab65ebd2d9561930ada7aad0b971b423f6b52cb', 'private_key': 'fdfce7f5a9b76436bd6da33d4956ad974805cca063574ff163c06aaa21296658'}
+    {'address': 'NQ43 63RJ AB2L EYF1 FCUB BQ67 YEVF KA8N L7XL', 'address_raw': '30f3252c5477de17b38b5e0c7fbbaf9a916a1fd4', 'public_key': 'fc957f38b0da3ceac253b005fc5e1ea54a6086c7fba3a1d10871b3a2d6503773', 'private_key': '9e26a6a1820528a231230800c8fbe32b4fe4f483d3a6a48a6db2182dac7bf38d'}
+    {'address': 'NQ51 L8TJ NAGH QVLR ETEN KAE6 XJR0 MB2X 99CJ', 'address_raw': 'a2372b2a11c769976dd69a9c6f4b20aac5e4a592', 'public_key': '532ebd252672f355e87af9a699dc02ca45176c7d7c8cc5238b473b6ed2c5c86b', 'private_key': '0ab378c0017126353db083bed2f9a2968e0e02bb445472eae417276b274b21fb'}
+    {'address': 'NQ30 TF6U G9UT SF8G BKS7 GC3F D9QN 1NTA GKVK', 'address_raw': 'dbcdc8279bd3d105cf478306f6a7160db6a84fb3', 'public_key': '0f5ead14cb835c45b48cab64959299dc72a6c5598dfa01d7d8b5ec96257bd4e5', 'private_key': '131980f2dc7f6f00ec07c07db4502edb808da41ee76697ad021d75b867828b02'}
+    {'address': 'NQ69 Q6E9 ALKF 7ARF U1S5 U5FR 9C7U UURT K4J5', 'address_raw': 'c19c95526f3ab2fe0745e15f94b0fce733b99245', 'public_key': '9a5c45d99778ebb9120f7e2875c838e1524deae24f6927b64a040248d70a87bd', 'private_key': '7c166dc874ab55603c1928c93978967c184815925fc6957e13bc17ed99dcd3bc'}
+    {'address': 'NQ29 CFXH 6GH1 PA9N 85M5 JYSQ J85F N99G 9XV2', 'address_raw': '63fd134221ba936416a597f58920afb25304fba2', 'public_key': '9e152274efd76925a06ddb11ae953a92741dbdc50fe4115917c5a13727b61d21', 'private_key': '92da53db8bbff08082c138bc5747e4c5fa7342ec129715dba8f2e1c0a0a828bc'}
+    {'address': 'NQ25 98UV EC6M DJG7 HGL9 4GH5 8XYS 4ACS USQ1', 'address_raw': '4a39d730d56ca078c2892422547bfa2299ae6b01', 'public_key': '12ff2fdc183b354921ecf855a0f098ec75a44c06d6cf6967a21eb1ca84fc5e6b', 'private_key': '7ae36bc5efaa47e24aa134b68595aca8a03535a913be5fee4a3f8da27d800d52'}
+    {'address': 'NQ26 LA75 7D1H EJER A0KF 405P PL6K 0SCN 1YA4', 'address_raw': 'a28e53b431749d95026f200b7bd0d3069960fd44', 'public_key': '1a107f09d9bbb3f03b6aaa55e7f14eded418d8dbf80c8aa4176e20be6515e900', 'private_key': '04e0055270be4f2b252a617c433db06e3b5ef209bc0ad0325279bbd275263c5f'}`;
     const validators = validatorsRaw.split("\n").map((v) => v.replace(/'/g, '"')).map((v) => JSON.parse(v));
     const { address, private_key } = validators[1];
     const { data } = yield client.constant.params();
@@ -1646,6 +1646,8 @@ function main() {
       throw new Error("No data");
     }
     const { stakingContractAddress } = data;
+    const importKey = yield client.account.importRawKey({ keyData: private_key });
+    console.log("Imported", importKey);
     const accounts = yield client.account.list();
     console.log("Accounts", accounts);
     console.log("");
@@ -1655,13 +1657,20 @@ function main() {
     console.log("");
     console.log("");
     const { next } = yield client.logs.subscribe({ addresses: [address, stakingContractAddress] });
-    next((data2) => {
+    next((data2) => __async(this, null, function* () {
       console.log("New TX");
       console.log(data2);
       console.log("");
       console.log("");
       console.log("");
-    });
+      if (data2.transactions.length === 0) {
+        return;
+      }
+      const txData = yield client.transaction.by({ hash: data2.transactions[0].hash });
+      console.log("TX Data for deactivation");
+      console.log(txData);
+      console.log("");
+    }));
     const params = {
       fee: 0,
       senderWallet: address,

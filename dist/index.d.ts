@@ -613,11 +613,11 @@ type WithMetadata<T> = {
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends {
     justHashes: true;
 } ? Hash[] : Transaction[];
-type ResultGetTransactionsBy<T> = Promise<T extends {
+type ResultGetTransactionsBy<T> = T extends {
     hash: Hash;
 } ? Transaction : T extends {
     address: Address;
-} ? ResultGetTransactionsByAddress<T> : Transaction[]>;
+} ? ResultGetTransactionsByAddress<T> : Transaction[];
 type BlockSubscription<T extends SubscribeForHeadBlockParams> = Subscription<T["filter"] extends 'HASH' ? 'subscribeForHeadBlockHash' : 'subscribeForHeadBlock', false, T["filter"] extends 'FULL' ? true : false>;
 declare class BlockchainClient extends Client$1 {
     constructor(url: URL);
@@ -1454,13 +1454,13 @@ declare class Client {
         }) => Promise<MaybeResponse<Boolean>>;
     };
     transaction: {
-        by: <T extends GetTransactionByParams>(p: T) => Promise<MaybeResponse<Promise<T extends {
+        by: <T extends GetTransactionByParams>(p: T) => Promise<MaybeResponse<T extends {
             hash: string;
         } ? Transaction : T extends {
             address: `NQ${number} ${string}`;
         } ? T extends infer T_1 ? T_1 extends T ? T_1 extends {
             justHashes: true;
-        } ? string[] : Transaction[] : never : never : Transaction[]>>>;
+        } ? string[] : Transaction[] : never : never : Transaction[]>>;
         push: ({ transaction, withHighPriority }: {
             transaction: string;
             withHighPriority?: boolean | undefined;

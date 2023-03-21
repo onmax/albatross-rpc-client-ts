@@ -81,8 +81,8 @@ describe('Test for epoch module', async () => {
     it('.firstBatch ok', async () => expect(typeof ((await epoch.firstBatch({blockNumber: 65})).data)).toBe("boolean"));
 });
 
-describe.only('Test for transaction module', async () => {
-    const { transaction, block, batch } = getClient();
+describe('Test for transaction module', async () => {
+    const { transaction, block, batch, constant } = getClient();
 
     let txs: Transaction[] = []
     let i = (await block.current()).data!
@@ -93,12 +93,14 @@ describe.only('Test for transaction module', async () => {
         if(!res.data) throw new Error(JSON.stringify(txs))
         txs = res.data
     }
-
+    
     const batchNumber = (await batch.at({blockNumber: txs[0].blockNumber})).data!
+    const stakingContract = (await constant.params()).data!.stakingContractAddress
 
     it('.by block number ok', async () => expect(txs).toBeInstanceOf(Array));
     it('.by hash ok', async () => expect(await transaction.by({hash: txs[0].hash})).toHaveProperty('data'));
     it('.by batch number ok', async () => expect((await transaction.by({batchNumber})).data).toBeInstanceOf(Array));
+    it('.by batch number ok', async () => expect((await transaction.by({address: stakingContract})).data).toBeInstanceOf(Array));
 
     // TODO transaction.push
     // TODO Returns method not found

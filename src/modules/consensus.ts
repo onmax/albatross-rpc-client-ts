@@ -1,30 +1,35 @@
 import { type } from "os";
-import { Address, BlockNumber, Coin, Hash, RawTransaction, Transaction } from "../types/common";
+import { Address, ValidityStartHeight, Coin, Hash, RawTransaction, Transaction } from "../types/common";
 import { Client } from "../client/client";
 
 type RawTransactionInfoParams = { rawTransaction: string };
 type Action = 'create' | 'send';
-type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, validityStartHeight: BlockNumber, data?: string, };
-type VestingTxParams = { wallet: Address, owner: Address, startTime: number, timeStep: number, numSteps: number, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type RedeemVestingTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type HtlcTransactionParams = { wallet: Address, htlcSender: Address, htlcRecipient: Address, hashRoot: string, hashCount: number, hashAlgorithm: string, timeout: number, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type RedeemRegularHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, preImage: string, hashRoot: string, hashCount: number, hashAlgorithm: string, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type RedeemTimeoutHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type RedeemEarlyHtlcTxParams = { wallet: Address, htlcAddress: Address, recipient: Address, htlcSenderSignature: string, htlcRecipientSignature: string, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type StakerTxParams = { senderWallet: Address, staker: Address, delegation: Address | undefined, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type StakeTxParams = { senderWallet: Address, staker: Address, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type UpdateStakerTxParams = { senderWallet: Address, staker: Address, newDelegation: Address, fee: Coin, validityStartHeight: BlockNumber };
-type UnstakeTxParams = { staker: Address, recipient: Address, value: Coin, fee: Coin, validityStartHeight: BlockNumber };
-type ValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin, validityStartHeight: BlockNumber };
-type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin, validityStartHeight: BlockNumber };
-type InactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin, validityStartHeight: BlockNumber };
-type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin, validityStartHeight: BlockNumber };
-type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin, validityStartHeight: BlockNumber };
-type DeleteValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin, value: Coin, validityStartHeight: BlockNumber };
+type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string, } & ValidityStartHeight;
+type VestingTxParams = { wallet: Address, owner: Address, startTime: number, timeStep: number, numSteps: number, value: Coin, fee: Coin } & ValidityStartHeight;
+type RedeemVestingTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
+type HtlcTransactionParams = { wallet: Address, htlcSender: Address, htlcRecipient: Address, hashRoot: string, hashCount: number, hashAlgorithm: string, timeout: number, value: Coin, fee: Coin } & ValidityStartHeight;
+type RedeemRegularHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, preImage: string, hashRoot: string, hashCount: number, hashAlgorithm: string, value: Coin, fee: Coin } & ValidityStartHeight;
+type RedeemTimeoutHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
+type RedeemEarlyHtlcTxParams = { wallet: Address, htlcAddress: Address, recipient: Address, htlcSenderSignature: string, htlcRecipientSignature: string, value: Coin, fee: Coin } & ValidityStartHeight;
+type SignRedeemEarlyHtlcParams = { wallet: Address, htlcAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
+type StakerTxParams = { senderWallet: Address, staker: Address, delegation: Address | undefined, value: Coin, fee: Coin } & ValidityStartHeight;
+type StakeTxParams = { senderWallet: Address, staker: Address, value: Coin, fee: Coin } & ValidityStartHeight;
+type UpdateStakerTxParams = { senderWallet: Address, staker: Address, newDelegation: Address, fee: Coin } & ValidityStartHeight;
+type UnstakeTxParams = { staker: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
+type ValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight;
+type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin } & ValidityStartHeight;
+type InactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
+type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
+type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
+type DeleteValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin, value: Coin } & ValidityStartHeight;
 
 export class ConsensusClient extends Client {
     constructor(url: URL) {
         super(url);
+    }
+
+    private getValidityStartHeight(p: ValidityStartHeight): string {
+        return 'relativeValidityStartHeight' in p ? `+${p.relativeValidityStartHeight}` : `${p.absoluteValidityStartHeight}`;
     }
 
     /**
@@ -45,11 +50,10 @@ export class ConsensusClient extends Client {
      * Creates a serialized transaction
      */
     public async createTransaction(p: TransactionParams): Promise<RawTransaction> {
-        const { wallet: w, recipient: r, value: v, fee: f, validityStartHeight: h, data: d } = p;
-        if (d) {
-            return this.call("createBasicTransactionWithData", [w, r, d, v, f, h]);
+        if (p.data) {
+            return this.call("createBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
         } else {
-            return this.call("createBasicTransaction", [w, r, v, f, h]);
+            return this.call("createBasicTransaction", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
         }
     }
 
@@ -57,11 +61,11 @@ export class ConsensusClient extends Client {
      * Sends a transaction
      */
     public async sendTransaction(p: TransactionParams): Promise<Hash> {
-        const { wallet: w, recipient: r, value: v, fee: f, validityStartHeight: h, data: d } = p;
-        if (d) {
-            return this.call("sendBasicTransactionWithData", [w, r, d, v, f, h]);
+        const h = this.getValidityStartHeight(p);
+        if (p.data) {
+            return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
         } else {
-            return this.call("sendBasicTransaction", [w, r, v, f, h]);
+            return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
         }
     }
 
@@ -70,7 +74,7 @@ export class ConsensusClient extends Client {
      */
     public async createNewVestingTransaction(p: VestingTxParams): Promise<RawTransaction> {
         return this.call("createNewVestingTransaction", [
-            p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee, p.validityStartHeight]);
+            p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee, this.getValidityStartHeight(p)]);
     }
 
     /**
@@ -78,7 +82,7 @@ export class ConsensusClient extends Client {
      */
     public async sendNewVestingTransaction(p: VestingTxParams): Promise<Hash> {
         return this.call("sendNewVestingTransaction", [
-            p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee, p.validityStartHeight]);
+            p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee,  this.getValidityStartHeight(p)]);
     }
 
     /**
@@ -86,7 +90,7 @@ export class ConsensusClient extends Client {
      */
     public async createRedeemVestingTransaction(p: RedeemVestingTxParams): Promise<RawTransaction> {
         return this.call("createRedeemVestingTransaction", [
-            p.wallet, p.contractAddress, p.recipient, p.value, p.fee,p.validityStartHeight]);
+            p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)]);
     }
 
     /**
@@ -94,7 +98,7 @@ export class ConsensusClient extends Client {
      */
     public async sendRedeemVestingTransaction(p: RedeemVestingTxParams): Promise<Hash> {
         return this.call("sendRedeemVestingTransaction", [
-            p.wallet, p.contractAddress, p.recipient, p.value, p.fee,p.validityStartHeight]);
+            p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)]);
     }
 
     /**
@@ -102,7 +106,7 @@ export class ConsensusClient extends Client {
      */
     public async createNewHtlcTransaction(p: HtlcTransactionParams): Promise<RawTransaction> {
         return this.call("createNewHtlcTransaction", [
-            p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee, p.validityStartHeight]);
+            p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee,  this.getValidityStartHeight(p)]);
     }
     
     /**
@@ -110,7 +114,7 @@ export class ConsensusClient extends Client {
      */
     public async sendNewHtlcTransaction(p: HtlcTransactionParams): Promise<Hash> {
         return this.call("sendNewHtlcTransaction", [
-            p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee, p.validityStartHeight]);
+            p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee,  this.getValidityStartHeight(p)]);
     }
         
 
@@ -119,7 +123,7 @@ export class ConsensusClient extends Client {
      */
     public async createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams): Promise<RawTransaction> {
         return this.call("createRedeemRegularHtlcTransaction", [
-            p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -128,7 +132,7 @@ export class ConsensusClient extends Client {
      */
     public async sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams): Promise<Hash> {
         return this.call("sendRedeemRegularHtlcTransaction", [
-            p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -138,7 +142,7 @@ export class ConsensusClient extends Client {
      */
     public async createRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams): Promise<RawTransaction> {
         return this.call("createRedeemTimeoutHtlcTransaction", [
-            p.wallet, p.contractAddress, p.recipient, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.contractAddress, p.recipient, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
     
@@ -149,7 +153,7 @@ export class ConsensusClient extends Client {
      */
     public async sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams): Promise<Hash> {
         return this.call("sendRedeemTimeoutHtlcTransaction", [
-            p.wallet, p.contractAddress, p.recipient, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.contractAddress, p.recipient, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -159,7 +163,7 @@ export class ConsensusClient extends Client {
      */
     public async createRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams): Promise<RawTransaction> {
         return this.call("createRedeemEarlyHtlcTransaction", [
-            p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -169,7 +173,7 @@ export class ConsensusClient extends Client {
      */
     public async sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams): Promise<Hash> {
         return this.call("sendRedeemEarlyHtlcTransaction", [
-            p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -177,9 +181,9 @@ export class ConsensusClient extends Client {
      * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
      * the `EarlyResolve` method.
      */
-    public async signRedeemEarlyHtlcTransaction(p: Omit<RedeemEarlyHtlcTxParams, 'htlcSenderSignature' | 'htlcRecipientSignature'>): Promise<String> {
+    public async signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams): Promise<String> {
         return this.call("signRedeemEarlyHtlcTransaction", [
-            p.wallet, p.htlcAddress, p.recipient, p.value, p.fee, p.validityStartHeight
+            p.wallet, p.htlcAddress, p.recipient, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -189,7 +193,7 @@ export class ConsensusClient extends Client {
      */
     public async createNewStakerTransaction(p: StakerTxParams): Promise<RawTransaction> {
         return this.call("createNewStakerTransaction", [
-            p.senderWallet, p.staker, p.delegation, p.value, p.fee, p.validityStartHeight
+            p.senderWallet, p.staker, p.delegation, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -199,7 +203,7 @@ export class ConsensusClient extends Client {
      */
     public async sendNewStakerTransaction(p: StakerTxParams): Promise<Hash> {
         return this.call("sendNewStakerTransaction", [
-            p.senderWallet, p.staker, p.delegation, p.value, p.fee, p.validityStartHeight
+            p.senderWallet, p.staker, p.delegation, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -209,7 +213,7 @@ export class ConsensusClient extends Client {
      */
     public async createStakeTransaction(p: StakeTxParams): Promise<RawTransaction> {
         return this.call("createStakeTransaction", [
-            p.senderWallet, p.staker, p.value, p.fee, p.validityStartHeight
+            p.senderWallet, p.staker, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -219,7 +223,7 @@ export class ConsensusClient extends Client {
      */
     public async sendStakeTransaction(p: StakeTxParams): Promise<Hash> {
         return this.call("sendStakeTransaction", [
-            p.senderWallet, p.staker, p.value, p.fee, p.validityStartHeight
+            p.senderWallet, p.staker, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -230,7 +234,7 @@ export class ConsensusClient extends Client {
      */
     public async createUpdateStakerTransaction(p: UpdateStakerTxParams): Promise<RawTransaction> {
         return this.call("createUpdateStakerTransaction", [
-            p.senderWallet, p.staker, p.newDelegation, p.fee, p.validityStartHeight
+            p.senderWallet, p.staker, p.newDelegation, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
     
@@ -241,7 +245,7 @@ export class ConsensusClient extends Client {
      */
     public async sendUpdateStakerTransaction(p: UpdateStakerTxParams): Promise<Hash> {
         return this.call("sendUpdateStakerTransaction", [
-            p.senderWallet, p.staker, p.newDelegation, p.fee, p.validityStartHeight
+            p.senderWallet, p.staker, p.newDelegation, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -251,7 +255,7 @@ export class ConsensusClient extends Client {
      */
     public async createUnstakeTransaction(p: UnstakeTxParams): Promise<RawTransaction> {
         return this.call("createUnstakeTransaction", [
-            p.staker, p.recipient, p.value, p.fee, p.validityStartHeight
+            p.staker, p.recipient, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -261,7 +265,7 @@ export class ConsensusClient extends Client {
      */
     public async sendUnstakeTransaction(p: UnstakeTxParams): Promise<Hash> {
         return this.call("sendUnstakeTransaction", [
-            p.staker, p.recipient, p.value, p.fee, p.validityStartHeight
+            p.staker, p.recipient, p.value, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -275,7 +279,7 @@ export class ConsensusClient extends Client {
      */
     public async createNewValidatorTransaction(p: ValidatorTxParams): Promise<RawTransaction> {
         return this.call("createNewValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -289,7 +293,7 @@ export class ConsensusClient extends Client {
      */
     public async sendNewValidatorTransaction(p: ValidatorTxParams): Promise<Hash> {
         return this.call("sendNewValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -304,7 +308,7 @@ export class ConsensusClient extends Client {
      */
     public async createUpdateValidatorTransaction(p: UpdateValidatorTxParams): Promise<RawTransaction> {
         return this.call("createUpdateValidatorTransaction", [
-            p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -319,7 +323,7 @@ export class ConsensusClient extends Client {
      */
     public async sendUpdateValidatorTransaction(p: UpdateValidatorTxParams): Promise<Hash> {
         return this.call("sendUpdateValidatorTransaction", [
-            p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -329,7 +333,7 @@ export class ConsensusClient extends Client {
      */
     public async createInactivateValidatorTransaction(p: InactiveValidatorTxParams): Promise<RawTransaction> {
         return this.call("createInactivateValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -339,7 +343,7 @@ export class ConsensusClient extends Client {
      */
     public async sendInactivateValidatorTransaction(p: InactiveValidatorTxParams): Promise<Hash> {
         return this.call("sendInactivateValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -349,7 +353,7 @@ export class ConsensusClient extends Client {
      */
     public async createReactivateValidatorTransaction(p: ReactivateValidatorTxParams): Promise<RawTransaction> {
         return this.call("createReactivateValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -359,7 +363,7 @@ export class ConsensusClient extends Client {
      */
     public async sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams): Promise<Hash> {
         return this.call("sendReactivateValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -369,7 +373,7 @@ export class ConsensusClient extends Client {
      */
     public async createUnparkValidatorTransaction(p: UnparkValidatorTxParams): Promise<RawTransaction> {
         return this.call("createUnparkValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -379,7 +383,7 @@ export class ConsensusClient extends Client {
      */
     public async sendUnparkValidatorTransaction(p: UnparkValidatorTxParams): Promise<Hash> {
         return this.call("sendUnparkValidatorTransaction", [
-            p.senderWallet, p.validator, p.signingSecretKey, p.fee, p.validityStartHeight
+            p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -391,7 +395,7 @@ export class ConsensusClient extends Client {
      */
     public async createDeleteValidatorTransaction(p: DeleteValidatorTxParams): Promise<RawTransaction> {
         return this.call("createDeleteValidatorTransaction", [
-            p.senderWallet, p.validator, p.fee, p.value, p.validityStartHeight
+            p.senderWallet, p.validator, p.fee, p.value,  this.getValidityStartHeight(p)
         ]);
     }
 
@@ -403,7 +407,7 @@ export class ConsensusClient extends Client {
      */
     public async sendDeleteValidatorTransaction(p: DeleteValidatorTxParams): Promise<Hash> {
         return this.call("sendDeleteValidatorTransaction", [
-            p.senderWallet, p.validator, p.fee, p.value, p.validityStartHeight
+            p.senderWallet, p.validator, p.fee, p.value,  this.getValidityStartHeight(p)
         ]);
     }
 }

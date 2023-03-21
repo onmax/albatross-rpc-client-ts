@@ -36,6 +36,9 @@ type Address = `NQ${number} ${string}`
 type Coin = number
 
 type BlockNumber = number /* u32 */
+type ValidityStartHeight$1 =
+    | { relativeValidityStartHeight: number }
+    | { absoluteValidityStartHeight: number }
 type EpochIndex = number /* u32 */
 type BatchIndex = number /* u32 */
 type GenesisSupply$1 = number /* u64 */
@@ -162,20 +165,14 @@ type PartialMacroBlock = {
     stateHash: string;
     bodyHash: string;
     historyHash: string;
-    isElectionBlock: boolean;
     parentElectionHash: string;
 }
 
 type MacroBlock = PartialMacroBlock & {
+    isElectionBlock: false;
     transactions: Transaction[];
-    lostRewardSet: any[];
-    disabledSet: any[];
-    slots: {
-        firstSlotNumber: number;
-        numSlots: number;
-        publicKey: string;
-        validator: Address;
-    }[];
+    lostRewardSet: number[];
+    disabledSet: number[];
     justification: {
         round: number;
         sig: {
@@ -185,8 +182,23 @@ type MacroBlock = PartialMacroBlock & {
     };
 }
 
+type ElectionMacroBlock = PartialMacroBlock & {
+    isElectionBlock: true;
+    transactions: Transaction[];
+    lostRewardSet: number[];
+    disabledSet: number[];
+    justification: {
+        round: number;
+        sig: {
+            signature: string;
+            signers: number[];
+        };
+    };
+    slots: Slot[];
+}
+
 type PartialBlock = PartialMicroBlock | PartialMacroBlock
-type Block = MicroBlock | MacroBlock
+type Block = MicroBlock | MacroBlock | ElectionMacroBlock
 
 type Staker = {
     address: Address;
@@ -210,7 +222,8 @@ type Validator = PartialValidator$1 & {
 }
 
 type Slot = {
-    slotNumber: number; // u16
+    firstSlotNumber: number; // u16
+    numSlots: number; // u16
     validator: Address;
     publicKey: string;
 }
@@ -345,43 +358,43 @@ type ConsensusMethods = {
     'isConsensusEstablished': Interaction<[], Boolean>,
     'getRawTransactionInfo': Interaction<[RawTransaction], Transaction>,
     'sendRawTransaction': Interaction<[RawTransaction], Hash>,
-    'createBasicTransaction': Interaction<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendBasicTransaction': Interaction<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createBasicTransactionWithData': Interaction<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendBasicTransactionWithData': Interaction<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createNewVestingTransaction': Interaction<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendNewVestingTransaction': Interaction<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createRedeemVestingTransaction': Interaction<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-   'sendRedeemVestingTransaction': Interaction<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createNewHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'sendNewHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createRedeemRegularHtlcTransaction': Interaction<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'sendRedeemRegularHtlcTransaction': Interaction<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createRedeemTimeoutHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'sendRedeemTimeoutHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'sendRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'signRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], String>,
-    'createNewStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendNewStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createStakeTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendStakeTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createUpdateStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendUpdateStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createUnstakeTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendUnstakeTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */BlockNumber], Hash>,
-    'createDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */BlockNumber], RawTransaction>,
-    'sendDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */BlockNumber], Hash>,
+    'createBasicTransaction': Interaction<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendBasicTransaction': Interaction<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createBasicTransactionWithData': Interaction<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendBasicTransactionWithData': Interaction<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createNewVestingTransaction': Interaction<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendNewVestingTransaction': Interaction<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemVestingTransaction': Interaction<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+   'sendRedeemVestingTransaction': Interaction<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createNewHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendNewHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemRegularHtlcTransaction': Interaction<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendRedeemRegularHtlcTransaction': Interaction<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemTimeoutHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendRedeemTimeoutHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'signRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], String>,
+    'createNewStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendNewStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createStakeTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendStakeTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createUpdateStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendUpdateStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createUnstakeTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendUnstakeTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
 }
 
 type MempoolMethods = {
@@ -715,9 +728,8 @@ type TransactionParams = {
     recipient: Address;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
     data?: string;
-};
+} & ValidityStartHeight$1;
 type VestingTxParams = {
     wallet: Address;
     owner: Address;
@@ -726,16 +738,14 @@ type VestingTxParams = {
     numSteps: number;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type RedeemVestingTxParams = {
     wallet: Address;
     contractAddress: Address;
     recipient: Address;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type HtlcTransactionParams = {
     wallet: Address;
     htlcSender: Address;
@@ -746,8 +756,7 @@ type HtlcTransactionParams = {
     timeout: number;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type RedeemRegularHtlcTxParams = {
     wallet: Address;
     contractAddress: Address;
@@ -758,16 +767,14 @@ type RedeemRegularHtlcTxParams = {
     hashAlgorithm: string;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type RedeemTimeoutHtlcTxParams = {
     wallet: Address;
     contractAddress: Address;
     recipient: Address;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type RedeemEarlyHtlcTxParams = {
     wallet: Address;
     htlcAddress: Address;
@@ -776,37 +783,39 @@ type RedeemEarlyHtlcTxParams = {
     htlcRecipientSignature: string;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
+type SignRedeemEarlyHtlcParams = {
+    wallet: Address;
+    htlcAddress: Address;
+    recipient: Address;
+    value: Coin;
+    fee: Coin;
+} & ValidityStartHeight$1;
 type StakerTxParams = {
     senderWallet: Address;
     staker: Address;
     delegation: Address | undefined;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type StakeTxParams = {
     senderWallet: Address;
     staker: Address;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type UpdateStakerTxParams = {
     senderWallet: Address;
     staker: Address;
     newDelegation: Address;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type UnstakeTxParams = {
     staker: Address;
     recipient: Address;
     value: Coin;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type ValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
@@ -815,8 +824,7 @@ type ValidatorTxParams = {
     rewardAddress: Address;
     signalData: string;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type UpdateValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
@@ -825,38 +833,34 @@ type UpdateValidatorTxParams = {
     newRewardAddress: Address;
     newSignalData: string;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type InactiveValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
     signingSecretKey: string;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type ReactivateValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
     signingSecretKey: string;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type UnparkValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
     signingSecretKey: string;
     fee: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 type DeleteValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
     fee: Coin;
     value: Coin;
-    validityStartHeight: BlockNumber;
-};
+} & ValidityStartHeight$1;
 declare class ConsensusClient extends Client$1 {
     constructor(url: URL);
+    private getValidityStartHeight;
     /**
      * Returns a boolean specifying if we have established consensus with the network
      */
@@ -929,7 +933,7 @@ declare class ConsensusClient extends Client$1 {
      * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
      * the `EarlyResolve` method.
      */
-    signRedeemEarlyHtlcTransaction(p: Omit<RedeemEarlyHtlcTxParams, 'htlcSenderSignature' | 'htlcRecipientSignature'>): Promise<String>;
+    signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams): Promise<String>;
     /**
      * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1407,6 +1411,7 @@ declare class Client {
             close: () => void;
             getSubscriptionId: () => number;
         }>;
+        perBatch: Promise<number>;
     };
     batch: {
         current: () => Promise<number>;
@@ -1417,6 +1422,7 @@ declare class Client {
         firstBlock: ({ epochIndex }: {
             epochIndex: number;
         }) => Promise<number>;
+        perEpoch: Promise<number>;
     };
     epoch: {
         current: () => Promise<number>;
@@ -1430,6 +1436,7 @@ declare class Client {
         firstBatch: ({ blockNumber }: {
             blockNumber: number;
         }) => Promise<Boolean>;
+        blocksPerEpoch: Promise<number>;
     };
     transaction: {
         by: <T extends {
@@ -1459,17 +1466,15 @@ declare class Client {
             recipient: `NQ${number} ${string}`;
             value: number;
             fee: number;
-            validityStartHeight: number;
             data?: string | undefined;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         send: (p: {
             wallet: `NQ${number} ${string}`;
             recipient: `NQ${number} ${string}`;
             value: number;
             fee: number;
-            validityStartHeight: number;
             data?: string | undefined;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
     };
     inherent: {
         by: <T extends {
@@ -1577,8 +1582,7 @@ declare class Client {
                     rewardAddress: `NQ${number} ${string}`;
                     signalData: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     senderWallet: `NQ${number} ${string}`;
                     validator: `NQ${number} ${string}`;
@@ -1587,8 +1591,7 @@ declare class Client {
                     rewardAddress: `NQ${number} ${string}`;
                     signalData: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             update: {
                 create: (p: {
@@ -1599,8 +1602,7 @@ declare class Client {
                     newRewardAddress: `NQ${number} ${string}`;
                     newSignalData: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     senderWallet: `NQ${number} ${string}`;
                     validator: `NQ${number} ${string}`;
@@ -1609,8 +1611,7 @@ declare class Client {
                     newRewardAddress: `NQ${number} ${string}`;
                     newSignalData: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             inactive: {
                 create: (p: {
@@ -1618,15 +1619,13 @@ declare class Client {
                     validator: `NQ${number} ${string}`;
                     signingSecretKey: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     senderWallet: `NQ${number} ${string}`;
                     validator: `NQ${number} ${string}`;
                     signingSecretKey: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             reactivate: {
                 create: (p: {
@@ -1634,15 +1633,13 @@ declare class Client {
                     validator: `NQ${number} ${string}`;
                     signingSecretKey: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     senderWallet: `NQ${number} ${string}`;
                     validator: `NQ${number} ${string}`;
                     signingSecretKey: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             unpark: {
                 create: (p: {
@@ -1650,15 +1647,13 @@ declare class Client {
                     validator: `NQ${number} ${string}`;
                     signingSecretKey: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     senderWallet: `NQ${number} ${string}`;
                     validator: `NQ${number} ${string}`;
                     signingSecretKey: string;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             delete: {
                 create: (p: {
@@ -1666,19 +1661,18 @@ declare class Client {
                     validator: `NQ${number} ${string}`;
                     fee: number;
                     value: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     senderWallet: `NQ${number} ${string}`;
                     validator: `NQ${number} ${string}`;
                     fee: number;
                     value: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
         };
     };
     slots: {
+        perBatch: Promise<number>;
         at: <T extends {
             blockNumber: number;
             offsetOpt?: number | undefined;
@@ -1721,15 +1715,13 @@ declare class Client {
                 staker: `NQ${number} ${string}`;
                 value: number;
                 fee: number;
-                validityStartHeight: number;
-            }) => Promise<string>;
+            } & ValidityStartHeight$1) => Promise<string>;
             send: (p: {
                 senderWallet: `NQ${number} ${string}`;
                 staker: `NQ${number} ${string}`;
                 value: number;
                 fee: number;
-                validityStartHeight: number;
-            }) => Promise<string>;
+            } & ValidityStartHeight$1) => Promise<string>;
         };
     };
     staker: {
@@ -1747,31 +1739,27 @@ declare class Client {
             delegation: `NQ${number} ${string}` | undefined;
             value: number;
             fee: number;
-            validityStartHeight: number;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         send: (p: {
             senderWallet: `NQ${number} ${string}`;
             staker: `NQ${number} ${string}`;
             delegation: `NQ${number} ${string}` | undefined;
             value: number;
             fee: number;
-            validityStartHeight: number;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         update: {
             create: (p: {
                 senderWallet: `NQ${number} ${string}`;
                 staker: `NQ${number} ${string}`;
                 newDelegation: `NQ${number} ${string}`;
                 fee: number;
-                validityStartHeight: number;
-            }) => Promise<string>;
+            } & ValidityStartHeight$1) => Promise<string>;
             send: (p: {
                 senderWallet: `NQ${number} ${string}`;
                 staker: `NQ${number} ${string}`;
                 newDelegation: `NQ${number} ${string}`;
                 fee: number;
-                validityStartHeight: number;
-            }) => Promise<string>;
+            } & ValidityStartHeight$1) => Promise<string>;
         };
     };
     peers: {
@@ -1799,8 +1787,7 @@ declare class Client {
             timeout: number;
             value: number;
             fee: number;
-            validityStartHeight: number;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         send: (p: {
             wallet: `NQ${number} ${string}`;
             htlcSender: `NQ${number} ${string}`;
@@ -1811,8 +1798,7 @@ declare class Client {
             timeout: number;
             value: number;
             fee: number;
-            validityStartHeight: number;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         redeem: {
             regular: {
                 create: (p: {
@@ -1825,8 +1811,7 @@ declare class Client {
                     hashAlgorithm: string;
                     value: number;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     wallet: `NQ${number} ${string}`;
                     contractAddress: `NQ${number} ${string}`;
@@ -1837,8 +1822,7 @@ declare class Client {
                     hashAlgorithm: string;
                     value: number;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             timeout: {
                 create: (p: {
@@ -1847,16 +1831,14 @@ declare class Client {
                     recipient: `NQ${number} ${string}`;
                     value: number;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     wallet: `NQ${number} ${string}`;
                     contractAddress: `NQ${number} ${string}`;
                     recipient: `NQ${number} ${string}`;
                     value: number;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
             early: {
                 create: (p: {
@@ -1867,8 +1849,7 @@ declare class Client {
                     htlcRecipientSignature: string;
                     value: number;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
                 send: (p: {
                     wallet: `NQ${number} ${string}`;
                     htlcAddress: `NQ${number} ${string}`;
@@ -1877,8 +1858,7 @@ declare class Client {
                     htlcRecipientSignature: string;
                     value: number;
                     fee: number;
-                    validityStartHeight: number;
-                }) => Promise<string>;
+                } & ValidityStartHeight$1) => Promise<string>;
             };
         };
     };
@@ -1891,8 +1871,7 @@ declare class Client {
             numSteps: number;
             value: number;
             fee: number;
-            validityStartHeight: number;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         send: (p: {
             wallet: `NQ${number} ${string}`;
             owner: `NQ${number} ${string}`;
@@ -1901,8 +1880,7 @@ declare class Client {
             numSteps: number;
             value: number;
             fee: number;
-            validityStartHeight: number;
-        }) => Promise<string>;
+        } & ValidityStartHeight$1) => Promise<string>;
         redeem: {
             create: (p: {
                 wallet: `NQ${number} ${string}`;
@@ -1910,16 +1888,14 @@ declare class Client {
                 recipient: `NQ${number} ${string}`;
                 value: number;
                 fee: number;
-                validityStartHeight: number;
-            }) => Promise<string>;
+            } & ValidityStartHeight$1) => Promise<string>;
             send: (p: {
                 wallet: `NQ${number} ${string}`;
                 contractAddress: `NQ${number} ${string}`;
                 recipient: `NQ${number} ${string}`;
                 value: number;
                 fee: number;
-                validityStartHeight: number;
-            }) => Promise<string>;
+            } & ValidityStartHeight$1) => Promise<string>;
         };
     };
     zeroKnowledgeProof: {
@@ -1947,4 +1923,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType$1 as BlockType, Client, Coin, CurrentTime$1 as CurrentTime, EpochIndex, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, Hash, HtlcAccount, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };
+export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType$1 as BlockType, Client, Coin, CurrentTime$1 as CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, Hash, HtlcAccount, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };

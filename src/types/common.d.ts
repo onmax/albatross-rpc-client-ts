@@ -4,6 +4,9 @@ export type Address = `NQ${number} ${string}`
 export type Coin = number
 
 export type BlockNumber = number /* u32 */
+export type ValidityStartHeight =
+    | { relativeValidityStartHeight: number }
+    | { absoluteValidityStartHeight: number }
 export type EpochIndex = number /* u32 */
 export type BatchIndex = number /* u32 */
 export type GenesisSupply = number /* u64 */
@@ -130,15 +133,14 @@ export type PartialMacroBlock = {
     stateHash: string;
     bodyHash: string;
     historyHash: string;
-    isElectionBlock: boolean;
     parentElectionHash: string;
 }
 
 export type MacroBlock = PartialMacroBlock & {
+    isElectionBlock: false;
     transactions: Transaction[];
     lostRewardSet: number[];
     disabledSet: number[];
-    slots: Slot[];
     justification: {
         round: number;
         sig: {
@@ -148,8 +150,23 @@ export type MacroBlock = PartialMacroBlock & {
     };
 }
 
+export type ElectionMacroBlock = PartialMacroBlock & {
+    isElectionBlock: true;
+    transactions: Transaction[];
+    lostRewardSet: number[];
+    disabledSet: number[];
+    justification: {
+        round: number;
+        sig: {
+            signature: string;
+            signers: number[];
+        };
+    };
+    slots: Slot[];
+}
+
 export type PartialBlock = PartialMicroBlock | PartialMacroBlock
-export type Block = MicroBlock | MacroBlock
+export type Block = MicroBlock | MacroBlock | ElectionMacroBlock
 
 export type Staker = {
     address: Address;

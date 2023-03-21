@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.17
+
+### Patch Changes
+
+- 2e5b3b5: Added context to requests
+
 ## 0.0.16
 
 ### Patch Changes

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Client } from '.';
+import { Client, Transaction } from '.';
 
 function getClient() {
     const secret = process.env.NIMIQ_SECRET || '';
@@ -81,9 +81,25 @@ describe('Test for epoch module', async () => {
     it('.firstBatch ok', async () => expect(typeof ((await epoch.firstBatch({blockNumber: 65})).data)).toBe("boolean"));
 });
 
-describe.skip('Test for transaction module', async () => {
-    // const { transaction } = getClient();
-    // TODO transaction.by
+describe.only('Test for transaction module', async () => {
+    const { transaction, block, batch } = getClient();
+
+    let txs: Transaction[] = []
+    let i = (await block.current()).data!
+    
+    while(txs.length === 0 && i > 0) {
+        // search for last tx in the chain
+        const res = await transaction.by({blockNumber: i--})
+        if(!res.data) throw new Error(JSON.stringify(txs))
+        txs = res.data
+    }
+
+    const batchNumber = (await batch.at({blockNumber: txs[0].blockNumber})).data!
+
+    it('.by block number ok', async () => expect(txs).toBeInstanceOf(Array));
+    it('.by hash ok', async () => expect(await transaction.by({hash: txs[0].hash})).toHaveProperty('data'));
+    it('.by batch number ok', async () => expect((await transaction.by({batchNumber})).data).toBeInstanceOf(Array));
+
     // TODO transaction.push
     // TODO Returns method not found
     // it('.minFeePerByte ok', async () => expect(await transaction.minFeePerByte()).toBeGreaterThanOrEqual(0));

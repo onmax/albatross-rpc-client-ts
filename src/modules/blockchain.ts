@@ -20,9 +20,9 @@ export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[],
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
-type ResultGetTransactionsBy<T> = Promise<T extends { hash: Hash }
+type ResultGetTransactionsBy<T> = T extends { hash: Hash }
     ? Transaction : T extends { address: Address }
-        ? ResultGetTransactionsByAddress<T> : Transaction[]>
+        ? ResultGetTransactionsByAddress<T> : Transaction[]
 
 type BlockSubscription<T extends SubscribeForHeadBlockParams> = Subscription<
     T["filter"] extends 'HASH' ? 'subscribeForHeadBlockHash' : 'subscribeForHeadBlock', false, T["filter"] extends 'FULL' ? true : false

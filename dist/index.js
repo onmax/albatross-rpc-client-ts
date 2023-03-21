@@ -21,54 +21,74 @@ var __async = (__this, __arguments, generator) => {
 
 // src/client/http.ts
 import fetch from "node-fetch";
-var HttpClient = class {
+var _HttpClient = class {
   constructor(url) {
-    this.id = 0;
     this.url = url;
   }
   call(method, params, withMetadata) {
     return __async(this, null, function* () {
       params = params.map((param) => param === void 0 ? null : param);
-      const response = new Promise((resolve, reject) => __async(this, null, function* () {
-        return fetch(this.url.href, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
+      const context = {
+        // @ts-ignore
+        method,
+        params,
+        id: _HttpClient.id
+      };
+      const response = yield fetch(this.url.href, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          jsonrpc: "2.0",
+          method,
+          params,
+          id: _HttpClient.id++
+        })
+      });
+      if (!response.ok) {
+        return {
+          error: {
+            code: response.status,
+            message: response.status === 401 ? "Server requires authorization." : `Response status code not OK: ${response.status} ${response.statusText}`
           },
-          body: JSON.stringify({
-            jsonrpc: "2.0",
-            method,
-            params,
-            id: this.id++
-          })
-        }).then((response2) => {
-          if (!response2.ok) {
-            reject(response2.status === 401 ? "Server requires authorization." : `Response status code not OK: ${response2.status} ${response2.statusText}`);
-          }
-          return response2;
-        }).then((response2) => response2.json()).then((data) => {
-          const typedData = data;
-          if ("result" in typedData)
-            resolve(typedData);
-          if ("error" in typedData)
-            reject(`${typedData.error.message}: ${typedData.error.data}`);
-          reject(`Unexpected format of data ${JSON.stringify(data)}`);
-        });
-      }));
-      response.then((r) => {
-        console.log({ method, response: r });
-      });
-      if (!response) {
-        throw new Error("Response is not successful");
+          data: void 0,
+          context
+        };
       }
-      return yield response.then((response2) => {
-        if (!withMetadata || !response2.result.metadata)
-          return response2.result.data;
-        return response2.result;
-      });
+      const json = yield response.json();
+      const typedData = json;
+      if ("result" in typedData) {
+        const data = !withMetadata || !typedData.result.metadata ? typedData.result.data : typedData.result;
+        return {
+          error: void 0,
+          data,
+          context
+        };
+      }
+      if ("error" in typedData) {
+        return {
+          error: {
+            code: typedData.error.code,
+            message: `${typedData.error.message}: ${typedData.error.data}`
+          },
+          data: void 0,
+          context
+        };
+      }
+      return {
+        error: {
+          code: -1,
+          message: `Unexpected format of data ${JSON.stringify(json)}`
+        },
+        data: void 0,
+        context
+      };
     });
   }
 };
+var HttpClient = _HttpClient;
+HttpClient.id = 0;
 
 // src/client/web-socket.ts
 import { Blob } from "buffer";
@@ -1364,13 +1384,20 @@ var ZkpComponentClient = class extends Client {
   }
   getZkpState() {
     return __async(this, null, function* () {
-      return this.call("getZkpState", []).then(
-        (d) => ({
-          latestHeaderHash: d["latest-header-number"],
-          latestBlockNumber: d["latest-block-number"],
-          latestProof: d["latest-proof"]
-        })
-      );
+      const { data, error, context } = yield this.call("getZkpState", []);
+      if (error) {
+        return { error, data, context };
+      } else {
+        return {
+          error,
+          data: {
+            latestHeaderHash: data["latest-header-number"],
+            latestBlockNumber: data["latest-block-number"],
+            latestProof: data["latest-proof"]
+          },
+          context
+        };
+      }
     });
   }
 };
@@ -1454,8 +1481,7 @@ var Client2 = class {
       },
       isMacro: policy.getIsMacroBlockAt.bind(policy),
       isMicro: policy.getIsMicroBlockAt.bind(policy),
-      subscribe: blockchain.subscribeForBlocks.bind(blockchain),
-      perBatch: policy.getPolicyConstants().then(({ blocksPerBatch }) => blocksPerBatch)
+      subscribe: blockchain.subscribeForBlocks.bind(blockchain)
     };
     this.logs = {
       subscribe: blockchain.subscribeForLogsByAddressesAndTypes.bind(blockchain)
@@ -1463,18 +1489,15 @@ var Client2 = class {
     this.batch = {
       current: blockchain.getBatchNumber.bind(blockchain),
       at: policy.getBatchAt.bind(policy),
-      firstBlock: policy.getFirstBlockOf.bind(policy),
-      perEpoch: policy.getPolicyConstants().then(({ batchesPerEpoch }) => batchesPerEpoch)
+      firstBlock: policy.getFirstBlockOf.bind(policy)
     };
     this.epoch = {
       current: blockchain.getEpochNumber.bind(blockchain),
       at: policy.getEpochAt.bind(policy),
       firstBlock: policy.getFirstBlockOf.bind(policy),
-      firstBatch: policy.getFirstBatchOfEpoch.bind(policy),
-      blocksPerEpoch: policy.getPolicyConstants().then(({ blocksPerEpoch }) => blocksPerEpoch)
+      firstBatch: policy.getFirstBatchOfEpoch.bind(policy)
     };
     this.slots = {
-      perBatch: policy.getPolicyConstants().then(({ slots }) => slots),
       at: blockchain.getSlotAt.bind(blockchain),
       slashed: {
         current: blockchain.getCurrentSlashedSlots.bind(blockchain),
@@ -1618,13 +1641,23 @@ function main() {
     {'address': 'NQ95 XXJL VE7K 0JVB 92YN R4QX 4Q2Y 2MCN 10YG', 'address_raw': 'f7a54eb8f304bab48bf6c931e2605f15596083f0', 'public_key': 'ced9e6199a50773b673e820bdc4a0c8af5d85460b5b352632a92b0c3de6b38ff', 'private_key': 'a575f785f48fe5a74738a9ab4a5e882be8808698786c8386d15cecfac5fa5b80'}`;
     const validators = validatorsRaw.split("\n").map((v) => v.replace(/'/g, '"')).map((v) => JSON.parse(v));
     const { address, private_key } = validators[1];
-    const { stakingContractAddress } = yield client.constant.params();
-    const unlocked = yield client.account.unlock({ address }).catch((e) => console.error(e));
+    const { data } = yield client.constant.params();
+    if (!data) {
+      throw new Error("No data");
+    }
+    const { stakingContractAddress } = data;
+    const accounts = yield client.account.list();
+    console.log("Accounts", accounts);
+    console.log("");
+    console.log("");
+    const unlocked = yield client.account.unlock({ address });
     console.log("Unlocked", unlocked);
+    console.log("");
+    console.log("");
     const { next } = yield client.logs.subscribe({ addresses: [address, stakingContractAddress] });
-    next((data) => {
+    next((data2) => {
       console.log("New TX");
-      console.log(data);
+      console.log(data2);
       console.log("");
       console.log("");
       console.log("");
@@ -1638,7 +1671,7 @@ function main() {
     };
     console.log({ params });
     const tx = yield client.validator.action.inactive.send(params).catch((e) => console.error(e));
-    console.log("OInacatvie TX");
+    console.log("inactive TX");
     console.log(tx);
   });
 }

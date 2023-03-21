@@ -53,10 +53,18 @@ export type ErrorCallReturn = {
     message: string,
 }
 
+export type ContextCall = {
+    method: string,
+    params: (string | number | boolean | null)[],
+    id: number,
+}
+
 export type MaybeResponse<T> = {
     error: ErrorCallReturn,
     data: undefined
+    context: ContextCall
 } | {
     error: undefined,
-    data: T
+    data: T,
+    context: ContextCall
 }

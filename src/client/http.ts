@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { ErrorCallReturn, MethodName, MethodResponse, MethodResponseError, RpcRequest } from "../types/rpc-messages";
+import { ContextCall, ErrorCallReturn, MethodName, MethodResponse, MethodResponseError, RpcRequest } from "../types/rpc-messages";
 
 type SuccessCallReturn<T extends MethodName, ShowMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
     ? MethodResponse<T>["result"]["data"]
@@ -8,16 +8,18 @@ type SuccessCallReturn<T extends MethodName, ShowMetadata extends boolean> = Met
         : MethodResponse<T>["result"]["data"]
 
 type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
-    error: ErrorCallReturn,
+    error: ErrorCallReturn
     data: undefined
+    context: ContextCall
 } | {
-    error: undefined,
+    error: undefined
     data: SuccessCallReturn<T, ShowMetadata>
+    context: ContextCall
 }
 
 export class HttpClient {
     private url: URL;
-    private id: number = 0;
+    private static id: number = 0;
 
     constructor(url: URL) {
         this.url = url;
@@ -27,6 +29,12 @@ export class HttpClient {
         // replace undefined with null
         params = params.map((param: undefined) => param === undefined ? null : param)
 
+        const context: ContextCall = {
+            // @ts-ignore
+            method,
+            params,
+            id: HttpClient.id,
+        }
 
         const response = await fetch(this.url.href, {
             method: 'POST',
@@ -37,7 +45,7 @@ export class HttpClient {
                 jsonrpc: '2.0',
                 method,
                 params,
-                id: this.id++,
+                id: HttpClient.id++,
             }),
         })
 
@@ -50,6 +58,7 @@ export class HttpClient {
                         : `Response status code not OK: ${response.status} ${response.statusText}`
                 },
                 data: undefined,
+                context,
             }
         }
 
@@ -63,6 +72,7 @@ export class HttpClient {
             return {
                 error: undefined,
                 data,
+                context,
             }
         }
         if ('error' in typedData) {
@@ -72,6 +82,7 @@ export class HttpClient {
                     message: `${typedData.error.message}: ${typedData.error.data}`,
                 },
                 data: undefined,
+                context,
             }
         }
 
@@ -81,6 +92,7 @@ export class HttpClient {
                 message: `Unexpected format of data ${JSON.stringify(json)}`,
             },
             data: undefined,
+            context,
         }
     }
 }

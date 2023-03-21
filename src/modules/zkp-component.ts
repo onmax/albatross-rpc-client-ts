@@ -1,6 +1,6 @@
 import { ZKPState } from "../types/common";
 import { Client } from "../client/client";
-import { MaybeResponse } from "../types/rpc-messages";
+import { ContextCall, MaybeResponse } from "../types/rpc-messages";
 
 export class ZkpComponentClient extends Client {
     constructor(url: URL) {
@@ -8,9 +8,9 @@ export class ZkpComponentClient extends Client {
     }
 
     public async getZkpState(): Promise<MaybeResponse<ZKPState>> {
-        const { data, error } = await this.call("getZkpState", []);
+        const { data, error, context } = await this.call("getZkpState", []);
         if (error) {
-            return { error, data };
+            return { error, data, context };
         } else {
             return { 
                 error,
@@ -18,7 +18,8 @@ export class ZkpComponentClient extends Client {
                     latestHeaderHash: data['latest-header-number'],
                     latestBlockNumber: data['latest-block-number'],
                     latestProof: data['latest-proof'],
-                } as ZKPState
+                } as ZKPState,
+                context
             };
         }
     }

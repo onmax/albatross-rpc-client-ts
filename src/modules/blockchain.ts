@@ -3,19 +3,20 @@ import { Subscription } from "../client/web-socket";
 import { Account, Address, BatchIndex, Block, BlockNumber, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockchainState } from "../types/modules";
+import { MaybeResponse } from "../types/rpc-messages";
 
-type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber}) & { includeTransactions?: boolean };
-type GetLatestBlockParams = { includeTransactions?: boolean };
-type GetSlotAtParams = { blockNumber: BlockNumber, offsetOpt?: number, withMetadata?: boolean };
-type GetTransactionsByAddressParams = { address: Address, max?: number, justHashes?: boolean };
-type GetTransactionByParams = { hash: Hash } | { blockNumber: BlockNumber } | { batchNumber: BatchIndex } | GetTransactionsByAddressParams;
-type GetInherentsByParams = { batchNumber: BatchIndex } | { blockNumber: BlockNumber };
-type GetAccountByAddressParams = { address: Address, withMetadata?: boolean };
-type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean };
-type GetStakerByAddressParams = { address: Address };
-type SubscribeForHeadBlockParams = { filter: 'HASH' | 'FULL' | 'PARTIAL' };
-type SubscribeForValidatorElectionByAddressParams = { address: Address, withMetadata?: boolean };
-type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[], withMetadata?: boolean };
+export type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber}) & { includeTransactions?: boolean };
+export type GetLatestBlockParams = { includeTransactions?: boolean };
+export type GetSlotAtParams = { blockNumber: BlockNumber, offsetOpt?: number, withMetadata?: boolean };
+export type GetTransactionsByAddressParams = { address: Address, max?: number, justHashes?: boolean };
+export type GetTransactionByParams = { hash: Hash } | { blockNumber: BlockNumber } | { batchNumber: BatchIndex } | GetTransactionsByAddressParams;
+export type GetInherentsByParams = { batchNumber: BatchIndex } | { blockNumber: BlockNumber };
+export type GetAccountByAddressParams = { address: Address, withMetadata?: boolean };
+export type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean };
+export type GetStakerByAddressParams = { address: Address };
+export type SubscribeForHeadBlockParams = { filter: 'HASH' | 'FULL' | 'PARTIAL' };
+export type SubscribeForValidatorElectionByAddressParams = { address: Address, withMetadata?: boolean };
+export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[], withMetadata?: boolean };
 
 type WithMetadata<T> = { data: T, metadata: BlockchainState };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
@@ -35,21 +36,21 @@ export class BlockchainClient extends Client {
     /**
      * Returns the block number for the current head.
      */
-    public async getBlockNumber(): Promise<BlockNumber> {
+    public async getBlockNumber(): Promise<MaybeResponse<BlockNumber>> {
         return this.call("getBlockNumber", []);
     }
 
     /**
      * Returns the batch number for the current head.
      */
-    public async getBatchNumber(): Promise<BatchIndex> {
+    public async getBatchNumber(): Promise<MaybeResponse<BatchIndex>> {
         return this.call("getBatchNumber", []);
     }
 
     /**
      * Returns the epoch number for the current head.
      */
-    public async getEpochNumber(): Promise<BatchIndex> {
+    public async getEpochNumber(): Promise<MaybeResponse<BatchIndex>> {
         return this.call("getEpochNumber", []);
     }
 
@@ -57,7 +58,7 @@ export class BlockchainClient extends Client {
      * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
      */
     public async getBlockBy<T extends GetBlockByParams>(p = { includeTransactions: false } as T):
-        Promise<T extends { includeTransactions: true } ? Block : PartialBlock> {
+        Promise<T extends { includeTransactions: true } ? MaybeResponse<Block> : MaybeResponse<PartialBlock>> {
             if ('hash' in p) {
                 return this.call("getBlockByHash", [p.hash, p.includeTransactions]);
             }
@@ -69,7 +70,7 @@ export class BlockchainClient extends Client {
      * transactions in the block, which defaults to false.
      */
     public async getLatestBlock<T extends GetLatestBlockParams>(p = { includeTransactions: false } as T):
-        Promise<T extends { includeTransactions: true } ? Block : PartialBlock> {
+        Promise<MaybeResponse<T extends { includeTransactions: true } ? Block : PartialBlock>> {
         return this.call("getLatestBlock", [p.includeTransactions]);
     }
     
@@ -79,7 +80,7 @@ export class BlockchainClient extends Client {
      * at the given height.
      */
     public async getSlotAt<T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<Slot> : Slot> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<Slot> : Slot>> {
         return this.call("getSlotAt", [blockNumber, offsetOpt], withMetadata);
     }
 
@@ -91,18 +92,18 @@ export class BlockchainClient extends Client {
      * transactions are also returned. It has an option to specify the maximum number of transactions
      * to fetch, it defaults to 500.
      */
-    public async getTransactionBy<T extends GetTransactionByParams>(p: T): Promise<ResultGetTransactionsBy<T>> {
+    public async getTransactionBy<T extends GetTransactionByParams>(p: T): Promise<MaybeResponse<ResultGetTransactionsBy<T>>> {
         if ('hash' in p) {
-            return this.call("getTransactionByHash", [p.hash]) as ResultGetTransactionsBy<T>;
+            return this.call("getTransactionByHash", [p.hash]);
         } else if ('blockNumber' in p) {
-            return this.call("getTransactionsByBlockNumber", [p.blockNumber]) as ResultGetTransactionsBy<T>;
+            return this.call("getTransactionsByBlockNumber", [p.blockNumber]);
         } else if ('batchNumber' in p) {
-            return this.call("getTransactionsByBatchNumber", [p.batchNumber]) as ResultGetTransactionsBy<T>;
+            return this.call("getTransactionsByBatchNumber", [p.batchNumber]);
         } else if ('address' in p) {
             if (p.justHashes === true) {
-                return this.call("getTransactionHashesByAddress", [p.address, p.max]) as ResultGetTransactionsBy<T>;
+                return this.call("getTransactionHashesByAddress", [p.address, p.max]);
             } else {
-                return this.call("getTransactionsByAddress", [p.address, p.max]) as ResultGetTransactionsBy<T>;
+                return this.call("getTransactionsByAddress", [p.address, p.max]);
             }
         }
         throw new Error("Invalid parameters");
@@ -112,7 +113,7 @@ export class BlockchainClient extends Client {
      * Returns all the inherents (including reward inherents) for the parameter. Note
      * that this only considers blocks in the main chain.
      */
-    public async getInherentsBy<T extends GetInherentsByParams>(p: T): Promise<Inherent[]> {
+    public async getInherentsBy<T extends GetInherentsByParams>(p: T): Promise<MaybeResponse<Inherent[]>> {
         if ('blockNumber' in p) {
             return this.call("getInherentsByBlockNumber", [p.blockNumber]);
         } else if ('batchNumber' in p) {
@@ -125,7 +126,7 @@ export class BlockchainClient extends Client {
      * Tries to fetch the account at the given address.
      */
     public async getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<Account> : Account> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<Account> : Account>> {
         return this.call("getAccountByAddress", [address], withMetadata);
     }
 
@@ -133,7 +134,7 @@ export class BlockchainClient extends Client {
      * Returns a collection of the currently active validator's addresses and balances.
      */
      public async getActiveValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<Validator[]> : Validator[]> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<Validator[]> : Validator[]>> {
         return this.call("getActiveValidators", [], withMetadata);
     }
 
@@ -142,7 +143,7 @@ export class BlockchainClient extends Client {
      * and that were disabled.
      */
     public async getCurrentSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]>> {
         return this.call("getCurrentSlashedSlots", [], withMetadata);
     }
 
@@ -151,7 +152,7 @@ export class BlockchainClient extends Client {
      * lost rewards and that were disabled.
      */
     public async getPreviousSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]>> {
             return this.call("getPreviousSlashedSlots", [], withMetadata);
     }
 
@@ -159,7 +160,7 @@ export class BlockchainClient extends Client {
      * Returns information about the currently parked validators.
      */
     public async getParkedValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false} as T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<{ blockNumber: BlockNumber, validators: Validator[]}> : { blockNumber: BlockNumber, validators: Validator[]}> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<{ blockNumber: BlockNumber, validators: Validator[]}> : { blockNumber: BlockNumber, validators: Validator[]}>> {
         return this.call("getParkedValidators", [], withMetadata);
     }
 
@@ -168,9 +169,9 @@ export class BlockchainClient extends Client {
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
     public async getValidatorBy<T extends GetValidatorByAddressParams>(p = { includeStakers: false } as T):
-        Promise<T extends { withMetadata: true }
+        Promise<MaybeResponse<T extends { withMetadata: true }
             ? WithMetadata<T extends { includeStakers: true } ? Validator : PartialValidator>
-            :   T extends { includeStakers: true } ? Validator : PartialValidator> {
+            :   T extends { includeStakers: true } ? Validator : PartialValidator>> {
         return this.call("getValidatorByAddress", [p.address, p.includeStakers]);
     }
 
@@ -178,7 +179,7 @@ export class BlockchainClient extends Client {
      * Tries to fetch a staker information given its address.
      */
     public async getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T):
-        Promise<T extends { withMetadata: true } ? WithMetadata<Staker> : Staker> {
+        Promise<MaybeResponse<T extends { withMetadata: true } ? WithMetadata<Staker> : Staker>> {
         return this.call("getStakerByAddress", [address]);
     }
 

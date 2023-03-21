@@ -1304,7 +1304,7 @@ type LockAccountParams = {
 };
 type UnlockAccountParams = {
     address: Address;
-    passphrase: string;
+    passphrase?: string;
     duration?: number;
 };
 type IsAccountLockedParams = {
@@ -1346,18 +1346,10 @@ declare class ZkpComponentClient extends Client$1 {
 declare class Client {
     block: {
         current: () => Promise<number>;
-        by: <T extends ({
-            hash: string;
-        } | {
-            blockNumber: number;
-        }) & {
-            includeTransactions?: boolean | undefined;
-        }>(p?: T) => Promise<T extends {
+        by: <T extends GetBlockByParams>(p?: T) => Promise<T extends {
             includeTransactions: true;
         } ? Block : PartialBlock>;
-        latest: <T_1 extends {
-            includeTransactions?: boolean | undefined;
-        }>(p?: T_1) => Promise<T_1 extends {
+        latest: <T_1 extends GetLatestBlockParams>(p?: T_1) => Promise<T_1 extends {
             includeTransactions: true;
         } ? Block : PartialBlock>;
         election: {
@@ -1373,10 +1365,7 @@ declare class Client {
             get: ({ epochIndex }: {
                 epochIndex: number;
             }) => Promise<number>;
-            subscribe: <T_2 extends {
-                address: `NQ${number} ${string}`;
-                withMetadata?: boolean | undefined;
-            }>(p?: T_2) => Promise<Subscription<"subscribeForValidatorElectionByAddress", T_2 extends {
+            subscribe: <T_2 extends SubscribeForValidatorElectionByAddressParams>(p?: T_2) => Promise<Subscription<"subscribeForValidatorElectionByAddress", T_2 extends {
                 withMetadata: true;
             } ? true : false, false>>;
         };
@@ -1403,9 +1392,7 @@ declare class Client {
         isMicro: ({ blockNumber }: {
             blockNumber: number;
         }) => Promise<Boolean>;
-        subscribe: <T_3 extends {
-            filter: "HASH" | "FULL" | "PARTIAL";
-        }>({ filter }: T_3) => Promise<{
+        subscribe: <T_3 extends SubscribeForHeadBlockParams>({ filter }: T_3) => Promise<{
             next: (callback: (data: (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") extends infer T_4 ? T_4 extends (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") ? T_4 extends "subscribeForHeadBlock" ? (T_3["filter"] extends "FULL" ? true : false) extends infer T_5 ? T_5 extends (T_3["filter"] extends "FULL" ? true : false) ? T_5 extends true ? Block : PartialBlock : never : never : BlockchainStreams[T_4]["result"] : never : never) => void) => void;
             error: (callback: (error: any) => void) => void;
             close: () => void;
@@ -1439,17 +1426,7 @@ declare class Client {
         blocksPerEpoch: Promise<number>;
     };
     transaction: {
-        by: <T extends {
-            hash: string;
-        } | {
-            blockNumber: number;
-        } | {
-            batchNumber: number;
-        } | {
-            address: `NQ${number} ${string}`;
-            max?: number | undefined;
-            justHashes?: boolean | undefined;
-        }>(p: T) => Promise<Promise<T extends {
+        by: <T extends GetTransactionByParams>(p: T) => Promise<Promise<T extends {
             hash: string;
         } ? Transaction : T extends {
             address: `NQ${number} ${string}`;
@@ -1461,33 +1438,14 @@ declare class Client {
             withHighPriority?: boolean | undefined;
         }) => Promise<string>;
         minFeePerByte: () => Promise<number>;
-        create: (p: {
-            wallet: `NQ${number} ${string}`;
-            recipient: `NQ${number} ${string}`;
-            value: number;
-            fee: number;
-            data?: string | undefined;
-        } & ValidityStartHeight$1) => Promise<string>;
-        send: (p: {
-            wallet: `NQ${number} ${string}`;
-            recipient: `NQ${number} ${string}`;
-            value: number;
-            fee: number;
-            data?: string | undefined;
-        } & ValidityStartHeight$1) => Promise<string>;
+        create: (p: TransactionParams) => Promise<string>;
+        send: (p: TransactionParams) => Promise<string>;
     };
     inherent: {
-        by: <T extends {
-            batchNumber: number;
-        } | {
-            blockNumber: number;
-        }>(p: T) => Promise<Inherent[]>;
+        by: <T extends GetInherentsByParams>(p: T) => Promise<Inherent[]>;
     };
     account: {
-        byAddress: <T extends {
-            address: `NQ${number} ${string}`;
-            withMetadata?: boolean | undefined;
-        }>({ address, withMetadata }: T) => Promise<T extends {
+        byAddress: <T extends GetAccountByAddressParams>({ address, withMetadata }: T) => Promise<T extends {
             withMetadata: true;
         } ? {
             data: Account;
@@ -1509,7 +1467,7 @@ declare class Client {
         }) => Promise<null>;
         unlock: ({ address, passphrase, duration }: {
             address: `NQ${number} ${string}`;
-            passphrase: string;
+            passphrase?: string | undefined;
             duration?: number | undefined;
         }) => Promise<Boolean>;
         isLocked: ({ address }: {
@@ -1529,10 +1487,7 @@ declare class Client {
         }) => Promise<Boolean>;
     };
     validator: {
-        byAddress: <T extends {
-            address: `NQ${number} ${string}`;
-            includeStakers?: boolean | undefined;
-        }>(p?: T) => Promise<T extends {
+        byAddress: <T extends GetValidatorByAddressParams>(p?: T) => Promise<T extends {
             withMetadata: true;
         } ? {
             data: T extends {
@@ -1574,110 +1529,34 @@ declare class Client {
         }>;
         action: {
             new: {
-                create: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    votingSecretKey: string;
-                    rewardAddress: `NQ${number} ${string}`;
-                    signalData: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    votingSecretKey: string;
-                    rewardAddress: `NQ${number} ${string}`;
-                    signalData: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: ValidatorTxParams) => Promise<string>;
+                send: (p: ValidatorTxParams) => Promise<string>;
             };
             update: {
-                create: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    newSigningSecretKey: string;
-                    newVotingSecretKey: string;
-                    newRewardAddress: `NQ${number} ${string}`;
-                    newSignalData: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    newSigningSecretKey: string;
-                    newVotingSecretKey: string;
-                    newRewardAddress: `NQ${number} ${string}`;
-                    newSignalData: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: UpdateValidatorTxParams) => Promise<string>;
+                send: (p: UpdateValidatorTxParams) => Promise<string>;
             };
             inactive: {
-                create: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: InactiveValidatorTxParams) => Promise<string>;
+                send: (p: InactiveValidatorTxParams) => Promise<string>;
             };
             reactivate: {
-                create: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: ReactivateValidatorTxParams) => Promise<string>;
+                send: (p: ReactivateValidatorTxParams) => Promise<string>;
             };
             unpark: {
-                create: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    signingSecretKey: string;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: UnparkValidatorTxParams) => Promise<string>;
+                send: (p: UnparkValidatorTxParams) => Promise<string>;
             };
             delete: {
-                create: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    fee: number;
-                    value: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    senderWallet: `NQ${number} ${string}`;
-                    validator: `NQ${number} ${string}`;
-                    fee: number;
-                    value: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: DeleteValidatorTxParams) => Promise<string>;
+                send: (p: DeleteValidatorTxParams) => Promise<string>;
             };
         };
     };
     slots: {
         perBatch: Promise<number>;
-        at: <T extends {
-            blockNumber: number;
-            offsetOpt?: number | undefined;
-            withMetadata?: boolean | undefined;
-        }>({ blockNumber, offsetOpt, withMetadata }: T) => Promise<T extends {
+        at: <T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T) => Promise<T extends {
             withMetadata: true;
         } ? {
             data: Slot;
@@ -1710,56 +1589,22 @@ declare class Client {
     };
     stakes: {
         new: {
-            create: (p: {
-                senderWallet: `NQ${number} ${string}`;
-                staker: `NQ${number} ${string}`;
-                value: number;
-                fee: number;
-            } & ValidityStartHeight$1) => Promise<string>;
-            send: (p: {
-                senderWallet: `NQ${number} ${string}`;
-                staker: `NQ${number} ${string}`;
-                value: number;
-                fee: number;
-            } & ValidityStartHeight$1) => Promise<string>;
+            create: (p: StakeTxParams) => Promise<string>;
+            send: (p: StakeTxParams) => Promise<string>;
         };
     };
     staker: {
-        byAddress: <T extends {
-            address: `NQ${number} ${string}`;
-        }>({ address }: T) => Promise<T extends {
+        byAddress: <T extends GetStakerByAddressParams>({ address }: T) => Promise<T extends {
             withMetadata: true;
         } ? {
             data: Staker;
             metadata: BlockchainState;
         } : Staker>;
-        create: (p: {
-            senderWallet: `NQ${number} ${string}`;
-            staker: `NQ${number} ${string}`;
-            delegation: `NQ${number} ${string}` | undefined;
-            value: number;
-            fee: number;
-        } & ValidityStartHeight$1) => Promise<string>;
-        send: (p: {
-            senderWallet: `NQ${number} ${string}`;
-            staker: `NQ${number} ${string}`;
-            delegation: `NQ${number} ${string}` | undefined;
-            value: number;
-            fee: number;
-        } & ValidityStartHeight$1) => Promise<string>;
+        create: (p: StakerTxParams) => Promise<string>;
+        send: (p: StakerTxParams) => Promise<string>;
         update: {
-            create: (p: {
-                senderWallet: `NQ${number} ${string}`;
-                staker: `NQ${number} ${string}`;
-                newDelegation: `NQ${number} ${string}`;
-                fee: number;
-            } & ValidityStartHeight$1) => Promise<string>;
-            send: (p: {
-                senderWallet: `NQ${number} ${string}`;
-                staker: `NQ${number} ${string}`;
-                newDelegation: `NQ${number} ${string}`;
-                fee: number;
-            } & ValidityStartHeight$1) => Promise<string>;
+            create: (p: UpdateStakerTxParams) => Promise<string>;
+            send: (p: UpdateStakerTxParams) => Promise<string>;
         };
     };
     peers: {
@@ -1777,136 +1622,36 @@ declare class Client {
         }) => Promise<number>;
     };
     htlc: {
-        create: (p: {
-            wallet: `NQ${number} ${string}`;
-            htlcSender: `NQ${number} ${string}`;
-            htlcRecipient: `NQ${number} ${string}`;
-            hashRoot: string;
-            hashCount: number;
-            hashAlgorithm: string;
-            timeout: number;
-            value: number;
-            fee: number;
-        } & ValidityStartHeight$1) => Promise<string>;
-        send: (p: {
-            wallet: `NQ${number} ${string}`;
-            htlcSender: `NQ${number} ${string}`;
-            htlcRecipient: `NQ${number} ${string}`;
-            hashRoot: string;
-            hashCount: number;
-            hashAlgorithm: string;
-            timeout: number;
-            value: number;
-            fee: number;
-        } & ValidityStartHeight$1) => Promise<string>;
+        create: (p: HtlcTransactionParams) => Promise<string>;
+        send: (p: HtlcTransactionParams) => Promise<string>;
         redeem: {
             regular: {
-                create: (p: {
-                    wallet: `NQ${number} ${string}`;
-                    contractAddress: `NQ${number} ${string}`;
-                    recipient: `NQ${number} ${string}`;
-                    preImage: string;
-                    hashRoot: string;
-                    hashCount: number;
-                    hashAlgorithm: string;
-                    value: number;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    wallet: `NQ${number} ${string}`;
-                    contractAddress: `NQ${number} ${string}`;
-                    recipient: `NQ${number} ${string}`;
-                    preImage: string;
-                    hashRoot: string;
-                    hashCount: number;
-                    hashAlgorithm: string;
-                    value: number;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: RedeemRegularHtlcTxParams) => Promise<string>;
+                send: (p: RedeemRegularHtlcTxParams) => Promise<string>;
             };
             timeout: {
-                create: (p: {
-                    wallet: `NQ${number} ${string}`;
-                    contractAddress: `NQ${number} ${string}`;
-                    recipient: `NQ${number} ${string}`;
-                    value: number;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    wallet: `NQ${number} ${string}`;
-                    contractAddress: `NQ${number} ${string}`;
-                    recipient: `NQ${number} ${string}`;
-                    value: number;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: RedeemTimeoutHtlcTxParams) => Promise<string>;
+                send: (p: RedeemTimeoutHtlcTxParams) => Promise<string>;
             };
             early: {
-                create: (p: {
-                    wallet: `NQ${number} ${string}`;
-                    htlcAddress: `NQ${number} ${string}`;
-                    recipient: `NQ${number} ${string}`;
-                    htlcSenderSignature: string;
-                    htlcRecipientSignature: string;
-                    value: number;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
-                send: (p: {
-                    wallet: `NQ${number} ${string}`;
-                    htlcAddress: `NQ${number} ${string}`;
-                    recipient: `NQ${number} ${string}`;
-                    htlcSenderSignature: string;
-                    htlcRecipientSignature: string;
-                    value: number;
-                    fee: number;
-                } & ValidityStartHeight$1) => Promise<string>;
+                create: (p: RedeemEarlyHtlcTxParams) => Promise<string>;
+                send: (p: RedeemEarlyHtlcTxParams) => Promise<string>;
             };
         };
     };
     vesting: {
-        create: (p: {
-            wallet: `NQ${number} ${string}`;
-            owner: `NQ${number} ${string}`;
-            startTime: number;
-            timeStep: number;
-            numSteps: number;
-            value: number;
-            fee: number;
-        } & ValidityStartHeight$1) => Promise<string>;
-        send: (p: {
-            wallet: `NQ${number} ${string}`;
-            owner: `NQ${number} ${string}`;
-            startTime: number;
-            timeStep: number;
-            numSteps: number;
-            value: number;
-            fee: number;
-        } & ValidityStartHeight$1) => Promise<string>;
+        create: (p: VestingTxParams) => Promise<string>;
+        send: (p: VestingTxParams) => Promise<string>;
         redeem: {
-            create: (p: {
-                wallet: `NQ${number} ${string}`;
-                contractAddress: `NQ${number} ${string}`;
-                recipient: `NQ${number} ${string}`;
-                value: number;
-                fee: number;
-            } & ValidityStartHeight$1) => Promise<string>;
-            send: (p: {
-                wallet: `NQ${number} ${string}`;
-                contractAddress: `NQ${number} ${string}`;
-                recipient: `NQ${number} ${string}`;
-                value: number;
-                fee: number;
-            } & ValidityStartHeight$1) => Promise<string>;
+            create: (p: RedeemVestingTxParams) => Promise<string>;
+            send: (p: RedeemVestingTxParams) => Promise<string>;
         };
     };
     zeroKnowledgeProof: {
         state: () => Promise<ZKPState>;
     };
     logs: {
-        subscribe: <T extends {
-            addresses?: `NQ${number} ${string}`[] | undefined;
-            types?: LogType[] | undefined;
-            withMetadata?: boolean | undefined;
-        }>(p?: T) => Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends {
+        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams>(p?: T) => Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends {
             withMetadata: true;
         } ? true : false, false>>;
     };
@@ -1923,4 +1668,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType$1 as BlockType, Client, Coin, CurrentTime$1 as CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, Hash, HtlcAccount, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };
+export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType$1 as BlockType, Client, Coin, CurrentTime$1 as CurrentTime, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactiveValidatorTxParams, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, SignRedeemEarlyHtlcParams, Signature, SlashedSlot, Slot, StakeTxParams, Staker, StakerTxParams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionParams, UnparkValidatorTxParams, UnstakeTxParams, UpdateStakerTxParams, UpdateValidatorTxParams, Validator, ValidatorTxParams, VestingAccount, VestingTxParams, WalletAccount, ZKPState };

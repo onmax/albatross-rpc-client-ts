@@ -16,7 +16,7 @@ export class Client {
         this.webSocketClient = new WebSocketClient(url);
     }
 
-    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], withMetadata: boolean = false): Promise<CallReturn<T>> {
+    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], withMetadata: boolean = false) {
         return this.httpClient.call(method, params, withMetadata);
     }
 

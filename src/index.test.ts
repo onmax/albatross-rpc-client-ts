@@ -10,29 +10,30 @@ function getClient() {
 
 describe('Test for block module', async () => {
     const { block } = getClient();
-    const current = await block.current();
-    const blockData = await block.by({ blockNumber: current });
-    it('.current ok', async () => expect(await current).toBeGreaterThanOrEqual(0));
+    const current = (await block.current());
+    if (current.error) throw new Error('current block is undefined');
+    const blockData = (await block.by({ blockNumber: current.data })).data!;
+    it('.current ok', async () => expect(current.data).toBeGreaterThanOrEqual(0));
     it('.by blockNumber ok', async () => expect(blockData).toHaveProperty('hash'));
-    it('.by hash ok', async () => expect(await block.by({ hash: blockData.hash })).toHaveProperty('hash'));
-    it('.by blockNumber w/txs ok', async () => expect(await block.by({ blockNumber: 0, includeTransactions: true })).toHaveProperty('hash'));
-    it('.latest ok', async () => expect(await block.latest()).toHaveProperty('hash'));
-    it('.latest ok w/txs', async () => expect(await block.latest({includeTransactions: true})).toHaveProperty('transactions'));
-    it('.election.after ok', async () => expect(await block.election.after({blockNumber: 0})).toBeGreaterThanOrEqual(0));
-    it('.election.before ok', async () => expect(await block.election.before({blockNumber: 10})).toBeGreaterThanOrEqual(0));
-    it('.election.last ok', async () => expect(await block.election.last({blockNumber: 10})).toBeGreaterThanOrEqual(0));
-    it('.election.get ok', async () => expect(await block.election.get({epochIndex: 1})).toBeGreaterThanOrEqual(0));
-    it('.isElection ok', async () => expect(typeof (await block.isElection({blockNumber: 1}))).toBe("boolean"));
-    it('.macro.after ok', async () => expect(await block.macro.after({blockNumber: 0})).toBeGreaterThanOrEqual(0));
-    it('.macro.before ok', async () => expect(await block.macro.before({blockNumber: 10})).toBeGreaterThanOrEqual(0));
-    it('.macro.last ok', async () => expect(await block.macro.last({blockNumber: 10})).toBeGreaterThanOrEqual(0));
-    it('.macro.get ok', async () => expect(await block.macro.get({batchIndex: 1})).toBeGreaterThanOrEqual(0));
-    it('.isMacro ok', async () => expect(typeof (await block.isMacro({blockNumber: 0}))).toBe("boolean"));
-    it('.isMicro ok', async () => expect(typeof (await block.isMicro({blockNumber: 0}))).toBe("boolean"));
-    it('.election.after ok', async () => expect(await block.election.after({blockNumber: 0})).toBeGreaterThanOrEqual(0));
-    it('.election.before ok', async () => expect(await block.election.before({blockNumber: 10})).toBeGreaterThanOrEqual(0));
-    it('.election.last ok', async () => expect(await block.election.last({blockNumber: 10})).toBeGreaterThanOrEqual(0));
-    it('.election.get ok', async () => expect(await block.election.get({epochIndex: 1})).toBeGreaterThanOrEqual(0));
+    it('.by hash ok', async () => expect((await block.by({ hash: blockData.hash })).data).toHaveProperty('hash'));
+    it('.by blockNumber w/txs ok', async () => expect((await block.by({ blockNumber: 0, includeTransactions: true })).data).toHaveProperty('hash'));
+    it('.latest ok', async () => expect((await block.latest()).data).toHaveProperty('hash'));
+    it('.latest ok w/txs', async () => expect((await block.latest({includeTransactions: true})).data).toHaveProperty('transactions'));
+    it('.election.after ok', async () => expect((await block.election.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
+    it('.election.before ok', async () => expect((await block.election.before({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
+    it('.election.last ok', async () => expect((await block.election.last({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
+    it('.election.get ok', async () => expect((await block.election.get({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
+    it('.isElection ok', async () => expect(typeof ((await block.isElection({blockNumber: 1})).data)).toBe("boolean"));
+    it('.macro.after ok', async () => expect((await block.macro.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
+    it('.macro.before ok', async () => expect((await block.macro.before({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
+    it('.macro.last ok', async () => expect((await block.macro.last({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
+    it('.macro.get ok', async () => expect((await block.macro.get({batchIndex: 1})).data).toBeGreaterThanOrEqual(0));
+    it('.isMacro ok', async () => expect(typeof ((await block.isMacro({blockNumber: 0})).data)).toBe("boolean"));
+    it('.isMicro ok', async () => expect(typeof ((await block.isMicro({blockNumber: 0})).data)).toBe("boolean"));
+    it('.election.after ok', async () => expect((await block.election.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
+    it('.election.before ok', async () => expect((await block.election.before({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
+    it('.election.last ok', async () => expect((await block.election.last({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
+    it('.election.get ok', async () => expect((await block.election.get({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
 });
 
 describe('Test for subscriptions', async () => {
@@ -67,17 +68,17 @@ describe('Test for subscriptions', async () => {
 
 describe('Test for batch module', async () => {
     const { batch } = getClient();
-    it('.current ok', async () => expect(await batch.current()).toBeGreaterThanOrEqual(0));
-    it('.at ok', async () => expect(await batch.at({blockNumber: 0})).toBeGreaterThanOrEqual(0));
-    it('.firstBlock ok', async () => expect(await batch.firstBlock({epochIndex: 1})).toBeGreaterThanOrEqual(0));
+    it('.current ok', async () => expect((await batch.current()).data).toBeGreaterThanOrEqual(0));
+    it('.at ok', async () => expect((await batch.at({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
+    it('.firstBlock ok', async () => expect((await batch.firstBlock({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
 });
 
 describe('Test for epoch module', async () => {
     const { epoch } = getClient();
-    it('.current ok', async () => expect(await epoch.current()).toBeGreaterThanOrEqual(0));
-    it('.at ok', async () => expect(await epoch.at({blockNumber: 0})).toBeGreaterThanOrEqual(0));
-    it('.firstBlock ok', async () => expect(await epoch.firstBlock({epochIndex: 1})).toBeGreaterThanOrEqual(0));
-    it('.firstBatch ok', async () => expect(typeof (await epoch.firstBatch({blockNumber: 65}))).toBe("boolean"));
+    it('.current ok', async () => expect((await epoch.current()).data).toBeGreaterThanOrEqual(0));
+    it('.at ok', async () => expect((await epoch.at({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
+    it('.firstBlock ok', async () => expect((await epoch.firstBlock({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
+    it('.firstBatch ok', async () => expect(typeof ((await epoch.firstBatch({blockNumber: 65})).data)).toBe("boolean"));
 });
 
 describe.skip('Test for transaction module', async () => {
@@ -112,19 +113,19 @@ describe.skip('Test for staker module', async () => {
 
 describe('Test for inherent module', async () => {
     const { inherent } = getClient();
-    it('.by blockNumber', async () => expect(await inherent.by({blockNumber: 0})).toBeInstanceOf(Array));
-    it('.by batchNumber', async () => expect(await inherent.by({batchNumber: 0})).toBeInstanceOf(Array));
+    it('.by blockNumber', async () => expect(await (await inherent.by({blockNumber: 0})).data).toBeInstanceOf(Array));
+    it('.by batchNumber', async () => expect(await (await inherent.by({batchNumber: 0})).data).toBeInstanceOf(Array));
 });
 
 describe('Test for validator module', async () => {
     const { validator } = getClient();
-    const validatorAddresses = await validator.active();
+    const validatorAddresses = await (await validator.active()).data!;
     it('.active ok', async () => expect(validatorAddresses).toBeInstanceOf(Array));
     const validatorInfo = validatorAddresses[0];
-    it('.byAddress ok', async () => expect(await validator.byAddress({ address: validatorInfo.address })).toHaveProperty('address'));
-    it('.active metadata ok', async () => expect((await validator.active({withMetadata: true})).data).toBeInstanceOf(Array));
-    it('.parked ok', async () => expect((await validator.parked()).validators).toBeInstanceOf(Array));
-    it('.parked metadata ok', async () => expect((await validator.parked({withMetadata: true})).data.validators).toBeInstanceOf(Array));
+    it('.byAddress ok', async () => expect(await (await validator.byAddress({ address: validatorInfo.address })).data).toHaveProperty('address'));
+    it('.active metadata ok', async () => expect((await (await validator.active({withMetadata: true})).data!).data).toBeInstanceOf(Array));
+    it('.parked ok', async () => expect((await validator.parked()).data!.validators).toBeInstanceOf(Array));
+    it('.parked metadata ok', async () => expect((await validator.parked({withMetadata: true})).data!.data.validators).toBeInstanceOf(Array));
     // TODO Figure out how validator.selfNode works
     // it.only('.selfNode.address ok', async () => expect(await validator.selfNode.address()).toHaveProperty('address'));
     // TODO validator.action
@@ -133,14 +134,14 @@ describe('Test for validator module', async () => {
 
 describe('Test for slots module', async () => {
     const { slots, block } = getClient();
-    const currentBlock = await block.current();
-    it('.current ok', async () => expect(await slots.at({blockNumber: currentBlock - 10})).haveOwnProperty('slotNumber'));
-    it('.current ok offset', async () => expect(await slots.at({blockNumber: currentBlock - 10, offsetOpt: 10})).haveOwnProperty('slotNumber'));
-    it('.current ok offset metadata', async () => expect((await slots.at({blockNumber: currentBlock - 10, offsetOpt: 10, withMetadata: true})).data).haveOwnProperty('slotNumber'));
-    it('.slashed.current ok', async () => expect((await slots.slashed.current())).haveOwnProperty('blockNumber'));
-    it('.slashed.current metadata ok', async () => expect((await slots.slashed.current({withMetadata: true})).data).haveOwnProperty('blockNumber'));
-    it('.slashed.previous ok', async () => expect((await slots.slashed.previous())).haveOwnProperty('blockNumber'));
-    it('.slashed.previous metadata ok', async () => expect((await slots.slashed.previous({withMetadata: true})).data).haveOwnProperty('blockNumber'));
+    const currentBlock = (await block.current()).data!;
+    it('.current ok', async () => expect(await (await slots.at({blockNumber: currentBlock - 10})).data).haveOwnProperty('slotNumber'));
+    it('.current ok offset', async () => expect((await slots.at({blockNumber: currentBlock - 10, offsetOpt: 10})).data).haveOwnProperty('slotNumber'));
+    it('.current ok offset metadata', async () => expect(((await slots.at({blockNumber: currentBlock - 10, offsetOpt: 10, withMetadata: true}))).data!.data).haveOwnProperty('slotNumber'));
+    it('.slashed.current ok', async () => expect((await slots.slashed.current()).data).haveOwnProperty('blockNumber'));
+    it('.slashed.current metadata ok', async () => expect((await slots.slashed.current({withMetadata: true})).data!.data).haveOwnProperty('blockNumber'));
+    it('.slashed.previous ok', async () => expect((await slots.slashed.previous()).data).haveOwnProperty('blockNumber'));
+    it('.slashed.previous metadata ok', async () => expect((await slots.slashed.previous({withMetadata: true})).data!.data).haveOwnProperty('blockNumber'));
 });
 
 describe.skip('Test for mempool module', async () => {
@@ -153,21 +154,21 @@ describe.skip('Test for mempool module', async () => {
 
 describe('Test for peers module', async () => {
     const { peers } = getClient();
-    it('.id ok', async () => expect(typeof (await peers.id())).toBe('string'));
-    it('.count ok', async () => expect(await peers.count()).toBeGreaterThanOrEqual(0));
-    it('.peers ok', async () => expect(await peers.peers()).toBeInstanceOf(Array));
-    it('.consensusEstablished ok', async () => expect(await peers.consensusEstablished()).toBe(true));
+    it('.id ok', async () => expect(typeof (await peers.id()).data).toBe('string'));
+    it('.count ok', async () => expect((await peers.count()).data).toBeGreaterThanOrEqual(0));
+    it('.peers ok', async () => expect((await peers.peers()).data).toBeInstanceOf(Array));
+    it('.consensusEstablished ok', async () => expect((await peers.consensusEstablished()).data).toBe(true));
 });
 
 describe('Test for constant module', async () => {
     const { constant } = getClient();
     const oneYearAgo = new Date().getTime() - 31536000000;
-    it('.params ok', async () => expect(await constant.params()).toHaveProperty('stakingContractAddress'));
-    it('.supply ok', async () => expect(await constant.supply({genesisSupply: 100000, genesisTime: oneYearAgo, currentTime: new Date().getTime()})).toBeGreaterThanOrEqual(0));
+    it('.params ok', async () => expect((await constant.params()).data).toHaveProperty('stakingContractAddress'));
+    it('.supply ok', async () => expect((await constant.supply({genesisSupply: 100000, genesisTime: oneYearAgo, currentTime: new Date().getTime()})).data).toBeGreaterThanOrEqual(0));
 });
 
 describe('Test for zeroKnowledgeProof module', async () => {
     const { zeroKnowledgeProof } = getClient();
-    it('.state ok', async () => expect(await zeroKnowledgeProof.state()).toHaveProperty('latestHeaderHash'));
+    it('.state ok', async () => expect((await zeroKnowledgeProof.state()).data).toHaveProperty('latestHeaderHash'));
 });
 

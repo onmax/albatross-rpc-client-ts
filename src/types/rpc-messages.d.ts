@@ -47,3 +47,16 @@ export type MethodResponseError = {
     }
     id: number
 }
+
+export type ErrorCallReturn = {
+    code: number,
+    message: string,
+}
+
+export type MaybeResponse<T> = {
+    error: ErrorCallReturn,
+    data: undefined
+} | {
+    error: undefined,
+    data: T
+}

@@ -103,47 +103,53 @@ class Client {
         }
 
         this.vesting = {
-            create: consensus.createNewVestingTransaction.bind(consensus),
-                send: consensus.sendNewVestingTransaction.bind(consensus),
-                redeem: {
-                    create: consensus.createRedeemVestingTransaction.bind(consensus),
-                    send: consensus.sendRedeemVestingTransaction.bind(consensus),
-                }
+            new: {
+                createTx: consensus.createNewVestingTransaction.bind(consensus),
+                sendTx: consensus.sendNewVestingTransaction.bind(consensus),
+            },
+            redeem: {
+                createTx: consensus.createRedeemVestingTransaction.bind(consensus),
+                sendTx: consensus.sendRedeemVestingTransaction.bind(consensus),
+            }
         }
 
         this.htlc = {
-            create: consensus.createNewHtlcTransaction.bind(consensus),
-            send: consensus.sendNewHtlcTransaction.bind(consensus),
+            new: {
+                createTx: consensus.createNewHtlcTransaction.bind(consensus),
+                sendTx: consensus.sendNewHtlcTransaction.bind(consensus),
+            },
             redeem: {
                 regular: {
-                    create: consensus.createRedeemRegularHtlcTransaction.bind(consensus),
-                    send: consensus.sendRedeemRegularHtlcTransaction.bind(consensus),
+                    createTx: consensus.createRedeemRegularHtlcTransaction.bind(consensus),
+                    sendTx: consensus.sendRedeemRegularHtlcTransaction.bind(consensus),
                 },
-                timeout: {
-                    create: consensus.createRedeemTimeoutHtlcTransaction.bind(consensus),
-                    send: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus),
+                timeoutTx: {
+                    createTx: consensus.createRedeemTimeoutHtlcTransaction.bind(consensus),
+                    sendTx: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus),
                 },
-                early: {
-                    create: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
-                    send: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus),
+                earlyTx: {
+                    createTx: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
+                    sendTx: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus),
                 }
             }
         }
 
         this.stakes = {
             new: {
-                create: consensus.createStakeTransaction.bind(consensus),
-                send: consensus.sendStakeTransaction.bind(consensus),
+                createTx: consensus.createStakeTransaction.bind(consensus),
+                sendTx: consensus.sendStakeTransaction.bind(consensus),
             }
         }
 
         this.staker = {
             byAddress: blockchain.getStakerByAddress.bind(blockchain),
-            create: consensus.createNewStakerTransaction.bind(consensus),
-            send: consensus.sendNewStakerTransaction.bind(consensus),
+            new: {
+                createTx: consensus.createNewStakerTransaction.bind(consensus),
+                sendTx: consensus.sendNewStakerTransaction.bind(consensus),
+            },
             update: {
-                create: consensus.createUpdateStakerTransaction.bind(consensus),
-                send: consensus.sendUpdateStakerTransaction.bind(consensus),
+                createTx: consensus.createUpdateStakerTransaction.bind(consensus),
+                sendTx: consensus.sendUpdateStakerTransaction.bind(consensus),
             }
         }
 
@@ -154,7 +160,7 @@ class Client {
         this.account = {
             byAddress: blockchain.getAccountBy.bind(blockchain),
             importRawKey: wallet.importRawKey.bind(wallet),
-            create: wallet.createAccount.bind(wallet),
+            new: wallet.createAccount.bind(wallet),
             isImported: wallet.isAccountImported.bind(wallet),
             list: wallet.listAccounts.bind(wallet),
             lock: wallet.lockAccount.bind(wallet),
@@ -176,28 +182,28 @@ class Client {
             parked: blockchain.getParkedValidators.bind(blockchain),
             action: {
                 new: {
-                    create: consensus.createNewValidatorTransaction.bind(consensus),
-                    send: consensus.sendNewValidatorTransaction.bind(consensus),
+                    createTx: consensus.createNewValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendNewValidatorTransaction.bind(consensus),
                 },
                 update: {
-                    create: consensus.createUpdateValidatorTransaction.bind(consensus),
-                    send: consensus.sendUpdateValidatorTransaction.bind(consensus),
+                    createTx: consensus.createUpdateValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendUpdateValidatorTransaction.bind(consensus),
                 },
                 inactive: {
-                    create: consensus.createInactivateValidatorTransaction.bind(consensus),
-                    send: consensus.sendInactivateValidatorTransaction.bind(consensus),
+                    createTx: consensus.createInactivateValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendInactivateValidatorTransaction.bind(consensus),
                 },
                 reactivate: {
-                    create: consensus.createReactivateValidatorTransaction.bind(consensus),
-                    send: consensus.sendReactivateValidatorTransaction.bind(consensus),
+                    createTx: consensus.createReactivateValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendReactivateValidatorTransaction.bind(consensus),
                 },
                 unpark: {
-                    create: consensus.createUnparkValidatorTransaction.bind(consensus),
-                    send: consensus.sendUnparkValidatorTransaction.bind(consensus),
+                    createTx: consensus.createUnparkValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendUnparkValidatorTransaction.bind(consensus),
                 },
                 delete: {
-                    create: consensus.createDeleteValidatorTransaction.bind(consensus),
-                    send: consensus.sendDeleteValidatorTransaction.bind(consensus),
+                    createTx: consensus.createDeleteValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendDeleteValidatorTransaction.bind(consensus),
                 }
             },
         }

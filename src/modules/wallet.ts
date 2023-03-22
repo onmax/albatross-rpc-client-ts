@@ -32,8 +32,8 @@ export class WalletClient extends Client {
         return this.call("lockAccount", [address]);
     }
 
-    public async createAccount({ passphrase }: CreateAccountParams): Promise<MaybeResponse<WalletAccount>> {
-        return this.call("createAccount", [passphrase]);
+    public async createAccount(p?: CreateAccountParams): Promise<MaybeResponse<WalletAccount>> {
+        return this.call("createAccount", [p?.passphrase]);
     }
 
     public async unlockAccount({ address, passphrase, duration }: UnlockAccountParams): Promise<MaybeResponse<Boolean>> {

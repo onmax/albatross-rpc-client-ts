@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.19
+
+### Patch Changes
+
+- f1626ac: version
+
 ## 0.0.18
 
 ### Patch Changes

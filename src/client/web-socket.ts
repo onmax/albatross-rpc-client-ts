@@ -1,26 +1,22 @@
 import { Blob } from 'buffer';
 import WebSocket from 'ws';
-import { Block, PartialBlock } from '../types/common';
-import { MethodResponse, RpcRequest, StreamName, StreamResponse } from "../types/rpc-messages";
+import { CallbackParam, ContextRequest, ErrorStreamReturn, MaybeStreamResponse, MethodResponse, RpcRequest, StreamName, StreamOptions, StreamResponse } from "../types/rpc-messages";
 
 export type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
-    next: (callback: (data: CallbackParam<T, ShowMetadata, IncludeBody>) => void) => void;
+    next: (callback: (p: MaybeStreamResponse<T, ShowMetadata, IncludeBody>) => void) => void;
     error: (callback: (error: any) => void) => void;
     close: () => void;
+
+    context: ContextRequest;
 
     // The subscriptionId is only available after the subscription is opened
     // By default it is set to -1
     getSubscriptionId: () => number;
 }
 
-type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
-    T extends 'subscribeForHeadBlock'
-        ? IncludeBody extends true
-            ? Block
-            : PartialBlock
-        : ShowMetadata extends true
-            ? StreamResponse<T>['params']['result']
-            : StreamResponse<T>['params']['result']['data']
+export const WS_DEFAULT_OPTIONS: StreamOptions = {
+    once: false,
+}
 
 export class WebSocketClient {
     private url: URL;
@@ -34,20 +30,39 @@ export class WebSocketClient {
         this.textDecoder = new TextDecoder()
     }
 
-    async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata): Promise<Subscription<T, ShowMetadata>> {
+    async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata, options: StreamOptions): Promise<Subscription<T, ShowMetadata>> {
         const ws = new WebSocket(this.url.href);
         let subscriptionId : number;
+
+        const requestBody = {
+            jsonrpc: '2.0',
+            method: event,
+            params,
+            id: this.id++,
+        };
+
+        const { once } = options;
         
-        const options: Subscription<T, ShowMetadata> = {
-            next: (callback: (data: CallbackParam<T, ShowMetadata>) => void) => {
+        const args: Subscription<T, ShowMetadata> = {
+            next: (callback: (data: MaybeStreamResponse<T, ShowMetadata>) => void) => {
                 ws.onmessage = async (event) => {
                     const payload = await this.parsePayload<T>(event);
+
                     if ('result' in payload) {
                         subscriptionId = payload.result;
                         return;
                     }
-                    const data = (withMetadata ? payload.params.result : payload.params.result.data) as CallbackParam<T, ShowMetadata>;
-                    callback(data);
+
+                    if ('error' in payload) {
+                        callback({ data: undefined, error: payload as ErrorStreamReturn });
+                    } else {
+                        const data = (withMetadata ? (payload as StreamResponse<T>).params.result : (payload as StreamResponse<T>).params.result.data) as CallbackParam<T, ShowMetadata>;
+                        callback({data, error: undefined});
+                    }
+
+                    if (once) {
+                        ws.close();
+                    }
                 }
             },
             error: (callback: (error: any) => void) => {
@@ -59,35 +74,37 @@ export class WebSocketClient {
                 ws.close();
             },
             getSubscriptionId: () => subscriptionId,
+            context: requestBody
         }
         
         return new Promise((resolve) => {
             ws.onopen = () => {
-                ws.send(JSON.stringify({
-                    jsonrpc: '2.0',
-                    method: event,
-                    params,
-                    id: this.id++,
-                }));
-                resolve(options);
+                ws.send(JSON.stringify(requestBody));
+                resolve(args);
             }
         });
     }
 
-    private async parsePayload<T extends StreamName>(event: WebSocket.MessageEvent): Promise<StreamResponse<T> | MethodResponse<'streamOpened'>> {
+    private async parsePayload<T extends StreamName>(event: WebSocket.MessageEvent): Promise<StreamResponse<T> | MethodResponse<'streamOpened'> | ErrorStreamReturn> {
         let payloadStr: string;
         if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer());
         } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
             payloadStr = this.textDecoder.decode(event.data);
         } else {
-            throw new Error('Unexpected data type');
+            return {
+                code: 1001,
+                message: 'Unexpected data type'
+            }
         }
 
         try {
             return JSON.parse(payloadStr) as StreamResponse<T> | MethodResponse<'streamOpened'>;
         } catch (e) {
-            throw new Error(`Unexpected payload: ${payloadStr}`);
+            return {
+                code: 1002,
+                message: `Unexpected payload: ${payloadStr}`
+            }
         }
     }
 }

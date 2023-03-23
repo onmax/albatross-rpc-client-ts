@@ -53,18 +53,50 @@ export type ErrorCallReturn = {
     message: string,
 }
 
-export type ContextCall = {
+export type ContextRequest = {
     method: string,
     params: (string | number | boolean | null)[],
     id: number,
 }
 
-export type MaybeResponse<T> = {
+export type MaybeCallResponse<T> = {
     error: ErrorCallReturn,
     data: undefined
-    context: ContextCall
+    context: ContextRequest
 } | {
     error: undefined,
     data: T,
-    context: ContextCall
+    context: ContextRequest
+}
+
+export type CallOptions = {
+    timeout: number
+}
+
+export type ErrorStreamReturn = {
+    code: number,
+    message: string,
+}
+
+export type MaybeStreamResponse<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+    error: ErrorStreamReturn,
+    data: undefined
+} | {
+    error: undefined,
+    data: CallbackParam<T, ShowMetadata, IncludeBody>,
+}
+
+export type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
+    T extends 'subscribeForHeadBlock'
+        ? IncludeBody extends true
+            ? Block
+            : PartialBlock
+        : ShowMetadata extends true
+            ? StreamResponse<T>['params']['result']
+            : StreamResponse<T>['params']['result']['data']
+
+
+export type StreamOptions = {
+    once: boolean,
+    // timeout: number, TODO
 }

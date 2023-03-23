@@ -1,5 +1,5 @@
 import fetch from 'node-fetch';
-import { ContextCall, ErrorCallReturn, MethodName, MethodResponse, MethodResponseError, RpcRequest } from "../types/rpc-messages";
+import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodResponse, MethodResponseError, RpcRequest } from "../types/rpc-messages";
 
 type SuccessCallReturn<T extends MethodName, ShowMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
     ? MethodResponse<T>["result"]["data"]
@@ -10,11 +10,15 @@ type SuccessCallReturn<T extends MethodName, ShowMetadata extends boolean> = Met
 type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
     error: ErrorCallReturn
     data: undefined
-    context: ContextCall
+    context: ContextRequest
 } | {
     error: undefined
     data: SuccessCallReturn<T, ShowMetadata>
-    context: ContextCall
+    context: ContextRequest
+}
+
+export const DEFAULT_OPTIONS: CallOptions = {
+    timeout: 10_000
 }
 
 export class HttpClient {
@@ -25,11 +29,16 @@ export class HttpClient {
         this.url = url;
     }
 
-    async call<T extends MethodName, ShowMetadata extends boolean>(method: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata): Promise<MaybeResponse<T, ShowMetadata>> {
+    async call<T extends MethodName, ShowMetadata extends boolean>(method: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata, options: CallOptions): Promise<MaybeResponse<T, ShowMetadata>> {
+        const { timeout } = options
+
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), timeout);
+
         // replace undefined with null
         params = params.map((param: undefined) => param === undefined ? null : param)
 
-        const context: ContextCall = {
+        const context: ContextRequest = {
             // @ts-ignore
             method,
             params,
@@ -47,7 +56,10 @@ export class HttpClient {
                 params,
                 id: HttpClient.id++,
             }),
+            signal: controller.signal
         })
+
+        clearTimeout(timeoutId);
 
         if (!response.ok) {
             return {

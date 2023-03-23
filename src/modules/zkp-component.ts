@@ -1,14 +1,15 @@
 import { ZKPState } from "../types/common";
 import { Client } from "../client/client";
-import { ContextCall, MaybeResponse } from "../types/rpc-messages";
+import { ContextRequest, MaybeCallResponse } from "../types/rpc-messages";
+import { DEFAULT_OPTIONS } from "../client/http";
 
 export class ZkpComponentClient extends Client {
     constructor(url: URL) {
         super(url);
     }
 
-    public async getZkpState(): Promise<MaybeResponse<ZKPState>> {
-        const { data, error, context } = await this.call("getZkpState", []);
+    public async getZkpState(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<ZKPState>> {
+        const { data, error, context } = await this.call("getZkpState", [], options);
         if (error) {
             return { error, data, context };
         } else {

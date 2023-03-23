@@ -1,4 +1,4 @@
-import { MethodName, MethodResponse, RpcRequest, StreamName } from "../types/rpc-messages";
+import { CallOptions, MethodName, MethodResponse, RpcRequest, StreamName, StreamOptions } from "../types/rpc-messages";
 import { HttpClient } from './http';
 import { WebSocketClient } from "./web-socket";
 
@@ -16,11 +16,11 @@ export class Client {
         this.webSocketClient = new WebSocketClient(url);
     }
 
-    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], withMetadata: boolean = false) {
-        return this.httpClient.call(method, params, withMetadata);
+    async call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], options: CallOptions, withMetadata: boolean = false) {
+        return this.httpClient.call(method, params, withMetadata, options);
     }
 
-    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], withMetadata: boolean = false) {
-        return this.webSocketClient.subscribe(event, params, withMetadata);
+    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], options: StreamOptions, withMetadata: boolean = false) {
+        return this.webSocketClient.subscribe(event, params, withMetadata, options);
     }
 }

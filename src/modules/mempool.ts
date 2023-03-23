@@ -1,6 +1,7 @@
 import { Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
 import { Client } from "../client/client";
-import { MaybeResponse } from "../types/rpc-messages";
+import { MaybeCallResponse } from "../types/rpc-messages";
+import { DEFAULT_OPTIONS } from "../client/http";
 
 type PushTransactionParams = { transaction: RawTransaction, withHighPriority?: boolean };
 type MempoolContentParams = { includeTransactions: boolean };
@@ -16,11 +17,11 @@ export class MempoolClient extends Client {
      * @param transaction Serialized transaction
      * @returns Transaction hash
      */
-    public pushTransaction({ transaction, withHighPriority }: PushTransactionParams): Promise<MaybeResponse<Hash>> {
+    public pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         if (withHighPriority) {
-            return super.call("pushHighPriorityTransaction", [transaction]);
+            return super.call("pushHighPriorityTransaction", [transaction], options);
         } else {
-            return super.call("pushTransaction", [transaction]);
+            return super.call("pushTransaction", [transaction], options);
         }
     }
 
@@ -30,22 +31,22 @@ export class MempoolClient extends Client {
      * @param includeTransactions
      * @returns 
      */
-    public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false}): Promise<MaybeResponse<(Hash | Transaction)[]>> {
-        return super.call("mempoolContent", [includeTransactions]);
+    public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false}, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<(Hash | Transaction)[]>> {
+        return super.call("mempoolContent", [includeTransactions], options);
     }
 
     /**
      * @returns 
      */
-    public mempool(): Promise<MaybeResponse<MempoolInfo>> {
-        return super.call("mempool", []);
+    public mempool(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<MempoolInfo>> {
+        return super.call("mempool", [], options);
     }
 
     /**
      * 
      * @returns
      */
-    public getMinFeePerByte(): Promise<MaybeResponse<number>> {
-        return super.call("getMinFeePerByte", []);
+    public getMinFeePerByte(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<number>> {
+        return super.call("getMinFeePerByte", [], options);
     }
 }

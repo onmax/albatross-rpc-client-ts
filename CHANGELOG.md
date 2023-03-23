@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.20
+
+### Patch Changes
+
+- 293a15a: context and options
+
 ## 0.0.19
 
 ### Patch Changes

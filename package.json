@@ -1,11 +1,13 @@
 {
   "name": "nimiq-rpc-client-ts",
-  "version": "0.0.20",
+  "version": "0.0.21",
   "description": "A Nimiq RPC client for TypeScript",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "types": "./dist/index.d.ts",
-  "files": ["./dist"],
+  "files": [
+    "./dist"
+  ],
   "license": "MIT",
   "author": "onmax",
   "private": false,

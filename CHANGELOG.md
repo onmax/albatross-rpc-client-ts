@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.22
+
+### Patch Changes
+
+- 9b4ec4f: version
+
 ## 0.0.21
 
 ### Patch Changes

@@ -159,7 +159,7 @@ class Client {
         }
 
         this.account = {
-            by: blockchain.getAccountBy.bind(blockchain),
+            get: blockchain.getAccountBy.bind(blockchain),
             importRawKey: wallet.importRawKey.bind(wallet),
             new: wallet.createAccount.bind(wallet),
             isImported: wallet.isAccountImported.bind(wallet),

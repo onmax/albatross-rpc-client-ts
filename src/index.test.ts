@@ -12,11 +12,11 @@ describe('Test for block module', async () => {
     const { block } = getClient();
     const current = (await block.current());
     if (current.error) throw new Error('current block is undefined');
-    const blockData = (await block.by({ blockNumber: current.data })).data!;
+    const blockData = (await block.get({ blockNumber: current.data })).data!;
     it('.current ok', async () => expect(current.data).toBeGreaterThanOrEqual(0));
-    it('.by blockNumber ok', async () => expect(blockData).toHaveProperty('hash'));
-    it('.by hash ok', async () => expect((await block.by({ hash: blockData.hash })).data).toHaveProperty('hash'));
-    it('.by blockNumber w/txs ok', async () => expect((await block.by({ blockNumber: 0, includeTransactions: true })).data).toHaveProperty('hash'));
+    it('.get blockNumber ok', async () => expect(blockData).toHaveProperty('hash'));
+    it('.get hash ok', async () => expect((await block.get({ hash: blockData.hash })).data).toHaveProperty('hash'));
+    it('.get blockNumber w/txs ok', async () => expect((await block.get({ blockNumber: 0, includeTransactions: true })).data).toHaveProperty('hash'));
     it('.latest ok', async () => expect((await block.latest()).data).toHaveProperty('hash'));
     it('.latest ok w/txs', async () => expect((await block.latest({includeTransactions: true})).data).toHaveProperty('transactions'));
     it('.election.after ok', async () => expect((await block.election.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
@@ -89,7 +89,7 @@ describe('Test for transaction module', async () => {
     
     while(txs.length === 0 && i > 0) {
         // search for last tx in the chain
-        const res = await transaction.by({blockNumber: i--})
+        const res = await transaction.get({blockNumber: i--})
         if(!res.data) throw new Error(JSON.stringify(txs))
         txs = res.data
     }
@@ -97,10 +97,10 @@ describe('Test for transaction module', async () => {
     const batchNumber = (await batch.at({blockNumber: txs[0].blockNumber})).data!
     const stakingContract = (await constant.params()).data!.stakingContractAddress
 
-    it('.by block number ok', async () => expect(txs).toBeInstanceOf(Array));
-    it('.by hash ok', async () => expect(await transaction.by({hash: txs[0].hash})).toHaveProperty('data'));
-    it('.by batch number ok', async () => expect((await transaction.by({batchNumber})).data).toBeInstanceOf(Array));
-    it('.by batch number ok', async () => expect((await transaction.by({address: stakingContract})).data).toBeInstanceOf(Array));
+    it('.get block number ok', async () => expect(txs).toBeInstanceOf(Array));
+    it('.get hash ok', async () => expect(await transaction.get({hash: txs[0].hash})).toHaveProperty('data'));
+    it('.get batch number ok', async () => expect((await transaction.get({batchNumber})).data).toBeInstanceOf(Array));
+    it('.get batch number ok', async () => expect((await transaction.get({address: stakingContract})).data).toBeInstanceOf(Array));
 
     // TODO transaction.push
     // TODO Returns method not found
@@ -131,17 +131,17 @@ describe.skip('Test for staker module', async () => {
 
 describe('Test for inherent module', async () => {
     const { inherent } = getClient();
-    it('.by blockNumber', async () => expect(await (await inherent.by({blockNumber: 0})).data).toBeInstanceOf(Array));
-    it('.by batchNumber', async () => expect(await (await inherent.by({batchNumber: 0})).data).toBeInstanceOf(Array));
+    it('.get blockNumber', async () => expect(await (await inherent.get({blockNumber: 0})).data).toBeInstanceOf(Array));
+    it('.get batchNumber', async () => expect(await (await inherent.get({batchNumber: 0})).data).toBeInstanceOf(Array));
 });
 
 describe('Test for validator module', async () => {
     const { validator } = getClient();
-    const validatorAddresses = await (await validator.active()).data!;
+    const validatorAddresses = await (await validator.activeList()).data!;
     it('.active ok', async () => expect(validatorAddresses).toBeInstanceOf(Array));
     const validatorInfo = validatorAddresses[0];
     it('.byAddress ok', async () => expect(await (await validator.byAddress({ address: validatorInfo.address })).data).toHaveProperty('address'));
-    it('.active metadata ok', async () => expect((await (await validator.active({withMetadata: true})).data!).data).toBeInstanceOf(Array));
+    it('.active metadata ok', async () => expect((await (await validator.activeList({withMetadata: true})).data!).data).toBeInstanceOf(Array));
     it('.parked ok', async () => expect((await validator.parked()).data!.validators).toBeInstanceOf(Array));
     it('.parked metadata ok', async () => expect((await validator.parked({withMetadata: true})).data!.data.validators).toBeInstanceOf(Array));
     // TODO Figure out how validator.selfNode works

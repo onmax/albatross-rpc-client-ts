@@ -59,6 +59,14 @@ export class HttpClient {
                 id: HttpClient.id++,
             }),
             signal: controller.signal
+        }).catch((error) => {
+            if (error.name === 'AbortError') {
+                return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` } as Response
+            } else if (error.name === 'FetchError') {
+                return { ok: false, status: 503, statusText: `FetchError: Service Unavailable: ${error.message}` } as Response
+            } else {
+                return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message}` } as Response
+            }
         })
 
         clearTimeout(timeoutId);

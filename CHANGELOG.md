@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.23
+
+### Patch Changes
+
+- 049ad89: error check
+
 ## 0.0.22
 
 ### Patch Changes

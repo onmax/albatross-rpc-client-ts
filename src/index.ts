@@ -190,9 +190,9 @@ class Client {
                     createTx: consensus.createUpdateValidatorTransaction.bind(consensus),
                     sendTx: consensus.sendUpdateValidatorTransaction.bind(consensus),
                 },
-                inactive: {
-                    createTx: consensus.createInactivateValidatorTransaction.bind(consensus),
-                    sendTx: consensus.sendInactivateValidatorTransaction.bind(consensus),
+                deactive: {
+                    createTx: consensus.createDeactivateValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendDeactivateValidatorTransaction.bind(consensus),
                 },
                 reactivate: {
                     createTx: consensus.createReactivateValidatorTransaction.bind(consensus),

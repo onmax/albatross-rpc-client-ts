@@ -331,8 +331,8 @@ export class ConsensusClient extends Client {
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    public async createInactivateValidatorTransaction(p: InactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
-        return this.call("createInactivateValidatorTransaction", [
+    public async createDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
+        return this.call("createDeactivateValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ], options);
     }
@@ -341,8 +341,8 @@ export class ConsensusClient extends Client {
      * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    public async sendInactivateValidatorTransaction(p: InactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
-        return this.call("sendInactivateValidatorTransaction", [
+    public async sendDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
+        return this.call("sendDeactivateValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ], options);
     }

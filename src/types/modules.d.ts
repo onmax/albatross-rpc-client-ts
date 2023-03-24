@@ -18,7 +18,6 @@ type Interaction<Params extends any[], Result, Metadata = null> = {
 
 type Maybe<T> = T | undefined
 
-// TODO Review the metadatas types
 export type BlockchainMethods = {
     'getBlockNumber': Interaction<[], BlockNumber>,
     'getBatchNumber': Interaction<[], BatchIndex>,
@@ -44,7 +43,6 @@ export type BlockchainMethods = {
 }
 
 // When you open a stream, the server will return a subscription number
-// which we will ignore for now
 export type StreamOpened = {
     'streamOpened': Interaction<[], number>
 }
@@ -89,8 +87,8 @@ export type ConsensusMethods = {
     'sendNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
     'createUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
     'sendUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createDeactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendDeactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
     'createReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
     'sendReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
     'createUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
@@ -149,7 +147,7 @@ export type WalletMethods = {
     'listAccounts': Interaction<[], Address[]>,
     'lockAccount': Interaction<[/* address */Address], null>,
     'createAccount': Interaction<[/* passphrase */Maybe<String>], WalletAccount>,
-    'unlockAccount': Interaction<[/* address */Address, /* passphrase */String, /* duration: u64 */Maybe<number>], Boolean>,
+    'unlockAccount': Interaction<[/* address */Address, /* passphrase */Maybe<String>, /* duration: u64 */Maybe<number>], Boolean>,
     'isAccountLocked': Interaction<[/* address */Address], Boolean>,
     'sign': Interaction<[/* message */String, /* address */Address, /* passphrase */Maybe<String>, /* is_hex */Boolean], Signature>,
     'verifySignature': Interaction<[/* message */String, /* public_key */PublicKey, /* signature */Signature, /* is_hex */Boolean], Boolean>,

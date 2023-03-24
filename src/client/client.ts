@@ -2,11 +2,6 @@ import { CallOptions, MethodName, MethodResponse, RpcRequest, StreamName, Stream
 import { HttpClient } from './http';
 import { WebSocketClient } from "./web-socket";
 
-
-type CallReturn<T extends MethodName> =  MethodResponse<T>["result"] extends {metadata: null}
-    ? MethodResponse<T>["result"]["data"]
-    : MethodResponse<T>["result"]
-
 export class Client {
     private httpClient: HttpClient;
     private webSocketClient: WebSocketClient;

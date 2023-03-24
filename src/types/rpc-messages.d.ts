@@ -1,15 +1,19 @@
-import { PolicyMethods, BlockchainMethods, ConsensusMethods, MempoolMethods, NetworkMethods, ValidatorMethods, WalletMethods, ZkpComponentMethods, BlockchainStreams } from "./modules";
+import { PolicyMethods, BlockchainMethods, ConsensusMethods, MempoolMethods, NetworkMethods, ValidatorMethods, StreamOpened, WalletMethods, ZkpComponentMethods, BlockchainStreams } from "./modules";
 
+// export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods & StreamOpened
 export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods & StreamOpened
 export type MethodName = keyof Methods
 
 export type Streams = BlockchainStreams
 export type StreamName = keyof Streams
 
+type Interaction = Methods & Streams
+type InteractionName = keyof Interaction
+
 export type RpcRequest<M extends InteractionName> = {
     jsonrpc: string,
     method: M,
-    params: Interactions[M]['params'],
+    params: Interaction[M]['params'],
     id: number
 }
 
@@ -18,9 +22,16 @@ export type MethodResponsePayload<M extends Methods> = {
     metadata: M['metadata'];
 } & {}
 
+export type MethodResponseContent<M extends MethodName, WithMetadata extends boolean> = 
+    M extends 'streamOpened'
+        ? number :
+        WithMetadata extends true
+            ? MethodResponsePayload<Methods[M]>
+            : MethodResponsePayload<Methods[M]>["data"]
+
 export type MethodResponse<M extends MethodName> = {
     jsonrpc: string,
-    result: M extends 'streamOpened' ? number : MethodResponsePayload<Methods[M]>,
+    result: MethodResponseContent<M>,
     id: number
 }
 
@@ -55,7 +66,7 @@ export type ErrorCallReturn = {
 
 export type ContextRequest = {
     method: string,
-    params: (string | number | boolean | null)[],
+    params: RpcRequest<T>['params'],
     id: number,
 }
 

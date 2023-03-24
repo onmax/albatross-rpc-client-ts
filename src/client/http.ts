@@ -1,11 +1,13 @@
 import fetch from 'node-fetch';
-import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodResponse, MethodResponseError, RpcRequest } from "../types/rpc-messages";
+import { Interaction } from '../types/modules';
+import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodResponse, MethodResponseContent, MethodResponseError, RpcRequest } from "../types/rpc-messages";
 
-type SuccessCallReturn<T extends MethodName, ShowMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
-    ? MethodResponse<T>["result"]["data"]
-    : ShowMetadata extends true
+type Data<T extends { data: any }> = T extends number ? T : T["data"]
+type SuccessCallReturn<T extends MethodName, WithMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
+    ? MethodResponseContent<T, false>
+    : WithMetadata extends true
         ? MethodResponse<T>["result"]
-        : MethodResponse<T>["result"]["data"]
+        : MethodResponseContent<T, WithMetadata>
 
 type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
     error: ErrorCallReturn
@@ -36,7 +38,7 @@ export class HttpClient {
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
         // replace undefined with null
-        params = params.map((param: undefined) => param === undefined ? null : param)
+        params = params.map((param: any) => param === undefined ? null : param) as RpcRequest<T>['params']
 
         const context: ContextRequest = {
             // @ts-ignore

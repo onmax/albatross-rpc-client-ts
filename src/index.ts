@@ -1,6 +1,6 @@
 import { BlockchainClient, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
 import type { GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams } from "./modules/blockchain";
-import type { DeleteValidatorTxParams, HtlcTransactionParams, InactiveValidatorTxParams, RawTransactionInfoParams, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, SignRedeemEarlyHtlcParams, StakerTxParams, StakeTxParams, TransactionParams, UnparkValidatorTxParams, UnstakeTxParams, UpdateStakerTxParams, UpdateValidatorTxParams, ValidatorTxParams, VestingTxParams } from "./modules/consensus";
+import type { DeleteValidatorTxParams, HtlcTransactionParams, InactiveValidatorTxParams, RawTransactionInfoParams, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, SignRedeemEarlyHtlcParams, StakerTxParams, StakeTxParams, TransactionParams, UnparkValidatorTxParams, UnstakeTxParams, UpdateStakerTxParams, UpdateValidatorTxParams, NewValidatorTxParams, VestingTxParams } from "./modules/consensus";
 import type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState } from './types/common';
 import type { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, ErrorStreamReturn, MaybeCallResponse, MaybeStreamResponse, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, RpcRequest, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams } from './types/rpc-messages';
 import { AccountType, BlockType, LogType } from "./types/enums";
@@ -49,7 +49,7 @@ class Client {
 
         this.block = {
             current: blockchain.getBlockNumber.bind(blockchain),
-            by: blockchain.getBlockBy.bind(blockchain),
+            get: blockchain.getBlockBy.bind(blockchain),
             latest: blockchain.getLatestBlock.bind(blockchain),
             election: {
                 after: policy.getElectionBlockAfter.bind(policy),
@@ -96,7 +96,7 @@ class Client {
         }
         
         this.transaction = {
-            by: blockchain.getTransactionBy.bind(blockchain),
+            get: blockchain.getTransactionBy.bind(blockchain),
             push: mempool.pushTransaction.bind(mempool),
             minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
             create: consensus.createTransaction.bind(consensus),
@@ -155,11 +155,11 @@ class Client {
         }
 
         this.inherent = {
-            by: blockchain.getInherentsBy.bind(blockchain),
+            get: blockchain.getInherentsBy.bind(blockchain),
         }
 
         this.account = {
-            byAddress: blockchain.getAccountBy.bind(blockchain),
+            by: blockchain.getAccountBy.bind(blockchain),
             importRawKey: wallet.importRawKey.bind(wallet),
             new: wallet.createAccount.bind(wallet),
             isImported: wallet.isAccountImported.bind(wallet),
@@ -236,6 +236,6 @@ export { Client };
 export { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };
 export { BlockType, LogType, AccountType };
 export { BlockLog, LogsByAddressesAndTypes };
-export { RawTransactionInfoParams, TransactionParams, VestingTxParams, RedeemVestingTxParams, HtlcTransactionParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemEarlyHtlcTxParams, SignRedeemEarlyHtlcParams, StakerTxParams, StakeTxParams, UpdateStakerTxParams, UnstakeTxParams, ValidatorTxParams, UpdateValidatorTxParams, InactiveValidatorTxParams, ReactivateValidatorTxParams, UnparkValidatorTxParams, DeleteValidatorTxParams };
+export { RawTransactionInfoParams, TransactionParams, VestingTxParams, RedeemVestingTxParams, HtlcTransactionParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemEarlyHtlcTxParams, SignRedeemEarlyHtlcParams, StakerTxParams, StakeTxParams, UpdateStakerTxParams, UnstakeTxParams, NewValidatorTxParams as ValidatorTxParams, UpdateValidatorTxParams, InactiveValidatorTxParams, ReactivateValidatorTxParams, UnparkValidatorTxParams, DeleteValidatorTxParams };
 export { GetBlockByParams, GetLatestBlockParams, GetSlotAtParams, GetTransactionsByAddressParams, GetTransactionByParams, GetInherentsByParams, GetAccountByAddressParams, GetValidatorByAddressParams, GetStakerByAddressParams, SubscribeForHeadBlockParams, SubscribeForValidatorElectionByAddressParams, SubscribeForLogsByAddressesAndTypesParams };
 export { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, ErrorStreamReturn, MaybeCallResponse, MaybeStreamResponse, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, RpcRequest, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams };

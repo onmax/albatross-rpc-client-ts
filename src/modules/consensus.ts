@@ -16,12 +16,12 @@ export type StakerTxParams = { senderWallet: Address, staker: Address, delegatio
 export type StakeTxParams = { senderWallet: Address, staker: Address, value: Coin, fee: Coin } & ValidityStartHeight;
 export type UpdateStakerTxParams = { senderWallet: Address, staker: Address, newDelegation: Address, fee: Coin } & ValidityStartHeight;
 export type UnstakeTxParams = { staker: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
-export type ValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight;
+export type NewValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight;
 export type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin } & ValidityStartHeight;
 export type InactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
-export type DeleteValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin, value: Coin } & ValidityStartHeight;
+export type DeleteValidatorTxParams = { validator: Address, recipient: Address, fee: Coin, value: Coin } & ValidityStartHeight;
 
 export class ConsensusClient extends Client {
     constructor(url: URL) {
@@ -53,7 +53,7 @@ export class ConsensusClient extends Client {
         if (p.data) {
             return this.call("createBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
         } else {
-            return this.call("createBasicTransaction", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
+            return this.call("createBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
         }
     }
 
@@ -65,7 +65,7 @@ export class ConsensusClient extends Client {
         if (p.data) {
             return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
         } else {
-            return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
+            return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
         }
     }
 
@@ -277,7 +277,7 @@ export class ConsensusClient extends Client {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    public async createNewValidatorTransaction(p: ValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
+    public async createNewValidatorTransaction(p: NewValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
         return this.call("createNewValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee,  this.getValidityStartHeight(p)
         ], options);
@@ -291,7 +291,7 @@ export class ConsensusClient extends Client {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    public async sendNewValidatorTransaction(p: ValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
+    public async sendNewValidatorTransaction(p: NewValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("sendNewValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee,  this.getValidityStartHeight(p)
         ], options);
@@ -395,7 +395,7 @@ export class ConsensusClient extends Client {
      */
     public async createDeleteValidatorTransaction(p: DeleteValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
         return this.call("createDeleteValidatorTransaction", [
-            p.senderWallet, p.validator, p.fee, p.value,  this.getValidityStartHeight(p)
+            p.validator, p.recipient, p.fee, p.value,  this.getValidityStartHeight(p)
         ], options);
     }
 
@@ -407,7 +407,7 @@ export class ConsensusClient extends Client {
      */
     public async sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("sendDeleteValidatorTransaction", [
-            p.senderWallet, p.validator, p.fee, p.value,  this.getValidityStartHeight(p)
+            p.validator, p.recipient, p.fee, p.value,  this.getValidityStartHeight(p)
         ], options);
     }
 }

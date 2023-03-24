@@ -96,7 +96,7 @@ export type ConsensusMethods = {
     'createUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
     'sendUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
     'createDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendDeleteValidatorTransaction': Interaction<[/* validator */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
 }
 
 export type MempoolMethods = {

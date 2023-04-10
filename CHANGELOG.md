@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.24
+
+### Patch Changes
+
+- 1eed0fb: Added timestamp
+
 ## 0.0.23
 
 ### Patch Changes

@@ -41,10 +41,10 @@ export class HttpClient {
         params = params.map((param: any) => param === undefined ? null : param) as RpcRequest<T>['params']
 
         const context: ContextRequest = {
-            // @ts-ignore
             method,
             params,
             id: HttpClient.id,
+            timestamp: Date.now()
         }
 
         const response = await fetch(this.url.href, {

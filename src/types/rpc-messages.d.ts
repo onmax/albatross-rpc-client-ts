@@ -68,6 +68,7 @@ export type ContextRequest = {
     method: string,
     params: RpcRequest<T>['params'],
     id: number,
+    timestamp: number
 }
 
 export type MaybeCallResponse<T> = {

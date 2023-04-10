@@ -39,6 +39,7 @@ export class WebSocketClient {
             method: event,
             params,
             id: this.id++,
+            timestamp: Date.now()
         };
 
         const { once } = options;

@@ -25,7 +25,7 @@ type ResultGetTransactionsBy<T> = T extends { hash: Hash }
     ? Transaction : T extends { address: Address }
         ? ResultGetTransactionsByAddress<T> : Transaction[]
 
-type BlockSubscription<T extends SubscribeForHeadBlockParams> = Subscription<
+export type BlockSubscription<T extends SubscribeForHeadBlockParams> = Subscription<
     T["filter"] extends 'HASH' ? 'subscribeForHeadBlockHash' : 'subscribeForHeadBlock', false, T["filter"] extends 'FULL' ? true : false
 >;
                 

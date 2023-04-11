@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.25
+
+### Patch Changes
+
+- 62764d0: Added retire method
+
 ## 0.0.24
 
 ### Patch Changes

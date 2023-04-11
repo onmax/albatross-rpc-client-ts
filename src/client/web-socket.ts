@@ -39,7 +39,6 @@ export class WebSocketClient {
             method: event,
             params,
             id: this.id++,
-            timestamp: Date.now()
         };
 
         const { once } = options;
@@ -75,7 +74,10 @@ export class WebSocketClient {
                 ws.close();
             },
             getSubscriptionId: () => subscriptionId,
-            context: requestBody
+            context: {
+                ...requestBody,
+                timestamp: Date.now(),
+            }
         }
         
         return new Promise((resolve) => {

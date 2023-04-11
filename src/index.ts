@@ -4,7 +4,7 @@ import type { DeleteValidatorTxParams, HtlcTransactionParams, InactiveValidatorT
 import type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState } from './types/common';
 import type { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, ErrorStreamReturn, MaybeCallResponse, MaybeStreamResponse, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, RpcRequest, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams } from './types/rpc-messages';
 import { AccountType, BlockType, LogType } from "./types/enums";
-import type { BlockLog, LogsByAddressesAndTypes } from './types/logs';
+import type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeleteValidatorLog, InactivateValidatorLog, InherentLog, Log, ParkInherentLog, PayFeeLog, PayoutInherentLog, ReactivateValidatorLog, RevertContractInherentLog, RevertedBlockLog, SlashInherentLog, StakeLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog } from './types/logs';
 
 class Client {
     public block;
@@ -243,5 +243,5 @@ export type { DeleteValidatorTxParams, HtlcTransactionParams, InactiveValidatorT
 export type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };
 export type { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, ErrorStreamReturn, MaybeCallResponse, MaybeStreamResponse, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, RpcRequest, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams };
 export { AccountType, BlockType, LogType };
-export type { BlockLog, LogsByAddressesAndTypes };
+export type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeleteValidatorLog, InactivateValidatorLog, InherentLog, Log, ParkInherentLog, PayFeeLog, PayoutInherentLog, ReactivateValidatorLog, RevertContractInherentLog, RevertedBlockLog, SlashInherentLog, StakeLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog };
 

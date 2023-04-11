@@ -66,6 +66,11 @@ export type UnparkValidatorLog = {
     validatorAddress: Address;
 }
 
+export type RetireValidatorLog = {
+    type: 'retire-validator';
+    validatorAddress: Address;
+}
+
 export type DeleteValidatorLog = {
     type: 'delete-validator';
     validatorAddress: Address;
@@ -100,11 +105,12 @@ export type UnstakeLog = {
     value: Coin;
 }
 
-export type Log = PayFeeLog | TransferLog | CreateValidatorLog | UpdateValidatorLog | InactivateValidatorLog | ReactivateValidatorLog | UnparkValidatorLog | DeleteValidatorLog | CreateStakerLog | StakeLog | UpdateStakerLog | UnstakeLog
+export type Log = PayFeeLog | TransferLog | CreateValidatorLog | UpdateValidatorLog | InactivateValidatorLog | ReactivateValidatorLog | UnparkValidatorLog | RetireValidatorLog | DeleteValidatorLog | CreateStakerLog | StakeLog | UpdateStakerLog | UnstakeLog
 
 export type TransactionLog = {
     hash: string;
     logs: Log[];
+    failed: boolean;
 }
 
 export type BlockLog = {

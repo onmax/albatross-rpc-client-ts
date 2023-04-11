@@ -63,7 +63,7 @@ class Client {
                 after: policy.getMacroBlockAfter.bind(policy),
                 before: policy.getMacroBlockBefore.bind(policy),
                 last: policy.getLastMacroBlock.bind(policy),
-                get: policy.getMacroBlockOf.bind(policy),
+                getBy: policy.getMacroBlockOf.bind(policy),
             },
             isMacro: policy.getIsMacroBlockAt.bind(policy),
             isMicro: policy.getIsMicroBlockAt.bind(policy),

@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.26
+
+### Patch Changes
+
+- 166cf06: updated types in streams
+
 ## 0.0.25
 
 ### Patch Changes

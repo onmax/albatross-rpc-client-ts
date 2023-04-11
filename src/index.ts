@@ -202,6 +202,10 @@ class Client {
                     createTx: consensus.createUnparkValidatorTransaction.bind(consensus),
                     sendTx: consensus.sendUnparkValidatorTransaction.bind(consensus),
                 },
+                retire: {
+                    createTx: consensus.createRetireValidatorTransaction.bind(consensus),
+                    sendTx: consensus.sendRetireValidatorTransaction.bind(consensus),
+                },
                 delete: {
                     createTx: consensus.createDeleteValidatorTransaction.bind(consensus),
                     sendTx: consensus.sendDeleteValidatorTransaction.bind(consensus),

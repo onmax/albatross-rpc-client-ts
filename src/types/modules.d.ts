@@ -92,9 +92,11 @@ export type ConsensusMethods = {
     'createReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
     'sendReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
     'createUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
-    'createDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendDeleteValidatorTransaction': Interaction<[/* validator */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator_wallet */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createRetireValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator_wallet */Address, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendRetireValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator_wallet */Address, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createDeleteValidatorTransaction': Interaction<[/* validator_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendDeleteValidatorTransaction': Interaction<[/* validator_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
 }
 
 export type MempoolMethods = {

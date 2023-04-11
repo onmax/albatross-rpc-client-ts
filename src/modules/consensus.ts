@@ -21,6 +21,7 @@ export type UpdateValidatorTxParams = { senderWallet: Address, validator: Addres
 export type InactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
+export type RetireValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin } & ValidityStartHeight;
 export type DeleteValidatorTxParams = { validator: Address, recipient: Address, fee: Coin, value: Coin } & ValidityStartHeight;
 
 export class ConsensusClient extends Client {
@@ -28,7 +29,7 @@ export class ConsensusClient extends Client {
         super(url);
     }
 
-    private getValidityStartHeight(p: ValidityStartHeight, options = DEFAULT_OPTIONS): string {
+    private getValidityStartHeight(p: ValidityStartHeight): string {
         return 'relativeValidityStartHeight' in p ? `+${p.relativeValidityStartHeight}` : `${p.absoluteValidityStartHeight}`;
     }
 
@@ -384,6 +385,26 @@ export class ConsensusClient extends Client {
     public async sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("sendUnparkValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
+        ], options);
+    }
+
+    /**
+     * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee.
+     */
+    public async createRetireValidatorTransaction(p: RetireValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
+        return this.call("createRetireValidatorTransaction", [
+            p.senderWallet, p.validator, p.fee,  this.getValidityStartHeight(p)
+        ], options);
+    }
+
+    /**
+     * Sends a `retire_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee.
+     */
+    public async sendRetireValidatorTransaction(p: RetireValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
+        return this.call("sendRetireValidatorTransaction", [
+            p.senderWallet, p.validator, p.fee,  this.getValidityStartHeight(p)
         ], options);
     }
 

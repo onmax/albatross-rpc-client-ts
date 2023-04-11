@@ -49,13 +49,13 @@ class Client {
 
         this.block = {
             current: blockchain.getBlockNumber.bind(blockchain),
-            get: blockchain.getBlockBy.bind(blockchain),
+            getBy: blockchain.getBlockBy.bind(blockchain),
             latest: blockchain.getLatestBlock.bind(blockchain),
             election: {
                 after: policy.getElectionBlockAfter.bind(policy),
                 before: policy.getElectionBlockBefore.bind(policy),
                 last: policy.getLastElectionBlock.bind(policy),
-                get: policy.getElectionBlockOf.bind(policy),
+                getBy: policy.getElectionBlockOf.bind(policy),
                 subscribe: blockchain.subscribeForValidatorElectionByAddress.bind(blockchain),
             },
             isElection: policy.getIsElectionBlockAt.bind(policy),
@@ -96,7 +96,7 @@ class Client {
         }
         
         this.transaction = {
-            get: blockchain.getTransactionBy.bind(blockchain),
+            getBy: blockchain.getTransactionBy.bind(blockchain),
             push: mempool.pushTransaction.bind(mempool),
             minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
             create: consensus.createTransaction.bind(consensus),
@@ -155,11 +155,11 @@ class Client {
         }
 
         this.inherent = {
-            get: blockchain.getInherentsBy.bind(blockchain),
+            getBy: blockchain.getInherentsBy.bind(blockchain),
         }
 
         this.account = {
-            get: blockchain.getAccountBy.bind(blockchain),
+            getBy: blockchain.getAccountBy.bind(blockchain),
             importRawKey: wallet.importRawKey.bind(wallet),
             new: wallet.createAccount.bind(wallet),
             isImported: wallet.isAccountImported.bind(wallet),

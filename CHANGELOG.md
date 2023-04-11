@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.27
+
+### Patch Changes
+
+- b05e33d: added retire in logs
+
 ## 0.0.26
 
 ### Patch Changes

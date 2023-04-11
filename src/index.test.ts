@@ -12,28 +12,28 @@ describe('Test for block module', async () => {
     const { block } = getClient();
     const current = (await block.current());
     if (current.error) throw new Error('current block is undefined');
-    const blockData = (await block.get({ blockNumber: current.data })).data!;
+    const blockData = (await block.getBy({ blockNumber: current.data })).data!;
     it('.current ok', async () => expect(current.data).toBeGreaterThanOrEqual(0));
     it('.get blockNumber ok', async () => expect(blockData).toHaveProperty('hash'));
-    it('.get hash ok', async () => expect((await block.get({ hash: blockData.hash })).data).toHaveProperty('hash'));
-    it('.get blockNumber w/txs ok', async () => expect((await block.get({ blockNumber: 0, includeTransactions: true })).data).toHaveProperty('hash'));
+    it('.get hash ok', async () => expect((await block.getBy({ hash: blockData.hash })).data).toHaveProperty('hash'));
+    it('.get blockNumber w/txs ok', async () => expect((await block.getBy({ blockNumber: 0, includeTransactions: true })).data).toHaveProperty('hash'));
     it('.latest ok', async () => expect((await block.latest()).data).toHaveProperty('hash'));
     it('.latest ok w/txs', async () => expect((await block.latest({includeTransactions: true})).data).toHaveProperty('transactions'));
     it('.election.after ok', async () => expect((await block.election.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
     it('.election.before ok', async () => expect((await block.election.before({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
     it('.election.last ok', async () => expect((await block.election.last({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
-    it('.election.get ok', async () => expect((await block.election.get({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
+    it('.election.get ok', async () => expect((await block.election.getBy({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
     it('.isElection ok', async () => expect(typeof ((await block.isElection({blockNumber: 1})).data)).toBe("boolean"));
     it('.macro.after ok', async () => expect((await block.macro.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
     it('.macro.before ok', async () => expect((await block.macro.before({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
     it('.macro.last ok', async () => expect((await block.macro.last({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
-    it('.macro.get ok', async () => expect((await block.macro.get({batchIndex: 1})).data).toBeGreaterThanOrEqual(0));
+    it('.macro.get ok', async () => expect((await block.macro.getBy({batchIndex: 1})).data).toBeGreaterThanOrEqual(0));
     it('.isMacro ok', async () => expect(typeof ((await block.isMacro({blockNumber: 0})).data)).toBe("boolean"));
     it('.isMicro ok', async () => expect(typeof ((await block.isMicro({blockNumber: 0})).data)).toBe("boolean"));
     it('.election.after ok', async () => expect((await block.election.after({blockNumber: 0})).data).toBeGreaterThanOrEqual(0));
     it('.election.before ok', async () => expect((await block.election.before({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
     it('.election.last ok', async () => expect((await block.election.last({blockNumber: 10})).data).toBeGreaterThanOrEqual(0));
-    it('.election.get ok', async () => expect((await block.election.get({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
+    it('.election.get ok', async () => expect((await block.election.getBy({epochIndex: 1})).data).toBeGreaterThanOrEqual(0));
 });
 
 describe('Test for subscriptions', async () => {
@@ -89,7 +89,7 @@ describe('Test for transaction module', async () => {
     
     while(txs.length === 0 && i > 0) {
         // search for last tx in the chain
-        const res = await transaction.get({blockNumber: i--})
+        const res = await transaction.getBy({blockNumber: i--})
         if(!res.data) throw new Error(JSON.stringify(txs))
         txs = res.data
     }
@@ -98,9 +98,9 @@ describe('Test for transaction module', async () => {
     const stakingContract = (await constant.params()).data!.stakingContractAddress
 
     it('.get block number ok', async () => expect(txs).toBeInstanceOf(Array));
-    it('.get hash ok', async () => expect(await transaction.get({hash: txs[0].hash})).toHaveProperty('data'));
-    it('.get batch number ok', async () => expect((await transaction.get({batchNumber})).data).toBeInstanceOf(Array));
-    it('.get batch number ok', async () => expect((await transaction.get({address: stakingContract})).data).toBeInstanceOf(Array));
+    it('.get hash ok', async () => expect(await transaction.getBy({hash: txs[0].hash})).toHaveProperty('data'));
+    it('.get batch number ok', async () => expect((await transaction.getBy({batchNumber})).data).toBeInstanceOf(Array));
+    it('.get batch number ok', async () => expect((await transaction.getBy({address: stakingContract})).data).toBeInstanceOf(Array));
 
     // TODO transaction.push
     // TODO Returns method not found
@@ -131,8 +131,8 @@ describe.skip('Test for staker module', async () => {
 
 describe('Test for inherent module', async () => {
     const { inherent } = getClient();
-    it('.get blockNumber', async () => expect(await (await inherent.get({blockNumber: 0})).data).toBeInstanceOf(Array));
-    it('.get batchNumber', async () => expect(await (await inherent.get({batchNumber: 0})).data).toBeInstanceOf(Array));
+    it('.get blockNumber', async () => expect(await (await inherent.getBy({blockNumber: 0})).data).toBeInstanceOf(Array));
+    it('.get batchNumber', async () => expect(await (await inherent.getBy({batchNumber: 0})).data).toBeInstanceOf(Array));
 });
 
 describe('Test for validator module', async () => {

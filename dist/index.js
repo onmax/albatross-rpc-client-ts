@@ -21,18 +21,24 @@ var __async = (__this, __arguments, generator) => {
 
 // src/client/http.ts
 import fetch from "node-fetch";
+var DEFAULT_OPTIONS = {
+  timeout: 1e4
+};
 var _HttpClient = class {
   constructor(url) {
     this.url = url;
   }
-  call(method, params, withMetadata) {
+  call(method, params, withMetadata, options) {
     return __async(this, null, function* () {
+      const { timeout } = options;
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), timeout);
       params = params.map((param) => param === void 0 ? null : param);
       const context = {
-        // @ts-ignore
         method,
         params,
-        id: _HttpClient.id
+        id: _HttpClient.id,
+        timestamp: Date.now()
       };
       const response = yield fetch(this.url.href, {
         method: "POST",
@@ -44,8 +50,18 @@ var _HttpClient = class {
           method,
           params,
           id: _HttpClient.id++
-        })
+        }),
+        signal: controller.signal
+      }).catch((error) => {
+        if (error.name === "AbortError") {
+          return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` };
+        } else if (error.name === "FetchError") {
+          return { ok: false, status: 503, statusText: `FetchError: Service Unavailable: ${error.message}` };
+        } else {
+          return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message}` };
+        }
       });
+      clearTimeout(timeoutId);
       if (!response.ok) {
         return {
           error: {
@@ -93,6 +109,9 @@ HttpClient.id = 0;
 // src/client/web-socket.ts
 import { Blob } from "buffer";
 import WebSocket from "ws";
+var WS_DEFAULT_OPTIONS = {
+  once: false
+};
 var WebSocketClient = class {
   constructor(url) {
     this.id = 0;
@@ -101,11 +120,19 @@ var WebSocketClient = class {
     this.url = wsUrl;
     this.textDecoder = new TextDecoder();
   }
-  subscribe(event, params, withMetadata) {
+  subscribe(event, params, withMetadata, options) {
     return __async(this, null, function* () {
       const ws = new WebSocket(this.url.href);
       let subscriptionId;
-      const options = {
+      const requestBody = {
+        jsonrpc: "2.0",
+        method: event,
+        params,
+        id: this.id++,
+        timestamp: Date.now()
+      };
+      const { once } = options;
+      const args = {
         next: (callback) => {
           ws.onmessage = (event2) => __async(this, null, function* () {
             const payload = yield this.parsePayload(event2);
@@ -113,8 +140,15 @@ var WebSocketClient = class {
               subscriptionId = payload.result;
               return;
             }
-            const data = withMetadata ? payload.params.result : payload.params.result.data;
-            callback(data);
+            if ("error" in payload) {
+              callback({ data: void 0, error: payload });
+            } else {
+              const data = withMetadata ? payload.params.result : payload.params.result.data;
+              callback({ data, error: void 0 });
+            }
+            if (once) {
+              ws.close();
+            }
           });
         },
         error: (callback) => {
@@ -125,17 +159,13 @@ var WebSocketClient = class {
         close: () => {
           ws.close();
         },
-        getSubscriptionId: () => subscriptionId
+        getSubscriptionId: () => subscriptionId,
+        context: requestBody
       };
       return new Promise((resolve) => {
         ws.onopen = () => {
-          ws.send(JSON.stringify({
-            jsonrpc: "2.0",
-            method: event,
-            params,
-            id: this.id++
-          }));
-          resolve(options);
+          ws.send(JSON.stringify(requestBody));
+          resolve(args);
         };
       });
     });
@@ -148,12 +178,18 @@ var WebSocketClient = class {
       } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
         payloadStr = this.textDecoder.decode(event.data);
       } else {
-        throw new Error("Unexpected data type");
+        return {
+          code: 1001,
+          message: "Unexpected data type"
+        };
       }
       try {
         return JSON.parse(payloadStr);
       } catch (e) {
-        throw new Error(`Unexpected payload: ${payloadStr}`);
+        return {
+          code: 1002,
+          message: `Unexpected payload: ${payloadStr}`
+        };
       }
     });
   }
@@ -165,14 +201,14 @@ var Client = class {
     this.httpClient = new HttpClient(url);
     this.webSocketClient = new WebSocketClient(url);
   }
-  call(method, params, withMetadata = false) {
+  call(method, params, options, withMetadata = false) {
     return __async(this, null, function* () {
-      return this.httpClient.call(method, params, withMetadata);
+      return this.httpClient.call(method, params, withMetadata, options);
     });
   }
-  subscribe(event, params, withMetadata = false) {
+  subscribe(event, params, options, withMetadata = false) {
     return __async(this, null, function* () {
-      return this.webSocketClient.subscribe(event, params, withMetadata);
+      return this.webSocketClient.subscribe(event, params, withMetadata, options);
     });
   }
 };
@@ -186,35 +222,35 @@ var BlockchainClient = class extends Client {
    * Returns the block number for the current head.
    */
   getBlockNumber() {
-    return __async(this, null, function* () {
-      return this.call("getBlockNumber", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getBlockNumber", [], options);
     });
   }
   /**
    * Returns the batch number for the current head.
    */
   getBatchNumber() {
-    return __async(this, null, function* () {
-      return this.call("getBatchNumber", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getBatchNumber", [], options);
     });
   }
   /**
    * Returns the epoch number for the current head.
    */
   getEpochNumber() {
-    return __async(this, null, function* () {
-      return this.call("getEpochNumber", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getEpochNumber", [], options);
     });
   }
   /**
    * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
    */
   getBlockBy() {
-    return __async(this, arguments, function* (p = { includeTransactions: false }) {
+    return __async(this, arguments, function* (p = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
       if ("hash" in p) {
-        return this.call("getBlockByHash", [p.hash, p.includeTransactions]);
+        return this.call("getBlockByHash", [p.hash, p.includeTransactions], options);
       }
-      return this.call("getBlockByNumber", [p.blockNumber, p.includeTransactions]);
+      return this.call("getBlockByNumber", [p.blockNumber, p.includeTransactions], options);
     });
   }
   /**
@@ -222,8 +258,8 @@ var BlockchainClient = class extends Client {
    * transactions in the block, which defaults to false.
    */
   getLatestBlock() {
-    return __async(this, arguments, function* (p = { includeTransactions: false }) {
-      return this.call("getLatestBlock", [p.includeTransactions]);
+    return __async(this, arguments, function* (p = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
+      return this.call("getLatestBlock", [p.includeTransactions], options);
     });
   }
   /**
@@ -232,8 +268,8 @@ var BlockchainClient = class extends Client {
    * at the given height.
    */
   getSlotAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber, offsetOpt, withMetadata }) {
-      return this.call("getSlotAt", [blockNumber, offsetOpt], withMetadata);
+    return __async(this, arguments, function* ({ blockNumber, offsetOpt, withMetadata }, options = DEFAULT_OPTIONS) {
+      return this.call("getSlotAt", [blockNumber, offsetOpt], options, withMetadata);
     });
   }
   /**
@@ -244,19 +280,19 @@ var BlockchainClient = class extends Client {
    * transactions are also returned. It has an option to specify the maximum number of transactions
    * to fetch, it defaults to 500.
    */
-  getTransactionBy(p) {
-    return __async(this, null, function* () {
+  getTransactionBy(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       if ("hash" in p) {
-        return this.call("getTransactionByHash", [p.hash]);
+        return this.call("getTransactionByHash", [p.hash], options);
       } else if ("blockNumber" in p) {
-        return this.call("getTransactionsByBlockNumber", [p.blockNumber]);
+        return this.call("getTransactionsByBlockNumber", [p.blockNumber], options);
       } else if ("batchNumber" in p) {
-        return this.call("getTransactionsByBatchNumber", [p.batchNumber]);
+        return this.call("getTransactionsByBatchNumber", [p.batchNumber], options);
       } else if ("address" in p) {
         if (p.justHashes === true) {
-          return this.call("getTransactionHashesByAddress", [p.address, p.max]);
+          return this.call("getTransactionHashesByAddress", [p.address, p.max], options);
         } else {
-          return this.call("getTransactionsByAddress", [p.address, p.max]);
+          return this.call("getTransactionsByAddress", [p.address, p.max], options);
         }
       }
       throw new Error("Invalid parameters");
@@ -266,12 +302,12 @@ var BlockchainClient = class extends Client {
    * Returns all the inherents (including reward inherents) for the parameter. Note
    * that this only considers blocks in the main chain.
    */
-  getInherentsBy(p) {
-    return __async(this, null, function* () {
+  getInherentsBy(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       if ("blockNumber" in p) {
-        return this.call("getInherentsByBlockNumber", [p.blockNumber]);
+        return this.call("getInherentsByBlockNumber", [p.blockNumber], options);
       } else if ("batchNumber" in p) {
-        return this.call("getInherentsByBatchNumber", [p.batchNumber]);
+        return this.call("getInherentsByBatchNumber", [p.batchNumber], options);
       }
       throw new Error("Invalid parameters");
     });
@@ -280,16 +316,16 @@ var BlockchainClient = class extends Client {
    * Tries to fetch the account at the given address.
    */
   getAccountBy(_0) {
-    return __async(this, arguments, function* ({ address, withMetadata }) {
-      return this.call("getAccountByAddress", [address], withMetadata);
+    return __async(this, arguments, function* ({ address, withMetadata }, options = DEFAULT_OPTIONS) {
+      return this.call("getAccountByAddress", [address], options, withMetadata);
     });
   }
   /**
   * Returns a collection of the currently active validator's addresses and balances.
   */
   getActiveValidators() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }) {
-      return this.call("getActiveValidators", [], withMetadata);
+    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+      return this.call("getActiveValidators", [], options, withMetadata);
     });
   }
   /**
@@ -297,8 +333,8 @@ var BlockchainClient = class extends Client {
    * and that were disabled.
    */
   getCurrentSlashedSlots() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }) {
-      return this.call("getCurrentSlashedSlots", [], withMetadata);
+    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+      return this.call("getCurrentSlashedSlots", [], options, withMetadata);
     });
   }
   /**
@@ -306,16 +342,16 @@ var BlockchainClient = class extends Client {
    * lost rewards and that were disabled.
    */
   getPreviousSlashedSlots() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }) {
-      return this.call("getPreviousSlashedSlots", [], withMetadata);
+    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+      return this.call("getPreviousSlashedSlots", [], options, withMetadata);
     });
   }
   /**
    * Returns information about the currently parked validators.
    */
   getParkedValidators() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }) {
-      return this.call("getParkedValidators", [], withMetadata);
+    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+      return this.call("getParkedValidators", [], options, withMetadata);
     });
   }
   /**
@@ -323,36 +359,36 @@ var BlockchainClient = class extends Client {
    * containing the addresses and stakes of all the stakers that are delegating to the validator.
    */
   getValidatorBy() {
-    return __async(this, arguments, function* (p = { includeStakers: false }) {
-      return this.call("getValidatorByAddress", [p.address, p.includeStakers]);
+    return __async(this, arguments, function* (p = { includeStakers: false }, options = DEFAULT_OPTIONS) {
+      return this.call("getValidatorByAddress", [p.address, p.includeStakers], options);
     });
   }
   /**
    * Tries to fetch a staker information given its address.
    */
   getStakerByAddress(_0) {
-    return __async(this, arguments, function* ({ address }) {
-      return this.call("getStakerByAddress", [address]);
+    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
+      return this.call("getStakerByAddress", [address], options);
     });
   }
   /**
    * Subscribes to new block events.
    */
   subscribeForBlocks(_0) {
-    return __async(this, arguments, function* ({ filter }) {
+    return __async(this, arguments, function* ({ filter }, options = WS_DEFAULT_OPTIONS) {
       switch (filter) {
         case "FULL":
           return this.subscribe("subscribeForHeadBlock", [
             /*includeTransactions*/
             true
-          ]);
+          ], options);
         case "PARTIAL":
           return this.subscribe("subscribeForHeadBlock", [
             /*includeTransactions*/
             false
-          ]);
+          ], options);
         case "HASH":
-          return this.subscribe("subscribeForHeadBlockHash", []);
+          return this.subscribe("subscribeForHeadBlockHash", [], options);
       }
     });
   }
@@ -360,8 +396,8 @@ var BlockchainClient = class extends Client {
    * Subscribes to pre epoch validators events.
    */
   subscribeForValidatorElectionByAddress() {
-    return __async(this, arguments, function* (p = { withMetadata: false }) {
-      return this.subscribe("subscribeForValidatorElectionByAddress", [p.address], p.withMetadata);
+    return __async(this, arguments, function* (p = { withMetadata: false }, options = WS_DEFAULT_OPTIONS) {
+      return this.subscribe("subscribeForValidatorElectionByAddress", [p.address], options, p.withMetadata);
     });
   }
   /**
@@ -370,8 +406,8 @@ var BlockchainClient = class extends Client {
    * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
    */
   subscribeForLogsByAddressesAndTypes() {
-    return __async(this, arguments, function* (p = { withMetadata: false }) {
-      return this.subscribe("subscribeForLogsByAddressesAndTypes", [(p == null ? void 0 : p.addresses) || [], (p == null ? void 0 : p.types) || []], p == null ? void 0 : p.withMetadata);
+    return __async(this, arguments, function* (p = { withMetadata: false }, options = WS_DEFAULT_OPTIONS) {
+      return this.subscribe("subscribeForLogsByAddressesAndTypes", [(p == null ? void 0 : p.addresses) || [], (p == null ? void 0 : p.types) || []], options, p == null ? void 0 : p.withMetadata);
     });
   }
 };
@@ -388,48 +424,48 @@ var ConsensusClient = class extends Client {
    * Returns a boolean specifying if we have established consensus with the network
    */
   isConsensusEstablished() {
-    return __async(this, null, function* () {
-      return this.call("isConsensusEstablished", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("isConsensusEstablished", [], options);
     });
   }
   /**
    * Given a serialized transaction, it will return the corresponding transaction struct
    */
   getRawTransactionInfo(_0) {
-    return __async(this, arguments, function* ({ rawTransaction }) {
-      return this.call("getRawTransactionInfo", [rawTransaction]);
+    return __async(this, arguments, function* ({ rawTransaction }, options = DEFAULT_OPTIONS) {
+      return this.call("getRawTransactionInfo", [rawTransaction], options);
     });
   }
   /**
    * Creates a serialized transaction
    */
-  createTransaction(p) {
-    return __async(this, null, function* () {
+  createTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       if (p.data) {
-        return this.call("createBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
+        return this.call("createBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
       } else {
-        return this.call("createBasicTransaction", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
+        return this.call("createBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
       }
     });
   }
   /**
    * Sends a transaction
    */
-  sendTransaction(p) {
-    return __async(this, null, function* () {
+  sendTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       const h = this.getValidityStartHeight(p);
       if (p.data) {
-        return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
+        return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
       } else {
-        return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)]);
+        return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
       }
     });
   }
   /**
    * Returns a serialized transaction creating a new vesting contract
    */
-  createNewVestingTransaction(p) {
-    return __async(this, null, function* () {
+  createNewVestingTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createNewVestingTransaction", [
         p.wallet,
         p.owner,
@@ -439,14 +475,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a transaction creating a new vesting contract to the network
    */
-  sendNewVestingTransaction(p) {
-    return __async(this, null, function* () {
+  sendNewVestingTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendNewVestingTransaction", [
         p.wallet,
         p.owner,
@@ -456,14 +492,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized transaction redeeming a vesting contract
    */
-  createRedeemVestingTransaction(p) {
-    return __async(this, null, function* () {
+  createRedeemVestingTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createRedeemVestingTransaction", [
         p.wallet,
         p.contractAddress,
@@ -471,14 +507,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a transaction redeeming a vesting contract
    */
-  sendRedeemVestingTransaction(p) {
-    return __async(this, null, function* () {
+  sendRedeemVestingTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendRedeemVestingTransaction", [
         p.wallet,
         p.contractAddress,
@@ -486,14 +522,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized transaction creating a new HTLC contract
    */
-  createNewHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  createNewHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createNewHtlcTransaction", [
         p.wallet,
         p.htlcSender,
@@ -505,14 +541,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a transaction creating a new HTLC contract
    */
-  sendNewHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  sendNewHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendNewHtlcTransaction", [
         p.wallet,
         p.htlcSender,
@@ -524,14 +560,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized transaction redeeming an HTLC contract
    */
-  createRedeemRegularHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  createRedeemRegularHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createRedeemRegularHtlcTransaction", [
         p.wallet,
         p.contractAddress,
@@ -543,14 +579,14 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a transaction redeeming an HTLC contract
    */
-  sendRedeemRegularHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  sendRedeemRegularHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendRedeemRegularHtlcTransaction", [
         p.wallet,
         p.contractAddress,
@@ -562,15 +598,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized transaction redeeming a HTLC contract using the `TimeoutResolve`
    * method 
    */
-  createRedeemTimeoutHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  createRedeemTimeoutHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createRedeemTimeoutHtlcTransaction", [
         p.wallet,
         p.contractAddress,
@@ -578,15 +614,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
    * method to network
    */
-  sendRedeemTimeoutHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  sendRedeemTimeoutHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendRedeemTimeoutHtlcTransaction", [
         p.wallet,
         p.contractAddress,
@@ -594,15 +630,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
    * method.
    */
-  createRedeemEarlyHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  createRedeemEarlyHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createRedeemEarlyHtlcTransaction", [
         p.wallet,
         p.htlcAddress,
@@ -612,15 +648,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
    * method.
    */
-  sendRedeemEarlyHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  sendRedeemEarlyHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendRedeemEarlyHtlcTransaction", [
         p.wallet,
         p.htlcAddress,
@@ -630,15 +666,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
    * the `EarlyResolve` method.
    */
-  signRedeemEarlyHtlcTransaction(p) {
-    return __async(this, null, function* () {
+  signRedeemEarlyHtlcTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("signRedeemEarlyHtlcTransaction", [
         p.wallet,
         p.htlcAddress,
@@ -646,15 +682,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createNewStakerTransaction(p) {
-    return __async(this, null, function* () {
+  createNewStakerTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createNewStakerTransaction", [
         p.senderWallet,
         p.staker,
@@ -662,15 +698,15 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a `new_staker` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendNewStakerTransaction(p) {
-    return __async(this, null, function* () {
+  sendNewStakerTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendNewStakerTransaction", [
         p.senderWallet,
         p.staker,
@@ -678,37 +714,37 @@ var ConsensusClient = class extends Client {
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
    * be paid from the `sender_wallet`.
    */
-  createStakeTransaction(p) {
-    return __async(this, null, function* () {
+  createStakeTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createStakeTransaction", [
         p.senderWallet,
         p.staker,
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a `stake` transaction. The funds to be staked and the transaction fee will
    * be paid from the `sender_wallet`.
    */
-  sendStakeTransaction(p) {
-    return __async(this, null, function* () {
+  sendStakeTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendStakeTransaction", [
         p.senderWallet,
         p.staker,
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -716,15 +752,15 @@ var ConsensusClient = class extends Client {
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet).
    */
-  createUpdateStakerTransaction(p) {
-    return __async(this, null, function* () {
+  createUpdateStakerTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createUpdateStakerTransaction", [
         p.senderWallet,
         p.staker,
         p.newDelegation,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -732,45 +768,45 @@ var ConsensusClient = class extends Client {
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet).
    */
-  sendUpdateStakerTransaction(p) {
-    return __async(this, null, function* () {
+  sendUpdateStakerTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendUpdateStakerTransaction", [
         p.senderWallet,
         p.staker,
         p.newDelegation,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
    * being unstaked.
    */
-  createUnstakeTransaction(p) {
-    return __async(this, null, function* () {
+  createUnstakeTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createUnstakeTransaction", [
         p.staker,
         p.recipient,
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a `unstake` transaction. The transaction fee will be paid from the funds
    * being unstaked.
    */
-  sendUnstakeTransaction(p) {
-    return __async(this, null, function* () {
+  sendUnstakeTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendUnstakeTransaction", [
         p.staker,
         p.recipient,
         p.value,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -781,8 +817,8 @@ var ConsensusClient = class extends Client {
    * "" = Set the signal data field to None.
    * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
    */
-  createNewValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  createNewValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createNewValidatorTransaction", [
         p.senderWallet,
         p.validator,
@@ -792,7 +828,7 @@ var ConsensusClient = class extends Client {
         p.signalData,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -803,8 +839,8 @@ var ConsensusClient = class extends Client {
    * "" = Set the signal data field to None.
    * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
    */
-  sendNewValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  sendNewValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendNewValidatorTransaction", [
         p.senderWallet,
         p.validator,
@@ -814,7 +850,7 @@ var ConsensusClient = class extends Client {
         p.signalData,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -826,8 +862,8 @@ var ConsensusClient = class extends Client {
    * "" = Change the signal data field to None.
    * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
    */
-  createUpdateValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  createUpdateValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createUpdateValidatorTransaction", [
         p.senderWallet,
         p.validator,
@@ -837,7 +873,7 @@ var ConsensusClient = class extends Client {
         p.newSignalData,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -849,8 +885,8 @@ var ConsensusClient = class extends Client {
    * "" = Change the signal data field to None.
    * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
    */
-  sendUpdateValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  sendUpdateValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendUpdateValidatorTransaction", [
         p.senderWallet,
         p.validator,
@@ -860,97 +896,125 @@ var ConsensusClient = class extends Client {
         p.newSignalData,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createInactivateValidatorTransaction(p) {
-    return __async(this, null, function* () {
-      return this.call("createInactivateValidatorTransaction", [
+  createDeactivateValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
+      return this.call("createDeactivateValidatorTransaction", [
         p.senderWallet,
         p.validator,
         p.signingSecretKey,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendInactivateValidatorTransaction(p) {
-    return __async(this, null, function* () {
-      return this.call("sendInactivateValidatorTransaction", [
+  sendDeactivateValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
+      return this.call("sendDeactivateValidatorTransaction", [
         p.senderWallet,
         p.validator,
         p.signingSecretKey,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createReactivateValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  createReactivateValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createReactivateValidatorTransaction", [
         p.senderWallet,
         p.validator,
         p.signingSecretKey,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendReactivateValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  sendReactivateValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendReactivateValidatorTransaction", [
         p.senderWallet,
         p.validator,
         p.signingSecretKey,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createUnparkValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  createUnparkValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createUnparkValidatorTransaction", [
         p.senderWallet,
         p.validator,
         p.signingSecretKey,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
    * Sends a `unpark_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendUnparkValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  sendUnparkValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendUnparkValidatorTransaction", [
         p.senderWallet,
         p.validator,
         p.signingSecretKey,
         p.fee,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
+    });
+  }
+  /**
+   * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
+   * account (the sender wallet) to pay the transaction fee.
+   */
+  createRetireValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
+      return this.call("createRetireValidatorTransaction", [
+        p.senderWallet,
+        p.validator,
+        p.fee,
+        this.getValidityStartHeight(p)
+      ], options);
+    });
+  }
+  /**
+   * Sends a `retire_validator` transaction. You need to provide the address of a basic
+   * account (the sender wallet) to pay the transaction fee.
+   */
+  sendRetireValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
+      return this.call("sendRetireValidatorTransaction", [
+        p.senderWallet,
+        p.validator,
+        p.fee,
+        this.getValidityStartHeight(p)
+      ], options);
     });
   }
   /**
@@ -959,15 +1023,15 @@ var ConsensusClient = class extends Client {
    * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
    * Failed delete validator transactions can diminish the validator deposit
    */
-  createDeleteValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  createDeleteValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("createDeleteValidatorTransaction", [
-        p.senderWallet,
         p.validator,
+        p.recipient,
         p.fee,
         p.value,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
   /**
@@ -976,15 +1040,15 @@ var ConsensusClient = class extends Client {
    * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
    * Failed delete validator transactions can diminish the validator deposit
    */
-  sendDeleteValidatorTransaction(p) {
-    return __async(this, null, function* () {
+  sendDeleteValidatorTransaction(_0) {
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
       return this.call("sendDeleteValidatorTransaction", [
-        p.senderWallet,
         p.validator,
+        p.recipient,
         p.fee,
         p.value,
         this.getValidityStartHeight(p)
-      ]);
+      ], options);
     });
   }
 };
@@ -1000,11 +1064,11 @@ var MempoolClient = class extends Client {
    * @param transaction Serialized transaction
    * @returns Transaction hash
    */
-  pushTransaction({ transaction, withHighPriority }) {
+  pushTransaction({ transaction, withHighPriority }, options = DEFAULT_OPTIONS) {
     if (withHighPriority) {
-      return super.call("pushHighPriorityTransaction", [transaction]);
+      return super.call("pushHighPriorityTransaction", [transaction], options);
     } else {
-      return super.call("pushTransaction", [transaction]);
+      return super.call("pushTransaction", [transaction], options);
     }
   }
   /**
@@ -1013,21 +1077,21 @@ var MempoolClient = class extends Client {
    * @param includeTransactions
    * @returns 
    */
-  mempoolContent({ includeTransactions } = { includeTransactions: false }) {
-    return super.call("mempoolContent", [includeTransactions]);
+  mempoolContent({ includeTransactions } = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
+    return super.call("mempoolContent", [includeTransactions], options);
   }
   /**
    * @returns 
    */
-  mempool() {
-    return super.call("mempool", []);
+  mempool(options = DEFAULT_OPTIONS) {
+    return super.call("mempool", [], options);
   }
   /**
    * 
    * @returns
    */
-  getMinFeePerByte() {
-    return super.call("getMinFeePerByte", []);
+  getMinFeePerByte(options = DEFAULT_OPTIONS) {
+    return super.call("getMinFeePerByte", [], options);
   }
 };
 
@@ -1040,24 +1104,24 @@ var NetworkClient = class extends Client {
    * The peer ID for our local peer.
    */
   getPeerId() {
-    return __async(this, null, function* () {
-      return this.call("getPeerId", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getPeerId", [], options);
     });
   }
   /**
    * Returns the number of peers. 
    */
   getPeerCount() {
-    return __async(this, null, function* () {
-      return this.call("getPeerCount", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getPeerCount", [], options);
     });
   }
   /**
    * Returns a list with the IDs of all our peers.
    */
   getPeerList() {
-    return __async(this, null, function* () {
-      return this.call("getPeerList", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getPeerList", [], options);
     });
   }
 };
@@ -1071,8 +1135,8 @@ var PolicyClient = class extends Client {
    * Gets a bundle of policy constants
    */
   getPolicyConstants() {
-    return __async(this, null, function* () {
-      return this.call("getPolicyConstants", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getPolicyConstants", [], options);
     });
   }
   /**
@@ -1084,11 +1148,11 @@ var PolicyClient = class extends Client {
    * @returns The epoch number at the given block number (height) or index
    */
   getEpochAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber, justIndex }) {
+    return __async(this, arguments, function* ({ blockNumber, justIndex }, options = DEFAULT_OPTIONS) {
       if (justIndex) {
-        return this.call("getEpochIndexAt", [blockNumber]);
+        return this.call("getEpochIndexAt", [blockNumber], options);
       } else {
-        return this.call("getEpochAt", [blockNumber]);
+        return this.call("getEpochAt", [blockNumber], options);
       }
     });
   }
@@ -1101,11 +1165,11 @@ var PolicyClient = class extends Client {
    * @returns The epoch number at the given block number (height).
    */
   getBatchAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber, justIndex }) {
+    return __async(this, arguments, function* ({ blockNumber, justIndex }, options = DEFAULT_OPTIONS) {
       if (justIndex) {
-        return this.call("getBatchIndexAt", [blockNumber]);
+        return this.call("getBatchIndexAt", [blockNumber], options);
       } else {
-        return this.call("getBatchAt", [blockNumber]);
+        return this.call("getBatchAt", [blockNumber], options);
       }
     });
   }
@@ -1116,8 +1180,8 @@ var PolicyClient = class extends Client {
    * @returns The number (height) of the next election macro block after a given block number (height).
    */
   getElectionBlockAfter(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getElectionBlockAfter", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getElectionBlockAfter", [blockNumber], options);
     });
   }
   /**
@@ -1128,8 +1192,8 @@ var PolicyClient = class extends Client {
    * @returns The block number (height) of the preceding election macro block before a given block number (height).
    */
   getElectionBlockBefore(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getElectionBlockBefore", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getElectionBlockBefore", [blockNumber], options);
     });
   }
   /**
@@ -1140,8 +1204,8 @@ var PolicyClient = class extends Client {
    * @returns 
    */
   getLastElectionBlock(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getLastElectionBlock", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getLastElectionBlock", [blockNumber], options);
     });
   }
   /**
@@ -1151,8 +1215,8 @@ var PolicyClient = class extends Client {
    * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
    */
   getIsElectionBlockAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getIsElectionBlockAt", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getIsElectionBlockAt", [blockNumber], options);
     });
   }
   /**
@@ -1162,8 +1226,8 @@ var PolicyClient = class extends Client {
    * @returns The block number (height) of the next macro block after a given block number (height).
    */
   getMacroBlockAfter(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getMacroBlockAfter", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getMacroBlockAfter", [blockNumber], options);
     });
   }
   /**
@@ -1173,8 +1237,8 @@ var PolicyClient = class extends Client {
    * @returns The block number (height) of the preceding macro block before a given block number (height).
    */
   getMacroBlockBefore(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getMacroBlockBefore", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getMacroBlockBefore", [blockNumber], options);
     });
   }
   /**
@@ -1185,8 +1249,8 @@ var PolicyClient = class extends Client {
    * @returns The block number (height) of the last macro block at a given block number (height).
    */
   getLastMacroBlock(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getLastMacroBlock", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getLastMacroBlock", [blockNumber], options);
     });
   }
   /**
@@ -1196,8 +1260,8 @@ var PolicyClient = class extends Client {
    * @returns A boolean expressing if the block at a given block number (height) is a macro block.
    */
   getIsMacroBlockAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getIsMacroBlockAt", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getIsMacroBlockAt", [blockNumber], options);
     });
   }
   /**
@@ -1207,8 +1271,8 @@ var PolicyClient = class extends Client {
    * @returns The block number (height) of the next micro block after a given block number (height).
    */
   getIsMicroBlockAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getIsMicroBlockAt", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getIsMicroBlockAt", [blockNumber], options);
     });
   }
   /**
@@ -1218,8 +1282,8 @@ var PolicyClient = class extends Client {
    * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
    */
   getFirstBlockOf(_0) {
-    return __async(this, arguments, function* ({ epochIndex }) {
-      return this.call("getFirstBlockOf", [epochIndex]);
+    return __async(this, arguments, function* ({ epochIndex }, options = DEFAULT_OPTIONS) {
+      return this.call("getFirstBlockOf", [epochIndex], options);
     });
   }
   /**
@@ -1229,8 +1293,8 @@ var PolicyClient = class extends Client {
    * @returns The block number of the first block of the given batch (which is always a micro block).
    */
   getFirstBlockOfBatch(_0) {
-    return __async(this, arguments, function* ({ batchIndex }) {
-      return this.call("getFirstBlockOfBatch", [batchIndex]);
+    return __async(this, arguments, function* ({ batchIndex }, options = DEFAULT_OPTIONS) {
+      return this.call("getFirstBlockOfBatch", [batchIndex], options);
     });
   }
   /**
@@ -1240,8 +1304,8 @@ var PolicyClient = class extends Client {
    * @returns The block number of the election macro block of the given epoch (which is always the last block).
    */
   getElectionBlockOf(_0) {
-    return __async(this, arguments, function* ({ epochIndex }) {
-      return this.call("getElectionBlockOf", [epochIndex]);
+    return __async(this, arguments, function* ({ epochIndex }, options = DEFAULT_OPTIONS) {
+      return this.call("getElectionBlockOf", [epochIndex], options);
     });
   }
   /**
@@ -1251,8 +1315,8 @@ var PolicyClient = class extends Client {
    * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
    */
   getMacroBlockOf(_0) {
-    return __async(this, arguments, function* ({ batchIndex }) {
-      return this.call("getMacroBlockOf", [batchIndex]);
+    return __async(this, arguments, function* ({ batchIndex }, options = DEFAULT_OPTIONS) {
+      return this.call("getMacroBlockOf", [batchIndex], options);
     });
   }
   /**
@@ -1263,8 +1327,8 @@ var PolicyClient = class extends Client {
    * @returns A boolean expressing if the batch at a given block number (height) is the first batch
    */
   getFirstBatchOfEpoch(_0) {
-    return __async(this, arguments, function* ({ blockNumber }) {
-      return this.call("getFirstBatchOfEpoch", [blockNumber]);
+    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
+      return this.call("getFirstBatchOfEpoch", [blockNumber], options);
     });
   }
   /**
@@ -1280,8 +1344,8 @@ var PolicyClient = class extends Client {
    * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
    */
   getSupplyAt(_0) {
-    return __async(this, arguments, function* ({ genesisSupply, genesisTime, currentTime }) {
-      return this.call("getSupplyAt", [genesisSupply, genesisTime, currentTime]);
+    return __async(this, arguments, function* ({ genesisSupply, genesisTime, currentTime }, options = DEFAULT_OPTIONS) {
+      return this.call("getSupplyAt", [genesisSupply, genesisTime, currentTime], options);
     });
   }
 };
@@ -1295,32 +1359,32 @@ var ValidatorClient = class extends Client {
    * Returns our validator address.
    */
   getAddress() {
-    return __async(this, null, function* () {
-      return this.call("getAddress", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getAddress", [], options);
     });
   }
   /**
    * Returns our validator signing key
    */
   getSigningKey() {
-    return __async(this, null, function* () {
-      return this.call("getSigningKey", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getSigningKey", [], options);
     });
   }
   /**
    * Returns our validator voting key
    */
   getVotingKey() {
-    return __async(this, null, function* () {
-      return this.call("getVotingKey", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("getVotingKey", [], options);
     });
   }
   /**
    * Updates the configuration setting to automatically reactivate our validator
    */
   setAutomaticReactivation(_0) {
-    return __async(this, arguments, function* ({ automaticReactivation }) {
-      return this.call("setAutomaticReactivation", [automaticReactivation]);
+    return __async(this, arguments, function* ({ automaticReactivation }, options = DEFAULT_OPTIONS) {
+      return this.call("setAutomaticReactivation", [automaticReactivation], options);
     });
   }
 };
@@ -1331,48 +1395,48 @@ var WalletClient = class extends Client {
     super(url);
   }
   importRawKey(_0) {
-    return __async(this, arguments, function* ({ keyData, passphrase }) {
-      return this.call("importRawKey", [keyData, passphrase]);
+    return __async(this, arguments, function* ({ keyData, passphrase }, options = DEFAULT_OPTIONS) {
+      return this.call("importRawKey", [keyData, passphrase], options);
     });
   }
   isAccountImported(_0) {
-    return __async(this, arguments, function* ({ address }) {
-      return this.call("isAccountImported", [address]);
+    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
+      return this.call("isAccountImported", [address], options);
     });
   }
   listAccounts() {
-    return __async(this, null, function* () {
-      return this.call("listAccounts", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      return this.call("listAccounts", [], options);
     });
   }
   lockAccount(_0) {
-    return __async(this, arguments, function* ({ address }) {
-      return this.call("lockAccount", [address]);
+    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
+      return this.call("lockAccount", [address], options);
     });
   }
   createAccount(_0) {
-    return __async(this, arguments, function* ({ passphrase }) {
-      return this.call("createAccount", [passphrase]);
+    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
+      return this.call("createAccount", [p == null ? void 0 : p.passphrase], options);
     });
   }
   unlockAccount(_0) {
-    return __async(this, arguments, function* ({ address, passphrase, duration }) {
-      return this.call("unlockAccount", [address, passphrase, duration]);
+    return __async(this, arguments, function* ({ address, passphrase, duration }, options = DEFAULT_OPTIONS) {
+      return this.call("unlockAccount", [address, passphrase, duration], options);
     });
   }
   isAccountLocked(_0) {
-    return __async(this, arguments, function* ({ address }) {
-      return this.call("isAccountLocked", [address]);
+    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
+      return this.call("isAccountLocked", [address], options);
     });
   }
   sign(_0) {
-    return __async(this, arguments, function* ({ message, address, passphrase, isHex }) {
-      return this.call("sign", [message, address, passphrase, isHex]);
+    return __async(this, arguments, function* ({ message, address, passphrase, isHex }, options = DEFAULT_OPTIONS) {
+      return this.call("sign", [message, address, passphrase, isHex], options);
     });
   }
   verifySignature(_0) {
-    return __async(this, arguments, function* ({ message, publicKey, signature, isHex }) {
-      return this.call("verifySignature", [message, publicKey, signature, isHex]);
+    return __async(this, arguments, function* ({ message, publicKey, signature, isHex }, options = DEFAULT_OPTIONS) {
+      return this.call("verifySignature", [message, publicKey, signature, isHex], options);
     });
   }
 };
@@ -1383,8 +1447,8 @@ var ZkpComponentClient = class extends Client {
     super(url);
   }
   getZkpState() {
-    return __async(this, null, function* () {
-      const { data, error, context } = yield this.call("getZkpState", []);
+    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
+      const { data, error, context } = yield this.call("getZkpState", [], options);
       if (error) {
         return { error, data, context };
       } else {
@@ -1463,7 +1527,7 @@ var Client2 = class {
     };
     this.block = {
       current: blockchain.getBlockNumber.bind(blockchain),
-      by: blockchain.getBlockBy.bind(blockchain),
+      get: blockchain.getBlockBy.bind(blockchain),
       latest: blockchain.getLatestBlock.bind(blockchain),
       election: {
         after: policy.getElectionBlockAfter.bind(policy),
@@ -1505,60 +1569,66 @@ var Client2 = class {
       }
     };
     this.transaction = {
-      by: blockchain.getTransactionBy.bind(blockchain),
+      get: blockchain.getTransactionBy.bind(blockchain),
       push: mempool.pushTransaction.bind(mempool),
       minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
       create: consensus.createTransaction.bind(consensus),
       send: consensus.sendTransaction.bind(consensus)
     };
     this.vesting = {
-      create: consensus.createNewVestingTransaction.bind(consensus),
-      send: consensus.sendNewVestingTransaction.bind(consensus),
+      new: {
+        createTx: consensus.createNewVestingTransaction.bind(consensus),
+        sendTx: consensus.sendNewVestingTransaction.bind(consensus)
+      },
       redeem: {
-        create: consensus.createRedeemVestingTransaction.bind(consensus),
-        send: consensus.sendRedeemVestingTransaction.bind(consensus)
+        createTx: consensus.createRedeemVestingTransaction.bind(consensus),
+        sendTx: consensus.sendRedeemVestingTransaction.bind(consensus)
       }
     };
     this.htlc = {
-      create: consensus.createNewHtlcTransaction.bind(consensus),
-      send: consensus.sendNewHtlcTransaction.bind(consensus),
+      new: {
+        createTx: consensus.createNewHtlcTransaction.bind(consensus),
+        sendTx: consensus.sendNewHtlcTransaction.bind(consensus)
+      },
       redeem: {
         regular: {
-          create: consensus.createRedeemRegularHtlcTransaction.bind(consensus),
-          send: consensus.sendRedeemRegularHtlcTransaction.bind(consensus)
+          createTx: consensus.createRedeemRegularHtlcTransaction.bind(consensus),
+          sendTx: consensus.sendRedeemRegularHtlcTransaction.bind(consensus)
         },
-        timeout: {
-          create: consensus.createRedeemTimeoutHtlcTransaction.bind(consensus),
-          send: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus)
+        timeoutTx: {
+          createTx: consensus.createRedeemTimeoutHtlcTransaction.bind(consensus),
+          sendTx: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus)
         },
-        early: {
-          create: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
-          send: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus)
+        earlyTx: {
+          createTx: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
+          sendTx: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus)
         }
       }
     };
     this.stakes = {
       new: {
-        create: consensus.createStakeTransaction.bind(consensus),
-        send: consensus.sendStakeTransaction.bind(consensus)
+        createTx: consensus.createStakeTransaction.bind(consensus),
+        sendTx: consensus.sendStakeTransaction.bind(consensus)
       }
     };
     this.staker = {
       byAddress: blockchain.getStakerByAddress.bind(blockchain),
-      create: consensus.createNewStakerTransaction.bind(consensus),
-      send: consensus.sendNewStakerTransaction.bind(consensus),
+      new: {
+        createTx: consensus.createNewStakerTransaction.bind(consensus),
+        sendTx: consensus.sendNewStakerTransaction.bind(consensus)
+      },
       update: {
-        create: consensus.createUpdateStakerTransaction.bind(consensus),
-        send: consensus.sendUpdateStakerTransaction.bind(consensus)
+        createTx: consensus.createUpdateStakerTransaction.bind(consensus),
+        sendTx: consensus.sendUpdateStakerTransaction.bind(consensus)
       }
     };
     this.inherent = {
-      by: blockchain.getInherentsBy.bind(blockchain)
+      get: blockchain.getInherentsBy.bind(blockchain)
     };
     this.account = {
-      byAddress: blockchain.getAccountBy.bind(blockchain),
+      get: blockchain.getAccountBy.bind(blockchain),
       importRawKey: wallet.importRawKey.bind(wallet),
-      create: wallet.createAccount.bind(wallet),
+      new: wallet.createAccount.bind(wallet),
       isImported: wallet.isAccountImported.bind(wallet),
       list: wallet.listAccounts.bind(wallet),
       lock: wallet.lockAccount.bind(wallet),
@@ -1576,32 +1646,36 @@ var Client2 = class {
         signingKey: validator_.getSigningKey.bind(blockchain),
         votingKey: validator_.getVotingKey.bind(blockchain)
       },
-      active: blockchain.getActiveValidators.bind(blockchain),
+      activeList: blockchain.getActiveValidators.bind(blockchain),
       parked: blockchain.getParkedValidators.bind(blockchain),
       action: {
         new: {
-          create: consensus.createNewValidatorTransaction.bind(consensus),
-          send: consensus.sendNewValidatorTransaction.bind(consensus)
+          createTx: consensus.createNewValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendNewValidatorTransaction.bind(consensus)
         },
         update: {
-          create: consensus.createUpdateValidatorTransaction.bind(consensus),
-          send: consensus.sendUpdateValidatorTransaction.bind(consensus)
+          createTx: consensus.createUpdateValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendUpdateValidatorTransaction.bind(consensus)
         },
-        inactive: {
-          create: consensus.createInactivateValidatorTransaction.bind(consensus),
-          send: consensus.sendInactivateValidatorTransaction.bind(consensus)
+        deactive: {
+          createTx: consensus.createDeactivateValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendDeactivateValidatorTransaction.bind(consensus)
         },
         reactivate: {
-          create: consensus.createReactivateValidatorTransaction.bind(consensus),
-          send: consensus.sendReactivateValidatorTransaction.bind(consensus)
+          createTx: consensus.createReactivateValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendReactivateValidatorTransaction.bind(consensus)
         },
         unpark: {
-          create: consensus.createUnparkValidatorTransaction.bind(consensus),
-          send: consensus.sendUnparkValidatorTransaction.bind(consensus)
+          createTx: consensus.createUnparkValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendUnparkValidatorTransaction.bind(consensus)
+        },
+        retire: {
+          createTx: consensus.createRetireValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendRetireValidatorTransaction.bind(consensus)
         },
         delete: {
-          create: consensus.createDeleteValidatorTransaction.bind(consensus),
-          send: consensus.sendDeleteValidatorTransaction.bind(consensus)
+          createTx: consensus.createDeleteValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendDeleteValidatorTransaction.bind(consensus)
         }
       }
     };
@@ -1627,6 +1701,14 @@ var Client2 = class {
 export {
   AccountType,
   BlockType,
+  BlockchainClient,
   Client2 as Client,
-  LogType
+  ConsensusClient,
+  LogType,
+  MempoolClient,
+  NetworkClient,
+  PolicyClient,
+  ValidatorClient,
+  WalletClient,
+  ZkpComponentClient
 };

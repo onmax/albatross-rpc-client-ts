@@ -197,8 +197,8 @@ type ElectionMacroBlock = PartialMacroBlock & {
     slots: Slot[];
 }
 
-type PartialBlock = PartialMicroBlock | PartialMacroBlock
-type Block = MicroBlock | MacroBlock | ElectionMacroBlock
+type PartialBlock$1 = PartialMicroBlock | PartialMacroBlock
+type Block$1 = MicroBlock | MacroBlock | ElectionMacroBlock
 
 type Staker = {
     address: Address;
@@ -311,7 +311,7 @@ type BlockchainState = {
     blockHash: Hash;
 }
 
-type Interaction<Params extends any[], Result, Metadata = null> = {
+type Interaction$1<Params extends any[], Result, Metadata = null> = {
     // In the request
     params: Params
 
@@ -322,135 +322,141 @@ type Interaction<Params extends any[], Result, Metadata = null> = {
 
 type Maybe<T> = T | undefined
 
-// TODO Review the metadatas types
 type BlockchainMethods = {
-    'getBlockNumber': Interaction<[], BlockNumber>,
-    'getBatchNumber': Interaction<[], BatchIndex>,
-    'getEpochNumber': Interaction<[], EpochIndex>,
-    'getBlockByHash': Interaction<[Hash, /* include_transactions */Maybe<Boolean>], Block>,
-    'getBlockByNumber': Interaction<[BlockNumber, /* include_transactions */Maybe<Boolean>], Block>,
-    'getLatestBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block>,
-    'getSlotAt': Interaction<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
-    'getTransactionByHash': Interaction<[Hash], Transaction>,
-    'getTransactionsByBlockNumber': Interaction<[BlockNumber], Transaction[]>,
-    'getInherentsByBlockNumber': Interaction<[BlockNumber], Inherent[]>,
-    'getTransactionsByBatchNumber': Interaction<[BatchIndex], Transaction[]>,
-    'getInherentsByBatchNumber': Interaction<[BatchIndex], Inherent[]>,
-    'getTransactionHashesByAddress': Interaction<[Address, /* max u16 */Maybe<number>], Hash[]>,
-    'getTransactionsByAddress': Interaction<[Address, /* max u16 */Maybe<number>], Transaction[]>,
-    'getAccountByAddress': Interaction<[Address], Account, BlockchainState>,
-    'getActiveValidators': Interaction<[], Validator[], BlockchainState>,
-    'getCurrentSlashedSlots': Interaction<[], SlashedSlot[], BlockchainState>,
-    'getPreviousSlashedSlots': Interaction<[], SlashedSlot[], BlockchainState>,
-    'getParkedValidators': Interaction<[], { blockNumber: BlockNumber, validators: Validator[]}, BlockchainState>,
-    'getValidatorByAddress': Interaction<[Address, /* include_stakers */Maybe<Boolean>], Validator | PartialValidator, BlockchainState>,
-    'getStakerByAddress': Interaction<[Address], Staker, BlockchainState>,
+    'getBlockNumber': Interaction$1<[], BlockNumber>,
+    'getBatchNumber': Interaction$1<[], BatchIndex>,
+    'getEpochNumber': Interaction$1<[], EpochIndex>,
+    'getBlockByHash': Interaction$1<[Hash, /* include_transactions */Maybe<Boolean>], Block$1>,
+    'getBlockByNumber': Interaction$1<[BlockNumber, /* include_transactions */Maybe<Boolean>], Block$1>,
+    'getLatestBlock': Interaction$1<[/* include_transactions */Maybe<Boolean>], Block$1>,
+    'getSlotAt': Interaction$1<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
+    'getTransactionByHash': Interaction$1<[Hash], Transaction>,
+    'getTransactionsByBlockNumber': Interaction$1<[BlockNumber], Transaction[]>,
+    'getInherentsByBlockNumber': Interaction$1<[BlockNumber], Inherent[]>,
+    'getTransactionsByBatchNumber': Interaction$1<[BatchIndex], Transaction[]>,
+    'getInherentsByBatchNumber': Interaction$1<[BatchIndex], Inherent[]>,
+    'getTransactionHashesByAddress': Interaction$1<[Address, /* max u16 */Maybe<number>], Hash[]>,
+    'getTransactionsByAddress': Interaction$1<[Address, /* max u16 */Maybe<number>], Transaction[]>,
+    'getAccountByAddress': Interaction$1<[Address], Account, BlockchainState>,
+    'getActiveValidators': Interaction$1<[], Validator[], BlockchainState>,
+    'getCurrentSlashedSlots': Interaction$1<[], SlashedSlot[], BlockchainState>,
+    'getPreviousSlashedSlots': Interaction$1<[], SlashedSlot[], BlockchainState>,
+    'getParkedValidators': Interaction$1<[], { blockNumber: BlockNumber, validators: Validator[]}, BlockchainState>,
+    'getValidatorByAddress': Interaction$1<[Address, /* include_stakers */Maybe<Boolean>], Validator | PartialValidator, BlockchainState>,
+    'getStakerByAddress': Interaction$1<[Address], Staker, BlockchainState>,
+}
+
+// When you open a stream, the server will return a subscription number
+type StreamOpened = {
+    'streamOpened': Interaction$1<[], number>
 }
 
 type BlockchainStreams = {
-    'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block | PartialBlock>,
-    'subscribeForHeadBlockHash': Interaction<[], Hash>,
-    'subscribeForValidatorElectionByAddress': Interaction<[Address], Validator, BlockchainState>,
-    'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/string[]], BlockLog, BlockchainState>,
+    'subscribeForHeadBlock': Interaction$1<[/* include_transactions */Maybe<Boolean>], Block$1 | PartialBlock$1>,
+    'subscribeForHeadBlockHash': Interaction$1<[], Hash>,
+    'subscribeForValidatorElectionByAddress': Interaction$1<[Address], Validator, BlockchainState>,
+    'subscribeForLogsByAddressesAndTypes': Interaction$1<[Address[], /*Check out logs-types.ts*/string[]], BlockLog, BlockchainState>,
 }
 
 type ConsensusMethods = {
-    'isConsensusEstablished': Interaction<[], Boolean>,
-    'getRawTransactionInfo': Interaction<[RawTransaction], Transaction>,
-    'sendRawTransaction': Interaction<[RawTransaction], Hash>,
-    'createBasicTransaction': Interaction<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendBasicTransaction': Interaction<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createBasicTransactionWithData': Interaction<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendBasicTransactionWithData': Interaction<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createNewVestingTransaction': Interaction<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendNewVestingTransaction': Interaction<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createRedeemVestingTransaction': Interaction<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-   'sendRedeemVestingTransaction': Interaction<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createNewHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'sendNewHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createRedeemRegularHtlcTransaction': Interaction<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'sendRedeemRegularHtlcTransaction': Interaction<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createRedeemTimeoutHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'sendRedeemTimeoutHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'sendRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'signRedeemEarlyHtlcTransaction': Interaction<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], String>,
-    'createNewStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendNewStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createStakeTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendStakeTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createUpdateStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendUpdateStakerTransaction': Interaction<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createUnstakeTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendUnstakeTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendNewValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendUpdateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
-    'createInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
-    'sendInactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
-    'createReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendReactivateValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
-    'createUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendUnparkValidatorTransaction': Interaction<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
-    'createDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendDeleteValidatorTransaction': Interaction<[/* sender_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'isConsensusEstablished': Interaction$1<[], Boolean>,
+    'getRawTransactionInfo': Interaction$1<[RawTransaction], Transaction>,
+    'sendRawTransaction': Interaction$1<[RawTransaction], Hash>,
+    'createBasicTransaction': Interaction$1<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendBasicTransaction': Interaction$1<[/* wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createBasicTransactionWithData': Interaction$1<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendBasicTransactionWithData': Interaction$1<[/* wallet */Address, /* recipient */Address, /*data*/string, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createNewVestingTransaction': Interaction$1<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendNewVestingTransaction': Interaction$1<[/* wallet */Address, /* owner */Address, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemVestingTransaction': Interaction$1<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+   'sendRedeemVestingTransaction': Interaction$1<[/* wallet */Address, /* contract_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createNewHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendNewHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_sender */Address, /* htlc_recipient */Address, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemRegularHtlcTransaction': Interaction$1<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendRedeemRegularHtlcTransaction': Interaction$1<[/* wallet */Address, /* contract_address */Address,  /* recipient */Address, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemTimeoutHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendRedeemTimeoutHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'sendRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'signRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address, /* htlc_address */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], String>,
+    'createNewStakerTransaction': Interaction$1<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendNewStakerTransaction': Interaction$1<[/* sender_wallet */Address, /* staker */Address, /* delegation */Maybe<Address>, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createStakeTransaction': Interaction$1<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendStakeTransaction': Interaction$1<[/* sender_wallet */Address, /* staker */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createUpdateStakerTransaction': Interaction$1<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendUpdateStakerTransaction': Interaction$1<[/* sender_wallet */Address, /* staker */Address, /* new_delegation */Address, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createUnstakeTransaction': Interaction$1<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendUnstakeTransaction': Interaction$1<[/* sender_wallet */Address, /* recipient */Address, /* value */Coin, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createNewValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendNewValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address, /* signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createUpdateValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendUpdateValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address, /* new_signal_data */String, /* fee */Coin, /* validity_start_height */string], Hash>,
+    'createDeactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */string], RawTransaction>,
+    'sendDeactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createReactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendReactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createUnparkValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendUnparkValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator_wallet */Address, /* signing_secret_key */String, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createRetireValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator_wallet */Address, /* fee */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendRetireValidatorTransaction': Interaction$1<[/* sender_wallet */Address, /* validator_wallet */Address, /* fee */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
+    'createDeleteValidatorTransaction': Interaction$1<[/* validator_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], RawTransaction>,
+    'sendDeleteValidatorTransaction': Interaction$1<[/* validator_wallet */Address, /* recipient */Address, /* fee */Coin, /* value */Coin, /* validity_start_height */ValidityStartHeight], Hash>,
 }
 
 type MempoolMethods = {
-    'pushTransaction': Interaction<[/* transaction */RawTransaction], Hash>,
-    'pushHighPriorityTransaction': Interaction<[/* transaction */RawTransaction], Hash>,
-    'mempoolContent': Interaction<[/* include_transactions */Boolean], (Hash | Transaction)[]>,
-    'mempool': Interaction<[], MempoolInfo>,
-    'getMinFeePerByte': Interaction<[], /* f64 */number>,
+    'pushTransaction': Interaction$1<[/* transaction */RawTransaction], Hash>,
+    'pushHighPriorityTransaction': Interaction$1<[/* transaction */RawTransaction], Hash>,
+    'mempoolContent': Interaction$1<[/* include_transactions */Boolean], (Hash | Transaction)[]>,
+    'mempool': Interaction$1<[], MempoolInfo>,
+    'getMinFeePerByte': Interaction$1<[], /* f64 */number>,
 }
 
 type NetworkMethods = {
-    'getPeerId': Interaction<[], String>,
-    'getPeerCount': Interaction<[], number>,
-    'getPeerList': Interaction<[], string[]>,
+    'getPeerId': Interaction$1<[], String>,
+    'getPeerCount': Interaction$1<[], number>,
+    'getPeerList': Interaction$1<[], string[]>,
 }
 
 type PolicyMethods = {
-    'getPolicyConstants': Interaction<[], PolicyConstants>,
-    'getEpochAt': Interaction<[BlockNumber], EpochIndex>,
-    'getEpochIndexAt': Interaction<[BlockNumber], EpochIndex>,
-    'getBatchAt': Interaction<[BlockNumber], BatchIndex>,
-    'getBatchIndexAt': Interaction<[BlockNumber], BatchIndex>,
-    'getElectionBlockAfter': Interaction<[BlockNumber], BlockNumber>,
-    'getElectionBlockBefore': Interaction<[BlockNumber], BlockNumber>,
-    'getLastElectionBlock': Interaction<[BlockNumber], BlockNumber>,
-    'getIsElectionBlockAt': Interaction<[BlockNumber], Boolean>,
-    'getMacroBlockAfter': Interaction<[BlockNumber], BlockNumber>,
-    'getMacroBlockBefore': Interaction<[BlockNumber], BlockNumber>,
-    'getLastMacroBlock': Interaction<[BlockNumber], BlockNumber>,
-    'getIsMacroBlockAt': Interaction<[BlockNumber], Boolean>,
-    'getIsMicroBlockAt': Interaction<[BlockNumber], Boolean>,
-    'getFirstBlockOf': Interaction<[EpochIndex], BlockNumber>,
-    'getFirstBlockOfBatch': Interaction<[BatchIndex], BlockNumber>,
-    'getElectionBlockOf': Interaction<[EpochIndex], BlockNumber>,
-    'getMacroBlockOf': Interaction<[BatchIndex], BlockNumber>,
-    'getFirstBatchOfEpoch': Interaction<[BlockNumber], Boolean>,
-    'getSupplyAt': Interaction<[GenesisSupply, GenesisTime, CurrentTime], number>,
+    'getPolicyConstants': Interaction$1<[], PolicyConstants>,
+    'getEpochAt': Interaction$1<[BlockNumber], EpochIndex>,
+    'getEpochIndexAt': Interaction$1<[BlockNumber], EpochIndex>,
+    'getBatchAt': Interaction$1<[BlockNumber], BatchIndex>,
+    'getBatchIndexAt': Interaction$1<[BlockNumber], BatchIndex>,
+    'getElectionBlockAfter': Interaction$1<[BlockNumber], BlockNumber>,
+    'getElectionBlockBefore': Interaction$1<[BlockNumber], BlockNumber>,
+    'getLastElectionBlock': Interaction$1<[BlockNumber], BlockNumber>,
+    'getIsElectionBlockAt': Interaction$1<[BlockNumber], Boolean>,
+    'getMacroBlockAfter': Interaction$1<[BlockNumber], BlockNumber>,
+    'getMacroBlockBefore': Interaction$1<[BlockNumber], BlockNumber>,
+    'getLastMacroBlock': Interaction$1<[BlockNumber], BlockNumber>,
+    'getIsMacroBlockAt': Interaction$1<[BlockNumber], Boolean>,
+    'getIsMicroBlockAt': Interaction$1<[BlockNumber], Boolean>,
+    'getFirstBlockOf': Interaction$1<[EpochIndex], BlockNumber>,
+    'getFirstBlockOfBatch': Interaction$1<[BatchIndex], BlockNumber>,
+    'getElectionBlockOf': Interaction$1<[EpochIndex], BlockNumber>,
+    'getMacroBlockOf': Interaction$1<[BatchIndex], BlockNumber>,
+    'getFirstBatchOfEpoch': Interaction$1<[BlockNumber], Boolean>,
+    'getSupplyAt': Interaction$1<[GenesisSupply, GenesisTime, CurrentTime], number>,
 }
 
 type ValidatorMethods = {
-    'getAddress': Interaction<[], Address>,
-    'getSigningKey': Interaction<[], String>,
-    'getVotingKey': Interaction<[], String>,
-    'setAutomaticReactivation': Interaction<[/* automatic_reactivation */Boolean], null>,
+    'getAddress': Interaction$1<[], Address>,
+    'getSigningKey': Interaction$1<[], String>,
+    'getVotingKey': Interaction$1<[], String>,
+    'setAutomaticReactivation': Interaction$1<[/* automatic_reactivation */Boolean], null>,
 }
 
 type WalletMethods = {
-    'importRawKey': Interaction<[/* key_data */String, /* passphrase */Maybe<String>], Address>,
-    'isAccountImported': Interaction<[/* address */Address], Boolean>,
-    'listAccounts': Interaction<[], Address[]>,
-    'lockAccount': Interaction<[/* address */Address], null>,
-    'createAccount': Interaction<[/* passphrase */Maybe<String>], WalletAccount>,
-    'unlockAccount': Interaction<[/* address */Address, /* passphrase */String, /* duration: u64 */Maybe<number>], Boolean>,
-    'isAccountLocked': Interaction<[/* address */Address], Boolean>,
-    'sign': Interaction<[/* message */String, /* address */Address, /* passphrase */Maybe<String>, /* is_hex */Boolean], Signature>,
-    'verifySignature': Interaction<[/* message */String, /* public_key */PublicKey, /* signature */Signature, /* is_hex */Boolean], Boolean>,
+    'importRawKey': Interaction$1<[/* key_data */String, /* passphrase */Maybe<String>], Address>,
+    'isAccountImported': Interaction$1<[/* address */Address], Boolean>,
+    'listAccounts': Interaction$1<[], Address[]>,
+    'lockAccount': Interaction$1<[/* address */Address], null>,
+    'createAccount': Interaction$1<[/* passphrase */Maybe<String>], WalletAccount>,
+    'unlockAccount': Interaction$1<[/* address */Address, /* passphrase */Maybe<String>, /* duration: u64 */Maybe<number>], Boolean>,
+    'isAccountLocked': Interaction$1<[/* address */Address], Boolean>,
+    'sign': Interaction$1<[/* message */String, /* address */Address, /* passphrase */Maybe<String>, /* is_hex */Boolean], Signature>,
+    'verifySignature': Interaction$1<[/* message */String, /* public_key */PublicKey, /* signature */Signature, /* is_hex */Boolean], Boolean>,
 }
 
 type ZKPStateKebab = {
@@ -460,19 +466,41 @@ type ZKPStateKebab = {
 }
 
 type ZkpComponentMethods = {
-    'getZkpState': Interaction<[], ZKPStateKebab>,
+    'getZkpState': Interaction$1<[], ZKPStateKebab>,
 }
 
+// export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods & StreamOpened
 type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods & StreamOpened
 type MethodName = keyof Methods
 
 type Streams = BlockchainStreams
 type StreamName = keyof Streams
 
+type Interaction = Methods & Streams
+type InteractionName = keyof Interaction
+
 type RpcRequest<M extends InteractionName> = {
     jsonrpc: string,
     method: M,
-    params: Interactions[M]['params'],
+    params: Interaction[M]['params'],
+    id: number
+}
+
+type MethodResponsePayload<M extends Methods> = {
+    data: M['result'];
+    metadata: M['metadata'];
+} & {}
+
+type MethodResponseContent<M extends MethodName, WithMetadata extends boolean> = 
+    M extends 'streamOpened'
+        ? number :
+        WithMetadata extends true
+            ? MethodResponsePayload<Methods[M]>
+            : MethodResponsePayload<Methods[M]>["data"]
+
+type MethodResponse<M extends MethodName> = {
+    jsonrpc: string,
+    result: MethodResponseContent<M>,
     id: number
 }
 
@@ -490,65 +518,92 @@ type StreamResponse<S extends StreamName> = {
     }
 }
 
+type MethodResponseError = {
+    jsonrpc: string,
+    error: {
+        code: number,
+        message: string,
+        data: string
+    }
+    id: number
+}
+
 type ErrorCallReturn = {
     code: number,
     message: string,
 }
 
-type ContextCall = {
+type ContextRequest = {
     method: string,
-    params: (string | number | boolean | null)[],
+    params: RpcRequest<T>['params'],
     id: number,
+    timestamp: number
 }
 
-type MaybeResponse<T> = {
+type MaybeCallResponse<T> = {
     error: ErrorCallReturn,
     data: undefined
-    context: ContextCall
+    context: ContextRequest
 } | {
     error: undefined,
     data: T,
-    context: ContextCall
+    context: ContextRequest
+}
+
+type CallOptions = {
+    timeout: number
+}
+
+type ErrorStreamReturn = {
+    code: number,
+    message: string,
+}
+
+type MaybeStreamResponse<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+    error: ErrorStreamReturn,
+    data: undefined
+} | {
+    error: undefined,
+    data: CallbackParam<T, ShowMetadata, IncludeBody>,
+}
+
+type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
+    T extends 'subscribeForHeadBlock'
+        ? IncludeBody extends true
+            ? Block
+            : PartialBlock
+        : ShowMetadata extends true
+            ? StreamResponse<T>['params']['result']
+            : StreamResponse<T>['params']['result']['data']
+
+
+type StreamOptions = {
+    once: boolean,
+    // timeout: number, TODO
 }
 
 type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
-    next: (callback: (data: CallbackParam<T, ShowMetadata, IncludeBody>) => void) => void;
+    next: (callback: (p: MaybeStreamResponse<T, ShowMetadata, IncludeBody>) => void) => void;
     error: (callback: (error: any) => void) => void;
     close: () => void;
+    context: ContextRequest;
     getSubscriptionId: () => number;
 };
-type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = T extends 'subscribeForHeadBlock' ? IncludeBody extends true ? Block : PartialBlock : ShowMetadata extends true ? StreamResponse<T>['params']['result'] : StreamResponse<T>['params']['result']['data'];
 
 declare class Client$1 {
     private httpClient;
     private webSocketClient;
     constructor(url: URL);
-    call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], withMetadata?: boolean): Promise<{
+    call<T extends MethodName>(method: T, params: RpcRequest<T>["params"], options: CallOptions, withMetadata?: boolean): Promise<{
         error: ErrorCallReturn;
         data: undefined;
-        context: ContextCall;
+        context: ContextRequest;
     } | {
         error: undefined;
-        data: (T extends "streamOpened" ? number : {
-            data: any;
-            metadata: any;
-        }) extends {
-            metadata: null;
-        } ? ({
-            metadata: null;
-        } & (T extends "streamOpened" ? number : {
-            data: any;
-            metadata: any;
-        }))["data"] : (T extends "streamOpened" ? number : {
-            data: any;
-            metadata: any;
-        })["data"] | (T extends "streamOpened" ? number : {
-            data: any;
-            metadata: any;
-        });
-        context: ContextCall;
+        data: any;
+        context: ContextRequest;
     }>;
-    subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], withMetadata?: boolean): Promise<Subscription<T, boolean, false>>;
+    subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], options: StreamOptions, withMetadata?: boolean): Promise<Subscription<T, boolean, false>>;
 }
 
 type GetBlockByParams = ({
@@ -624,34 +679,34 @@ declare class BlockchainClient extends Client$1 {
     /**
      * Returns the block number for the current head.
      */
-    getBlockNumber(): Promise<MaybeResponse<BlockNumber>>;
+    getBlockNumber(options?: CallOptions): Promise<MaybeCallResponse<BlockNumber>>;
     /**
      * Returns the batch number for the current head.
      */
-    getBatchNumber(): Promise<MaybeResponse<BatchIndex>>;
+    getBatchNumber(options?: CallOptions): Promise<MaybeCallResponse<BatchIndex>>;
     /**
      * Returns the epoch number for the current head.
      */
-    getEpochNumber(): Promise<MaybeResponse<BatchIndex>>;
+    getEpochNumber(options?: CallOptions): Promise<MaybeCallResponse<BatchIndex>>;
     /**
      * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
      */
-    getBlockBy<T extends GetBlockByParams>(p?: T): Promise<T extends {
+    getBlockBy<T extends GetBlockByParams>(p?: T, options?: CallOptions): Promise<T extends {
         includeTransactions: true;
-    } ? MaybeResponse<Block> : MaybeResponse<PartialBlock>>;
+    } ? MaybeCallResponse<Block$1> : MaybeCallResponse<PartialBlock$1>>;
     /**
      * Returns the block at the head of the main chain. It has an option to include the
      * transactions in the block, which defaults to false.
      */
-    getLatestBlock<T extends GetLatestBlockParams>(p?: T): Promise<MaybeResponse<T extends {
+    getLatestBlock<T extends GetLatestBlockParams>(p?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         includeTransactions: true;
-    } ? Block : PartialBlock>>;
+    } ? Block$1 : PartialBlock$1>>;
     /**
      * Returns the information for the slot owner at the given block height and offset. The
      * offset is optional, it will default to getting the offset for the existing block
      * at the given height.
      */
-    getSlotAt<T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T): Promise<MaybeResponse<T extends {
+    getSlotAt<T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<Slot> : Slot>>;
     /**
@@ -662,16 +717,16 @@ declare class BlockchainClient extends Client$1 {
      * transactions are also returned. It has an option to specify the maximum number of transactions
      * to fetch, it defaults to 500.
      */
-    getTransactionBy<T extends GetTransactionByParams>(p: T): Promise<MaybeResponse<ResultGetTransactionsBy<T>>>;
+    getTransactionBy<T extends GetTransactionByParams>(p: T, options?: CallOptions): Promise<MaybeCallResponse<ResultGetTransactionsBy<T>>>;
     /**
      * Returns all the inherents (including reward inherents) for the parameter. Note
      * that this only considers blocks in the main chain.
      */
-    getInherentsBy<T extends GetInherentsByParams>(p: T): Promise<MaybeResponse<Inherent[]>>;
+    getInherentsBy<T extends GetInherentsByParams>(p: T, options?: CallOptions): Promise<MaybeCallResponse<Inherent[]>>;
     /**
      * Tries to fetch the account at the given address.
      */
-    getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T): Promise<MaybeResponse<T extends {
+    getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<Account> : Account>>;
     /**
@@ -679,7 +734,7 @@ declare class BlockchainClient extends Client$1 {
     */
     getActiveValidators<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T): Promise<MaybeResponse<T extends {
+    }>({ withMetadata }?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<Validator[]> : Validator[]>>;
     /**
@@ -688,7 +743,7 @@ declare class BlockchainClient extends Client$1 {
      */
     getCurrentSlashedSlots<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T): Promise<MaybeResponse<T extends {
+    }>({ withMetadata }?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]>>;
     /**
@@ -697,7 +752,7 @@ declare class BlockchainClient extends Client$1 {
      */
     getPreviousSlashedSlots<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T): Promise<MaybeResponse<T extends {
+    }>({ withMetadata }?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]>>;
     /**
@@ -705,7 +760,7 @@ declare class BlockchainClient extends Client$1 {
      */
     getParkedValidators<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T): Promise<MaybeResponse<T extends {
+    }>({ withMetadata }?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<{
         blockNumber: BlockNumber;
@@ -718,7 +773,7 @@ declare class BlockchainClient extends Client$1 {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    getValidatorBy<T extends GetValidatorByAddressParams>(p?: T): Promise<MaybeResponse<T extends {
+    getValidatorBy<T extends GetValidatorByAddressParams>(p?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<T extends {
         includeStakers: true;
@@ -728,17 +783,17 @@ declare class BlockchainClient extends Client$1 {
     /**
      * Tries to fetch a staker information given its address.
      */
-    getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T): Promise<MaybeResponse<T extends {
+    getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
     } ? WithMetadata<Staker> : Staker>>;
     /**
      * Subscribes to new block events.
      */
-    subscribeForBlocks<T extends SubscribeForHeadBlockParams>({ filter }: T): Promise<BlockSubscription<T>>;
+    subscribeForBlocks<T extends SubscribeForHeadBlockParams>({ filter }: T, options?: StreamOptions): Promise<BlockSubscription<T>>;
     /**
      * Subscribes to pre epoch validators events.
      */
-    subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams>(p?: T): Promise<Subscription<"subscribeForValidatorElectionByAddress", T extends {
+    subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams>(p?: T, options?: StreamOptions): Promise<Subscription<"subscribeForValidatorElectionByAddress", T extends {
         withMetadata: true;
     } ? true : false>>;
     /**
@@ -746,7 +801,7 @@ declare class BlockchainClient extends Client$1 {
      * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
      * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
      */
-    subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams>(p?: T): Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends {
+    subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams>(p?: T, options?: StreamOptions): Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends {
         withMetadata: true;
     } ? true : false>>;
 }
@@ -847,7 +902,7 @@ type UnstakeTxParams = {
     value: Coin;
     fee: Coin;
 } & ValidityStartHeight$1;
-type ValidatorTxParams = {
+type NewValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
     signingSecretKey: string;
@@ -883,9 +938,14 @@ type UnparkValidatorTxParams = {
     signingSecretKey: string;
     fee: Coin;
 } & ValidityStartHeight$1;
-type DeleteValidatorTxParams = {
+type RetireValidatorTxParams = {
     senderWallet: Address;
     validator: Address;
+    fee: Coin;
+} & ValidityStartHeight$1;
+type DeleteValidatorTxParams = {
+    validator: Address;
+    recipient: Address;
     fee: Coin;
     value: Coin;
 } & ValidityStartHeight$1;
@@ -895,118 +955,118 @@ declare class ConsensusClient extends Client$1 {
     /**
      * Returns a boolean specifying if we have established consensus with the network
      */
-    isConsensusEstablished(): Promise<MaybeResponse<Boolean>>;
+    isConsensusEstablished(options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
     /**
      * Given a serialized transaction, it will return the corresponding transaction struct
      */
-    getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams): Promise<MaybeResponse<Transaction>>;
+    getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, options?: CallOptions): Promise<MaybeCallResponse<Transaction>>;
     /**
      * Creates a serialized transaction
      */
-    createTransaction(p: TransactionParams): Promise<MaybeResponse<RawTransaction>>;
+    createTransaction(p: TransactionParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction
      */
-    sendTransaction(p: TransactionParams): Promise<MaybeResponse<Hash>>;
+    sendTransaction(p: TransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized transaction creating a new vesting contract
      */
-    createNewVestingTransaction(p: VestingTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createNewVestingTransaction(p: VestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction creating a new vesting contract to the network
      */
-    sendNewVestingTransaction(p: VestingTxParams): Promise<MaybeResponse<Hash>>;
+    sendNewVestingTransaction(p: VestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized transaction redeeming a vesting contract
      */
-    createRedeemVestingTransaction(p: RedeemVestingTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createRedeemVestingTransaction(p: RedeemVestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction redeeming a vesting contract
      */
-    sendRedeemVestingTransaction(p: RedeemVestingTxParams): Promise<MaybeResponse<Hash>>;
+    sendRedeemVestingTransaction(p: RedeemVestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized transaction creating a new HTLC contract
      */
-    createNewHtlcTransaction(p: HtlcTransactionParams): Promise<MaybeResponse<RawTransaction>>;
+    createNewHtlcTransaction(p: HtlcTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction creating a new HTLC contract
      */
-    sendNewHtlcTransaction(p: HtlcTransactionParams): Promise<MaybeResponse<Hash>>;
+    sendNewHtlcTransaction(p: HtlcTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized transaction redeeming an HTLC contract
      */
-    createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction redeeming an HTLC contract
      */
-    sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams): Promise<MaybeResponse<Hash>>;
+    sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method
      */
-    createRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method to network
      */
-    sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams): Promise<MaybeResponse<Hash>>;
+    sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
      */
-    createRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
      */
-    sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams): Promise<MaybeResponse<Hash>>;
+    sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
      * the `EarlyResolve` method.
      */
-    signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams): Promise<MaybeResponse<String>>;
+    signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams, options?: CallOptions): Promise<MaybeCallResponse<String>>;
     /**
      * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createNewStakerTransaction(p: StakerTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createNewStakerTransaction(p: StakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendNewStakerTransaction(p: StakerTxParams): Promise<MaybeResponse<Hash>>;
+    sendNewStakerTransaction(p: StakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    createStakeTransaction(p: StakeTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createStakeTransaction(p: StakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    sendStakeTransaction(p: StakeTxParams): Promise<MaybeResponse<Hash>>;
+    sendStakeTransaction(p: StakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
      * providing a sender wallet).
      */
-    createUpdateStakerTransaction(p: UpdateStakerTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createUpdateStakerTransaction(p: UpdateStakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
      * providing a sender wallet).
      */
-    sendUpdateStakerTransaction(p: UpdateStakerTxParams): Promise<MaybeResponse<Hash>>;
+    sendUpdateStakerTransaction(p: UpdateStakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
      */
-    createUnstakeTransaction(p: UnstakeTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createUnstakeTransaction(p: UnstakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
      */
-    sendUnstakeTransaction(p: UnstakeTxParams): Promise<MaybeResponse<Hash>>;
+    sendUnstakeTransaction(p: UnstakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and the validator deposit.
@@ -1015,7 +1075,7 @@ declare class ConsensusClient extends Client$1 {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    createNewValidatorTransaction(p: ValidatorTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createNewValidatorTransaction(p: NewValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `new_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and the validator deposit.
@@ -1024,7 +1084,7 @@ declare class ConsensusClient extends Client$1 {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    sendNewValidatorTransaction(p: ValidatorTxParams): Promise<MaybeResponse<Hash>>;
+    sendNewValidatorTransaction(p: NewValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `update_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1034,7 +1094,7 @@ declare class ConsensusClient extends Client$1 {
      * "" = Change the signal data field to None.
      * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
      */
-    createUpdateValidatorTransaction(p: UpdateValidatorTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `update_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1044,51 +1104,61 @@ declare class ConsensusClient extends Client$1 {
      * "" = Change the signal data field to None.
      * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
      */
-    sendUpdateValidatorTransaction(p: UpdateValidatorTxParams): Promise<MaybeResponse<Hash>>;
+    sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createInactivateValidatorTransaction(p: InactiveValidatorTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendInactivateValidatorTransaction(p: InactiveValidatorTxParams): Promise<MaybeResponse<Hash>>;
+    sendDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createReactivateValidatorTransaction(p: ReactivateValidatorTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams): Promise<MaybeResponse<Hash>>;
+    sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createUnparkValidatorTransaction(p: UnparkValidatorTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendUnparkValidatorTransaction(p: UnparkValidatorTxParams): Promise<MaybeResponse<Hash>>;
+    sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    /**
+     * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee.
+     */
+    createRetireValidatorTransaction(p: RetireValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
+    /**
+     * Sends a `retire_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee.
+     */
+    sendRetireValidatorTransaction(p: RetireValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `delete_validator` transaction. The transaction fee will be paid from the
      * validator deposit that is being returned.
      * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
      * Failed delete validator transactions can diminish the validator deposit
      */
-    createDeleteValidatorTransaction(p: DeleteValidatorTxParams): Promise<MaybeResponse<RawTransaction>>;
+    createDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `delete_validator` transaction. The transaction fee will be paid from the
      * validator deposit that is being returned.
      * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
      * Failed delete validator transactions can diminish the validator deposit
      */
-    sendDeleteValidatorTransaction(p: DeleteValidatorTxParams): Promise<MaybeResponse<Hash>>;
+    sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
 }
 
 type PushTransactionParams = {
@@ -1106,23 +1176,23 @@ declare class MempoolClient extends Client$1 {
      * @param transaction Serialized transaction
      * @returns Transaction hash
      */
-    pushTransaction({ transaction, withHighPriority }: PushTransactionParams): Promise<MaybeResponse<Hash>>;
+    pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Content of the mempool
      *
      * @param includeTransactions
      * @returns
      */
-    mempoolContent({ includeTransactions }?: MempoolContentParams): Promise<MaybeResponse<(Hash | Transaction)[]>>;
+    mempoolContent({ includeTransactions }?: MempoolContentParams, options?: CallOptions): Promise<MaybeCallResponse<(Hash | Transaction)[]>>;
     /**
      * @returns
      */
-    mempool(): Promise<MaybeResponse<MempoolInfo>>;
+    mempool(options?: CallOptions): Promise<MaybeCallResponse<MempoolInfo>>;
     /**
      *
      * @returns
      */
-    getMinFeePerByte(): Promise<MaybeResponse<number>>;
+    getMinFeePerByte(options?: CallOptions): Promise<MaybeCallResponse<number>>;
 }
 
 declare class NetworkClient extends Client$1 {
@@ -1130,15 +1200,15 @@ declare class NetworkClient extends Client$1 {
     /**
      * The peer ID for our local peer.
      */
-    getPeerId(): Promise<MaybeResponse<String>>;
+    getPeerId(options?: CallOptions): Promise<MaybeCallResponse<String>>;
     /**
      * Returns the number of peers.
      */
-    getPeerCount(): Promise<MaybeResponse<number>>;
+    getPeerCount(options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Returns a list with the IDs of all our peers.
      */
-    getPeerList(): Promise<MaybeResponse<String[]>>;
+    getPeerList(options?: CallOptions): Promise<MaybeCallResponse<String[]>>;
 }
 
 type JustBlockNumber = {
@@ -1164,7 +1234,7 @@ declare class PolicyClient extends Client$1 {
     /**
      * Gets a bundle of policy constants
      */
-    getPolicyConstants(): Promise<MaybeResponse<PolicyConstants>>;
+    getPolicyConstants(options?: CallOptions): Promise<MaybeCallResponse<PolicyConstants>>;
     /**
      * Gets the epoch number at a given `block_number` (height)
      *
@@ -1173,7 +1243,7 @@ declare class PolicyClient extends Client$1 {
      * For example, the first block of any epoch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height) or index
      */
-    getEpochAt({ blockNumber, justIndex }: BlockNumberWithIndex): Promise<MaybeResponse<number>>;
+    getEpochAt({ blockNumber, justIndex }: BlockNumberWithIndex, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the batch number at a given `block_number` (height)
      *
@@ -1182,14 +1252,14 @@ declare class PolicyClient extends Client$1 {
      * For example, the first block of any batch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height).
      */
-    getBatchAt({ blockNumber, justIndex }: BlockNumberWithIndex): Promise<MaybeResponse<number>>;
+    getBatchAt({ blockNumber, justIndex }: BlockNumberWithIndex, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the number (height) of the next election macro block after a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The number (height) of the next election macro block after a given block number (height).
      */
-    getElectionBlockAfter({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<number>>;
+    getElectionBlockAfter({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number (height) of the preceding election macro block before a given block number (height).
      * If the given block number is an election macro block, it returns the election macro block before it.
@@ -1197,7 +1267,7 @@ declare class PolicyClient extends Client$1 {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding election macro block before a given block number (height).
      */
-    getElectionBlockBefore({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<number>>;
+    getElectionBlockBefore({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number (height) of the last election macro block at a given block number (height).
      * If the given block number is an election macro block, then it returns that block number.
@@ -1205,28 +1275,28 @@ declare class PolicyClient extends Client$1 {
      * @param blockNumber The block number (height) to query.
      * @returns
      */
-    getLastElectionBlock({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<number>>;
+    getLastElectionBlock({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
      *
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
      */
-    getIsElectionBlockAt({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<Boolean>>;
+    getIsElectionBlockAt({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
     /**
      * Gets the block number (height) of the next macro block after a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next macro block after a given block number (height).
      */
-    getMacroBlockAfter({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<number>>;
+    getMacroBlockAfter({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number (height) of the preceding macro block before a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding macro block before a given block number (height).
      */
-    getMacroBlockBefore({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<number>>;
+    getMacroBlockBefore({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number (height) of the last macro block at a given block number (height).
      * If the given block number is a macro block, then it returns that block number.
@@ -1234,49 +1304,49 @@ declare class PolicyClient extends Client$1 {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the last macro block at a given block number (height).
      */
-    getLastMacroBlock({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<number>>;
+    getLastMacroBlock({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets a boolean expressing if the block at a given block number (height) is a macro block.
      *
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is a macro block.
      */
-    getIsMacroBlockAt({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<Boolean>>;
+    getIsMacroBlockAt({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
     /**
      * Gets the block number (height) of the next micro block after a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next micro block after a given block number (height).
      */
-    getIsMicroBlockAt({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<Boolean>>;
+    getIsMicroBlockAt({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
     /**
      * Gets the block number (height) of the first block of the given epoch (which is always a micro block).
      *
      * @param epochIndex The epoch index to query.
      * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
      */
-    getFirstBlockOf({ epochIndex }: JustEpochIndex): Promise<MaybeResponse<number>>;
+    getFirstBlockOf({ epochIndex }: JustEpochIndex, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number of the first block of the given batch (which is always a micro block).
      *
      * @param batchIndex The batch index to query.
      * @returns The block number of the first block of the given batch (which is always a micro block).
      */
-    getFirstBlockOfBatch({ batchIndex }: JustBatchIndex): Promise<MaybeResponse<number>>;
+    getFirstBlockOfBatch({ batchIndex }: JustBatchIndex, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number of the election macro block of the given epoch (which is always the last block).
      *
      * @param epochIndex The epoch index to query.
      * @returns The block number of the election macro block of the given epoch (which is always the last block).
      */
-    getElectionBlockOf({ epochIndex }: JustEpochIndex): Promise<MaybeResponse<number>>;
+    getElectionBlockOf({ epochIndex }: JustEpochIndex, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets the block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
      *
      * @param batchIndex The batch index to query.
      * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
      */
-    getMacroBlockOf({ batchIndex }: JustBatchIndex): Promise<MaybeResponse<number>>;
+    getMacroBlockOf({ batchIndex }: JustBatchIndex, options?: CallOptions): Promise<MaybeCallResponse<number>>;
     /**
      * Gets a boolean expressing if the batch at a given block number (height) is the first batch
      * of the epoch.
@@ -1284,7 +1354,7 @@ declare class PolicyClient extends Client$1 {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the batch at a given block number (height) is the first batch
      */
-    getFirstBatchOfEpoch({ blockNumber }: JustBlockNumber): Promise<MaybeResponse<Boolean>>;
+    getFirstBatchOfEpoch({ blockNumber }: JustBlockNumber, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
     /**
      * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
      * calculated using the following formula:
@@ -1297,7 +1367,7 @@ declare class PolicyClient extends Client$1 {
      * @param currentTime timestamp to calculate supply at
      * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
      */
-    getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams): Promise<MaybeResponse<number>>;
+    getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams, options?: CallOptions): Promise<MaybeCallResponse<number>>;
 }
 
 type SetAutomaticReactivationParams = {
@@ -1308,19 +1378,19 @@ declare class ValidatorClient extends Client$1 {
     /**
      * Returns our validator address.
      */
-    getAddress(): Promise<MaybeResponse<String>>;
+    getAddress(options?: CallOptions): Promise<MaybeCallResponse<String>>;
     /**
      * Returns our validator signing key
      */
-    getSigningKey(): Promise<MaybeResponse<String>>;
+    getSigningKey(options?: CallOptions): Promise<MaybeCallResponse<String>>;
     /**
      * Returns our validator voting key
      */
-    getVotingKey(): Promise<MaybeResponse<String>>;
+    getVotingKey(options?: CallOptions): Promise<MaybeCallResponse<String>>;
     /**
      * Updates the configuration setting to automatically reactivate our validator
      */
-    setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams): Promise<MaybeResponse<null>>;
+    setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams, options?: CallOptions): Promise<MaybeCallResponse<null>>;
 }
 
 type ImportKeyParams = {
@@ -1358,103 +1428,98 @@ type VerifySignatureParams = {
 };
 declare class WalletClient extends Client$1 {
     constructor(url: URL);
-    importRawKey({ keyData, passphrase }: ImportKeyParams): Promise<MaybeResponse<Address>>;
-    isAccountImported({ address }: IsAccountImportedParams): Promise<MaybeResponse<Boolean>>;
-    listAccounts(): Promise<MaybeResponse<Address[]>>;
-    lockAccount({ address }: LockAccountParams): Promise<MaybeResponse<null>>;
-    createAccount({ passphrase }: CreateAccountParams): Promise<MaybeResponse<WalletAccount>>;
-    unlockAccount({ address, passphrase, duration }: UnlockAccountParams): Promise<MaybeResponse<Boolean>>;
-    isAccountLocked({ address }: IsAccountLockedParams): Promise<MaybeResponse<Boolean>>;
-    sign({ message, address, passphrase, isHex }: SignParams): Promise<MaybeResponse<Signature>>;
-    verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams): Promise<MaybeResponse<Boolean>>;
+    importRawKey({ keyData, passphrase }: ImportKeyParams, options?: CallOptions): Promise<MaybeCallResponse<Address>>;
+    isAccountImported({ address }: IsAccountImportedParams, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
+    listAccounts(options?: CallOptions): Promise<MaybeCallResponse<Address[]>>;
+    lockAccount({ address }: LockAccountParams, options?: CallOptions): Promise<MaybeCallResponse<null>>;
+    createAccount(p?: CreateAccountParams, options?: CallOptions): Promise<MaybeCallResponse<WalletAccount>>;
+    unlockAccount({ address, passphrase, duration }: UnlockAccountParams, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
+    isAccountLocked({ address }: IsAccountLockedParams, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
+    sign({ message, address, passphrase, isHex }: SignParams, options?: CallOptions): Promise<MaybeCallResponse<Signature>>;
+    verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams, options?: CallOptions): Promise<MaybeCallResponse<Boolean>>;
 }
 
 declare class ZkpComponentClient extends Client$1 {
     constructor(url: URL);
-    getZkpState(): Promise<MaybeResponse<ZKPState>>;
+    getZkpState(options?: CallOptions): Promise<MaybeCallResponse<ZKPState>>;
 }
 
 declare class Client {
     block: {
-        current: () => Promise<MaybeResponse<number>>;
-        by: <T extends GetBlockByParams>(p?: T) => Promise<T extends {
+        current: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
+        get: <T extends GetBlockByParams>(p?: T, options?: CallOptions) => Promise<T extends {
             includeTransactions: true;
-        } ? MaybeResponse<Block> : MaybeResponse<PartialBlock>>;
-        latest: <T_1 extends GetLatestBlockParams>(p?: T_1) => Promise<MaybeResponse<T_1 extends {
+        } ? MaybeCallResponse<Block$1> : MaybeCallResponse<PartialBlock$1>>;
+        latest: <T_1 extends GetLatestBlockParams>(p?: T_1, options?: CallOptions) => Promise<MaybeCallResponse<T_1 extends {
             includeTransactions: true;
-        } ? Block : PartialBlock>>;
+        } ? Block$1 : PartialBlock$1>>;
         election: {
             after: ({ blockNumber }: {
                 blockNumber: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
             before: ({ blockNumber }: {
                 blockNumber: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
             last: ({ blockNumber }: {
                 blockNumber: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
             get: ({ epochIndex }: {
                 epochIndex: number;
-            }) => Promise<MaybeResponse<number>>;
-            subscribe: <T_2 extends SubscribeForValidatorElectionByAddressParams>(p?: T_2) => Promise<Subscription<"subscribeForValidatorElectionByAddress", T_2 extends {
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
+            subscribe: <T_2 extends SubscribeForValidatorElectionByAddressParams>(p?: T_2, options?: StreamOptions) => Promise<Subscription<"subscribeForValidatorElectionByAddress", T_2 extends {
                 withMetadata: true;
             } ? true : false, false>>;
         };
         isElection: ({ blockNumber }: {
             blockNumber: number;
-        }) => Promise<MaybeResponse<Boolean>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
         macro: {
             after: ({ blockNumber }: {
                 blockNumber: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
             before: ({ blockNumber }: {
                 blockNumber: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
             last: ({ blockNumber }: {
                 blockNumber: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
             get: ({ batchIndex }: {
                 batchIndex: number;
-            }) => Promise<MaybeResponse<number>>;
+            }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         };
         isMacro: ({ blockNumber }: {
             blockNumber: number;
-        }) => Promise<MaybeResponse<Boolean>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
         isMicro: ({ blockNumber }: {
             blockNumber: number;
-        }) => Promise<MaybeResponse<Boolean>>;
-        subscribe: <T_3 extends SubscribeForHeadBlockParams>({ filter }: T_3) => Promise<{
-            next: (callback: (data: (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") extends infer T_4 ? T_4 extends (T_3["filter"] extends "HASH" ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock") ? T_4 extends "subscribeForHeadBlock" ? (T_3["filter"] extends "FULL" ? true : false) extends infer T_5 ? T_5 extends (T_3["filter"] extends "FULL" ? true : false) ? T_5 extends true ? Block : PartialBlock : never : never : BlockchainStreams[T_4]["result"] : never : never) => void) => void;
-            error: (callback: (error: any) => void) => void;
-            close: () => void;
-            getSubscriptionId: () => number;
-        }>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
+        subscribe: <T_3 extends SubscribeForHeadBlockParams>({ filter }: T_3, options?: StreamOptions) => Promise<BlockSubscription<T_3>>;
     };
     batch: {
-        current: () => Promise<MaybeResponse<number>>;
+        current: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         at: ({ blockNumber, justIndex }: {
             blockNumber: number;
             justIndex?: boolean | undefined;
-        }) => Promise<MaybeResponse<number>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         firstBlock: ({ epochIndex }: {
             epochIndex: number;
-        }) => Promise<MaybeResponse<number>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
     };
     epoch: {
-        current: () => Promise<MaybeResponse<number>>;
+        current: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         at: ({ blockNumber, justIndex }: {
             blockNumber: number;
             justIndex?: boolean | undefined;
-        }) => Promise<MaybeResponse<number>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         firstBlock: ({ epochIndex }: {
             epochIndex: number;
-        }) => Promise<MaybeResponse<number>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         firstBatch: ({ blockNumber }: {
             blockNumber: number;
-        }) => Promise<MaybeResponse<Boolean>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
     };
     transaction: {
-        by: <T extends GetTransactionByParams>(p: T) => Promise<MaybeResponse<T extends {
+        get: <T extends GetTransactionByParams>(p: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
             hash: string;
         } ? Transaction : T extends {
             address: `NQ${number} ${string}`;
@@ -1464,16 +1529,16 @@ declare class Client {
         push: ({ transaction, withHighPriority }: {
             transaction: string;
             withHighPriority?: boolean | undefined;
-        }) => Promise<MaybeResponse<string>>;
-        minFeePerByte: () => Promise<MaybeResponse<number>>;
-        create: (p: TransactionParams) => Promise<MaybeResponse<string>>;
-        send: (p: TransactionParams) => Promise<MaybeResponse<string>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+        minFeePerByte: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
+        create: (p: TransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+        send: (p: TransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
     };
     inherent: {
-        by: <T extends GetInherentsByParams>(p: T) => Promise<MaybeResponse<Inherent[]>>;
+        get: <T extends GetInherentsByParams>(p: T, options?: CallOptions) => Promise<MaybeCallResponse<Inherent[]>>;
     };
     account: {
-        byAddress: <T extends GetAccountByAddressParams>({ address, withMetadata }: T) => Promise<MaybeResponse<T extends {
+        get: <T extends GetAccountByAddressParams>({ address, withMetadata }: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
             withMetadata: true;
         } ? {
             data: Account;
@@ -1482,40 +1547,40 @@ declare class Client {
         importRawKey: ({ keyData, passphrase }: {
             keyData: string;
             passphrase?: string | undefined;
-        }) => Promise<MaybeResponse<`NQ${number} ${string}`>>;
-        create: ({ passphrase }: {
+        }, options?: CallOptions) => Promise<MaybeCallResponse<`NQ${number} ${string}`>>;
+        new: (p?: {
             passphrase?: string | undefined;
-        }) => Promise<MaybeResponse<WalletAccount>>;
+        } | undefined, options?: CallOptions) => Promise<MaybeCallResponse<WalletAccount>>;
         isImported: ({ address }: {
             address: `NQ${number} ${string}`;
-        }) => Promise<MaybeResponse<Boolean>>;
-        list: () => Promise<MaybeResponse<`NQ${number} ${string}`[]>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
+        list: (options?: CallOptions) => Promise<MaybeCallResponse<`NQ${number} ${string}`[]>>;
         lock: ({ address }: {
             address: `NQ${number} ${string}`;
-        }) => Promise<MaybeResponse<null>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<null>>;
         unlock: ({ address, passphrase, duration }: {
             address: `NQ${number} ${string}`;
             passphrase?: string | undefined;
             duration?: number | undefined;
-        }) => Promise<MaybeResponse<Boolean>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
         isLocked: ({ address }: {
             address: `NQ${number} ${string}`;
-        }) => Promise<MaybeResponse<Boolean>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
         sign: ({ message, address, passphrase, isHex }: {
             message: string;
             address: `NQ${number} ${string}`;
             passphrase: string;
             isHex: boolean;
-        }) => Promise<MaybeResponse<Signature>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Signature>>;
         verify: ({ message, publicKey, signature, isHex }: {
             message: string;
             publicKey: string;
             signature: Signature;
             isHex: boolean;
-        }) => Promise<MaybeResponse<Boolean>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
     };
     validator: {
-        byAddress: <T extends GetValidatorByAddressParams>(p?: T) => Promise<MaybeResponse<T extends {
+        byAddress: <T extends GetValidatorByAddressParams>(p?: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
             withMetadata: true;
         } ? {
             data: T extends {
@@ -1527,15 +1592,15 @@ declare class Client {
         } ? Validator : PartialValidator$1>>;
         setAutomaticReactivation: ({ automaticReactivation }: {
             automaticReactivation: boolean;
-        }) => Promise<MaybeResponse<null>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<null>>;
         selfNode: {
-            address: () => Promise<MaybeResponse<String>>;
-            signingKey: () => Promise<MaybeResponse<String>>;
-            votingKey: () => Promise<MaybeResponse<String>>;
+            address: (options?: CallOptions) => Promise<MaybeCallResponse<String>>;
+            signingKey: (options?: CallOptions) => Promise<MaybeCallResponse<String>>;
+            votingKey: (options?: CallOptions) => Promise<MaybeCallResponse<String>>;
         };
-        active: <T_1 extends {
+        activeList: <T_1 extends {
             withMetadata: boolean;
-        }>({ withMetadata }?: T_1) => Promise<MaybeResponse<T_1 extends {
+        }>({ withMetadata }?: T_1, options?: CallOptions) => Promise<MaybeCallResponse<T_1 extends {
             withMetadata: true;
         } ? {
             data: Validator[];
@@ -1543,7 +1608,7 @@ declare class Client {
         } : Validator[]>>;
         parked: <T_2 extends {
             withMetadata: boolean;
-        }>({ withMetadata }?: T_2) => Promise<MaybeResponse<T_2 extends {
+        }>({ withMetadata }?: T_2, options?: CallOptions) => Promise<MaybeCallResponse<T_2 extends {
             withMetadata: true;
         } ? {
             data: {
@@ -1557,33 +1622,37 @@ declare class Client {
         }>>;
         action: {
             new: {
-                create: (p: ValidatorTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: ValidatorTxParams) => Promise<MaybeResponse<string>>;
+                createTx: (p: NewValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: NewValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
             update: {
-                create: (p: UpdateValidatorTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: UpdateValidatorTxParams) => Promise<MaybeResponse<string>>;
+                createTx: (p: UpdateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: UpdateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
-            inactive: {
-                create: (p: InactiveValidatorTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: InactiveValidatorTxParams) => Promise<MaybeResponse<string>>;
+            deactive: {
+                createTx: (p: InactiveValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: InactiveValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
             reactivate: {
-                create: (p: ReactivateValidatorTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: ReactivateValidatorTxParams) => Promise<MaybeResponse<string>>;
+                createTx: (p: ReactivateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: ReactivateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
             unpark: {
-                create: (p: UnparkValidatorTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: UnparkValidatorTxParams) => Promise<MaybeResponse<string>>;
+                createTx: (p: UnparkValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: UnparkValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            };
+            retire: {
+                createTx: (p: RetireValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: RetireValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
             delete: {
-                create: (p: DeleteValidatorTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: DeleteValidatorTxParams) => Promise<MaybeResponse<string>>;
+                createTx: (p: DeleteValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: DeleteValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
         };
     };
     slots: {
-        at: <T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T) => Promise<MaybeResponse<T extends {
+        at: <T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
             withMetadata: true;
         } ? {
             data: Slot;
@@ -1592,7 +1661,7 @@ declare class Client {
         slashed: {
             current: <T_1 extends {
                 withMetadata: boolean;
-            }>({ withMetadata }?: T_1) => Promise<MaybeResponse<T_1 extends {
+            }>({ withMetadata }?: T_1, options?: CallOptions) => Promise<MaybeCallResponse<T_1 extends {
                 withMetadata: true;
             } ? {
                 data: SlashedSlot[];
@@ -1600,7 +1669,7 @@ declare class Client {
             } : SlashedSlot[]>>;
             previous: <T_2 extends {
                 withMetadata: boolean;
-            }>({ withMetadata }?: T_2) => Promise<MaybeResponse<T_2 extends {
+            }>({ withMetadata }?: T_2, options?: CallOptions) => Promise<MaybeCallResponse<T_2 extends {
                 withMetadata: true;
             } ? {
                 data: SlashedSlot[];
@@ -1609,76 +1678,82 @@ declare class Client {
         };
     };
     mempool: {
-        info: () => Promise<MaybeResponse<MempoolInfo>>;
+        info: (options?: CallOptions) => Promise<MaybeCallResponse<MempoolInfo>>;
         content: ({ includeTransactions }?: {
             includeTransactions: boolean;
-        }) => Promise<MaybeResponse<(string | Transaction)[]>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<(string | Transaction)[]>>;
     };
     stakes: {
         new: {
-            create: (p: StakeTxParams) => Promise<MaybeResponse<string>>;
-            send: (p: StakeTxParams) => Promise<MaybeResponse<string>>;
+            createTx: (p: StakeTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendTx: (p: StakeTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
         };
     };
     staker: {
-        byAddress: <T extends GetStakerByAddressParams>({ address }: T) => Promise<MaybeResponse<T extends {
+        byAddress: <T extends GetStakerByAddressParams>({ address }: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
             withMetadata: true;
         } ? {
             data: Staker;
             metadata: BlockchainState;
         } : Staker>>;
-        create: (p: StakerTxParams) => Promise<MaybeResponse<string>>;
-        send: (p: StakerTxParams) => Promise<MaybeResponse<string>>;
+        new: {
+            createTx: (p: StakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendTx: (p: StakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+        };
         update: {
-            create: (p: UpdateStakerTxParams) => Promise<MaybeResponse<string>>;
-            send: (p: UpdateStakerTxParams) => Promise<MaybeResponse<string>>;
+            createTx: (p: UpdateStakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendTx: (p: UpdateStakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
         };
     };
     peers: {
-        id: () => Promise<MaybeResponse<String>>;
-        count: () => Promise<MaybeResponse<number>>;
-        peers: () => Promise<MaybeResponse<String[]>>;
-        consensusEstablished: () => Promise<MaybeResponse<Boolean>>;
+        id: (options?: CallOptions) => Promise<MaybeCallResponse<String>>;
+        count: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
+        peers: (options?: CallOptions) => Promise<MaybeCallResponse<String[]>>;
+        consensusEstablished: (options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
     };
     constant: {
-        params: () => Promise<MaybeResponse<PolicyConstants>>;
+        params: (options?: CallOptions) => Promise<MaybeCallResponse<PolicyConstants>>;
         supply: ({ genesisSupply, genesisTime, currentTime }: {
             genesisSupply: number;
             genesisTime: number;
             currentTime: number;
-        }) => Promise<MaybeResponse<number>>;
+        }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
     };
     htlc: {
-        create: (p: HtlcTransactionParams) => Promise<MaybeResponse<string>>;
-        send: (p: HtlcTransactionParams) => Promise<MaybeResponse<string>>;
+        new: {
+            createTx: (p: HtlcTransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendTx: (p: HtlcTransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+        };
         redeem: {
             regular: {
-                create: (p: RedeemRegularHtlcTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: RedeemRegularHtlcTxParams) => Promise<MaybeResponse<string>>;
+                createTx: (p: RedeemRegularHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: RedeemRegularHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
-            timeout: {
-                create: (p: RedeemTimeoutHtlcTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: RedeemTimeoutHtlcTxParams) => Promise<MaybeResponse<string>>;
+            timeoutTx: {
+                createTx: (p: RedeemTimeoutHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: RedeemTimeoutHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
-            early: {
-                create: (p: RedeemEarlyHtlcTxParams) => Promise<MaybeResponse<string>>;
-                send: (p: RedeemEarlyHtlcTxParams) => Promise<MaybeResponse<string>>;
+            earlyTx: {
+                createTx: (p: RedeemEarlyHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: RedeemEarlyHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
         };
     };
     vesting: {
-        create: (p: VestingTxParams) => Promise<MaybeResponse<string>>;
-        send: (p: VestingTxParams) => Promise<MaybeResponse<string>>;
+        new: {
+            createTx: (p: VestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendTx: (p: VestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+        };
         redeem: {
-            create: (p: RedeemVestingTxParams) => Promise<MaybeResponse<string>>;
-            send: (p: RedeemVestingTxParams) => Promise<MaybeResponse<string>>;
+            createTx: (p: RedeemVestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendTx: (p: RedeemVestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
         };
     };
     zeroKnowledgeProof: {
-        state: () => Promise<MaybeResponse<ZKPState>>;
+        state: (options?: CallOptions) => Promise<MaybeCallResponse<ZKPState>>;
     };
     logs: {
-        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams>(p?: T) => Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends {
+        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams>(p?: T, options?: StreamOptions) => Promise<Subscription<"subscribeForLogsByAddressesAndTypes", T extends {
             withMetadata: true;
         } ? true : false, false>>;
     };
@@ -1695,4 +1770,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType$1 as BlockType, Client, Coin, CurrentTime$1 as CurrentTime, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactiveValidatorTxParams, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, SignRedeemEarlyHtlcParams, Signature, SlashedSlot, Slot, StakeTxParams, Staker, StakerTxParams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionParams, UnparkValidatorTxParams, UnstakeTxParams, UpdateStakerTxParams, UpdateValidatorTxParams, Validator, ValidatorTxParams, VestingAccount, VestingTxParams, WalletAccount, ZKPState };
+export { Account, AccountType$1 as AccountType, Address, BasicAccount, BatchIndex, Block$1 as Block, BlockLog, BlockNumber, BlockSubscription, BlockType$1 as BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin, ConsensusClient, ContextRequest, CurrentTime$1 as CurrentTime, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactiveValidatorTxParams, Inherent, LogType, LogsByAddressesAndTypes, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashedSlot, Slot, StakeTxParams, Staker, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionParams, UnparkValidatorTxParams, UnstakeTxParams, UpdateStakerTxParams, UpdateValidatorTxParams, Validator, ValidatorClient, VestingAccount, VestingTxParams, WalletAccount, WalletClient, ZKPState, ZkpComponentClient };

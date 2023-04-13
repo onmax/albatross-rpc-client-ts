@@ -15,7 +15,7 @@ export class Client {
         return this.httpClient.call(method, params, withMetadata, options);
     }
 
-    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], options: StreamOptions, withMetadata: boolean = false) {
-        return this.webSocketClient.subscribe(event, params, withMetadata, options);
+    async subscribe<T extends StreamName>(event: T, params: RpcRequest<T>["params"], options: StreamOptions<T>) {
+        return this.webSocketClient.subscribe(event, params, options);
     }
 }

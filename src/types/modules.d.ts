@@ -1,5 +1,6 @@
 import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, PartialBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
 import { BlockLog } from "./logs";
+import { LogType } from "./enums";
 
 // Metadatas
 export type BlockchainState = { 
@@ -51,7 +52,7 @@ export type BlockchainStreams = {
     'subscribeForHeadBlock': Interaction<[/* include_transactions */Maybe<Boolean>], Block | PartialBlock>,
     'subscribeForHeadBlockHash': Interaction<[], Hash>,
     'subscribeForValidatorElectionByAddress': Interaction<[Address], Validator, BlockchainState>,
-    'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/string[]], BlockLog, BlockchainState>,
+    'subscribeForLogsByAddressesAndTypes': Interaction<[Address[], /*Check out logs-types.ts*/LogType[]], BlockLog, BlockchainState>,
 }
 
 export type ConsensusMethods = {

@@ -4,6 +4,10 @@ export enum BlockType {
 }
 
 export enum LogType {
+    PayoutInherent = "payout-inherent",
+    ParkInherent = "park-inherent",
+    SlashInherent = "slash-inherent",
+    RevertContractInherent = "revert-contract-inherent",
     PayFee = "pay-fee",
     Transfer = "transfer",
     HtlcCreate = "htlc-create",
@@ -19,6 +23,7 @@ export enum LogType {
     CreateStaker = "create-staker",
     Stake = "stake",
     UpdateStaker = "update-staker",
+    RetireValidator = "retire-validator",
     DeleteValidator = "delete-validator",
     Unstake = "unstake",
     PayoutReward = "payout-reward",

@@ -1,10 +1,27 @@
 "use strict";
 var __create = Object.create;
 var __defProp = Object.defineProperty;
+var __defProps = Object.defineProperties;
 var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
 var __getOwnPropNames = Object.getOwnPropertyNames;
+var __getOwnPropSymbols = Object.getOwnPropertySymbols;
 var __getProtoOf = Object.getPrototypeOf;
 var __hasOwnProp = Object.prototype.hasOwnProperty;
+var __propIsEnum = Object.prototype.propertyIsEnumerable;
+var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
+var __spreadValues = (a, b) => {
+  for (var prop in b || (b = {}))
+    if (__hasOwnProp.call(b, prop))
+      __defNormalProp(a, prop, b[prop]);
+  if (__getOwnPropSymbols)
+    for (var prop of __getOwnPropSymbols(b)) {
+      if (__propIsEnum.call(b, prop))
+        __defNormalProp(a, prop, b[prop]);
+    }
+  return a;
+};
+var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
@@ -156,7 +173,8 @@ HttpClient.id = 0;
 var import_buffer = require("buffer");
 var import_ws = __toESM(require("ws"), 1);
 var WS_DEFAULT_OPTIONS = {
-  once: false
+  once: false,
+  filter: () => true
 };
 var WebSocketClient = class {
   constructor(url) {
@@ -166,7 +184,7 @@ var WebSocketClient = class {
     this.url = wsUrl;
     this.textDecoder = new TextDecoder();
   }
-  subscribe(event, params, withMetadata, options) {
+  subscribe(event, params, userOptions) {
     return __async(this, null, function* () {
       const ws = new import_ws.default(this.url.href);
       let subscriptionId;
@@ -174,24 +192,28 @@ var WebSocketClient = class {
         jsonrpc: "2.0",
         method: event,
         params,
-        id: this.id++,
-        timestamp: Date.now()
+        id: this.id++
       };
-      const { once } = options;
+      const options = __spreadValues(__spreadValues({}, WS_DEFAULT_OPTIONS), userOptions);
+      const { once, filter } = options;
+      const withMetadata = "withMetadata" in options ? options.withMetadata : false;
       const args = {
         next: (callback) => {
           ws.onmessage = (event2) => __async(this, null, function* () {
             const payload = yield this.parsePayload(event2);
+            if ("error" in payload) {
+              callback({ data: void 0, error: payload });
+              return;
+            }
             if ("result" in payload) {
               subscriptionId = payload.result;
               return;
             }
-            if ("error" in payload) {
-              callback({ data: void 0, error: payload });
-            } else {
-              const data = withMetadata ? payload.params.result : payload.params.result.data;
-              callback({ data, error: void 0 });
+            const data = withMetadata ? payload.params.result : payload.params.result.data;
+            if (filter && !filter(data)) {
+              return;
             }
+            callback({ data, error: void 0 });
             if (once) {
               ws.close();
             }
@@ -206,7 +228,9 @@ var WebSocketClient = class {
           ws.close();
         },
         getSubscriptionId: () => subscriptionId,
-        context: requestBody
+        context: __spreadProps(__spreadValues({}, requestBody), {
+          timestamp: Date.now()
+        })
       };
       return new Promise((resolve) => {
         ws.onopen = () => {
@@ -252,9 +276,9 @@ var Client = class {
       return this.httpClient.call(method, params, withMetadata, options);
     });
   }
-  subscribe(event, params, options, withMetadata = false) {
+  subscribe(event, params, options) {
     return __async(this, null, function* () {
-      return this.webSocketClient.subscribe(event, params, withMetadata, options);
+      return this.webSocketClient.subscribe(event, params, options);
     });
   }
 };
@@ -420,9 +444,28 @@ var BlockchainClient = class extends Client {
   /**
    * Subscribes to new block events.
    */
-  subscribeForBlocks(_0) {
-    return __async(this, arguments, function* ({ filter }, options = WS_DEFAULT_OPTIONS) {
-      switch (filter) {
+  subscribeForBlocks(params, userOptions) {
+    return __async(this, null, function* () {
+      if (params.retrieve === "HASH") {
+        const options2 = __spreadValues(__spreadValues({}, WS_DEFAULT_OPTIONS), userOptions);
+        return this.subscribe("subscribeForHeadBlockHash", [], options2);
+      }
+      let filter = void 0;
+      if (!userOptions || !userOptions.filter) {
+        switch (params.blockType) {
+          case "ELECTION":
+            filter = (block) => block.isElectionBlock;
+            break;
+          case "MACRO":
+            filter = (block) => "isElectionBlock" in block;
+            break;
+          case "MICRO":
+            filter = (block) => !("isElectionBlock" in block);
+            break;
+        }
+      }
+      const options = __spreadValues(__spreadProps(__spreadValues({}, WS_DEFAULT_OPTIONS), { filter }), userOptions);
+      switch (params.retrieve) {
         case "FULL":
           return this.subscribe("subscribeForHeadBlock", [
             /*includeTransactions*/
@@ -433,17 +476,16 @@ var BlockchainClient = class extends Client {
             /*includeTransactions*/
             false
           ], options);
-        case "HASH":
-          return this.subscribe("subscribeForHeadBlockHash", [], options);
       }
     });
   }
   /**
    * Subscribes to pre epoch validators events.
    */
-  subscribeForValidatorElectionByAddress() {
-    return __async(this, arguments, function* (p = { withMetadata: false }, options = WS_DEFAULT_OPTIONS) {
-      return this.subscribe("subscribeForValidatorElectionByAddress", [p.address], options, p.withMetadata);
+  subscribeForValidatorElectionByAddress(p, userOptions) {
+    return __async(this, null, function* () {
+      const options = __spreadValues(__spreadProps(__spreadValues({}, WS_DEFAULT_OPTIONS), { withMetadata: false }), userOptions);
+      return this.subscribe("subscribeForValidatorElectionByAddress", [p == null ? void 0 : p.address], options);
     });
   }
   /**
@@ -451,9 +493,10 @@ var BlockchainClient = class extends Client {
    * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
    * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
    */
-  subscribeForLogsByAddressesAndTypes() {
-    return __async(this, arguments, function* (p = { withMetadata: false }, options = WS_DEFAULT_OPTIONS) {
-      return this.subscribe("subscribeForLogsByAddressesAndTypes", [(p == null ? void 0 : p.addresses) || [], (p == null ? void 0 : p.types) || []], options, p == null ? void 0 : p.withMetadata);
+  subscribeForLogsByAddressesAndTypes(p, userOptions) {
+    return __async(this, null, function* () {
+      const options = __spreadValues(__spreadProps(__spreadValues({}, WS_DEFAULT_OPTIONS), { withMetadata: false }), userOptions);
+      return this.subscribe("subscribeForLogsByAddressesAndTypes", [(p == null ? void 0 : p.addresses) || [], (p == null ? void 0 : p.types) || []], options);
     });
   }
 };
@@ -1519,6 +1562,10 @@ var BlockType = /* @__PURE__ */ ((BlockType2) => {
   return BlockType2;
 })(BlockType || {});
 var LogType = /* @__PURE__ */ ((LogType2) => {
+  LogType2["PayoutInherent"] = "payout-inherent";
+  LogType2["ParkInherent"] = "park-inherent";
+  LogType2["SlashInherent"] = "slash-inherent";
+  LogType2["RevertContractInherent"] = "revert-contract-inherent";
   LogType2["PayFee"] = "pay-fee";
   LogType2["Transfer"] = "transfer";
   LogType2["HtlcCreate"] = "htlc-create";
@@ -1534,6 +1581,7 @@ var LogType = /* @__PURE__ */ ((LogType2) => {
   LogType2["CreateStaker"] = "create-staker";
   LogType2["Stake"] = "stake";
   LogType2["UpdateStaker"] = "update-staker";
+  LogType2["RetireValidator"] = "retire-validator";
   LogType2["DeleteValidator"] = "delete-validator";
   LogType2["Unstake"] = "unstake";
   LogType2["PayoutReward"] = "payout-reward";
@@ -1573,13 +1621,13 @@ var Client2 = class {
     };
     this.block = {
       current: blockchain.getBlockNumber.bind(blockchain),
-      get: blockchain.getBlockBy.bind(blockchain),
+      getBy: blockchain.getBlockBy.bind(blockchain),
       latest: blockchain.getLatestBlock.bind(blockchain),
       election: {
         after: policy.getElectionBlockAfter.bind(policy),
         before: policy.getElectionBlockBefore.bind(policy),
         last: policy.getLastElectionBlock.bind(policy),
-        get: policy.getElectionBlockOf.bind(policy),
+        getBy: policy.getElectionBlockOf.bind(policy),
         subscribe: blockchain.subscribeForValidatorElectionByAddress.bind(blockchain)
       },
       isElection: policy.getIsElectionBlockAt.bind(policy),
@@ -1587,7 +1635,7 @@ var Client2 = class {
         after: policy.getMacroBlockAfter.bind(policy),
         before: policy.getMacroBlockBefore.bind(policy),
         last: policy.getLastMacroBlock.bind(policy),
-        get: policy.getMacroBlockOf.bind(policy)
+        getBy: policy.getMacroBlockOf.bind(policy)
       },
       isMacro: policy.getIsMacroBlockAt.bind(policy),
       isMicro: policy.getIsMicroBlockAt.bind(policy),
@@ -1615,7 +1663,7 @@ var Client2 = class {
       }
     };
     this.transaction = {
-      get: blockchain.getTransactionBy.bind(blockchain),
+      getBy: blockchain.getTransactionBy.bind(blockchain),
       push: mempool.pushTransaction.bind(mempool),
       minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
       create: consensus.createTransaction.bind(consensus),
@@ -1669,10 +1717,10 @@ var Client2 = class {
       }
     };
     this.inherent = {
-      get: blockchain.getInherentsBy.bind(blockchain)
+      getBy: blockchain.getInherentsBy.bind(blockchain)
     };
     this.account = {
-      get: blockchain.getAccountBy.bind(blockchain),
+      getBy: blockchain.getAccountBy.bind(blockchain),
       importRawKey: wallet.importRawKey.bind(wallet),
       new: wallet.createAccount.bind(wallet),
       isImported: wallet.isAccountImported.bind(wallet),

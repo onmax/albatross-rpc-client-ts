@@ -2,8 +2,8 @@ import { Blob } from 'buffer';
 import WebSocket from 'ws';
 import { CallbackParam, ContextRequest, ErrorStreamReturn, MaybeStreamResponse, MethodResponse, RpcRequest, StreamName, StreamOptions, StreamResponse } from "../types/rpc-messages";
 
-export type Subscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
-    next: (callback: (p: MaybeStreamResponse<T, ShowMetadata, IncludeBody>) => void) => void;
+export type Subscription<CallbackItem> = {
+    next: (callback: (p: CallbackItem) => void) => void;
     error: (callback: (error: any) => void) => void;
     close: () => void;
 
@@ -14,8 +14,10 @@ export type Subscription<T extends StreamName, ShowMetadata extends boolean | un
     getSubscriptionId: () => number;
 }
 
+
 export const WS_DEFAULT_OPTIONS: StreamOptions = {
     once: false,
+    filter: () => true,
 }
 
 export class WebSocketClient {
@@ -30,7 +32,7 @@ export class WebSocketClient {
         this.textDecoder = new TextDecoder()
     }
 
-    async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata, options: StreamOptions): Promise<Subscription<T, ShowMetadata>> {
+    async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], userOptions: StreamOptions<T>) {
         const ws = new WebSocket(this.url.href);
         let subscriptionId : number;
 
@@ -41,24 +43,36 @@ export class WebSocketClient {
             id: this.id++,
         };
 
-        const { once } = options;
-        
-        const args: Subscription<T, ShowMetadata> = {
+        const options = {
+            ...WS_DEFAULT_OPTIONS,
+            ...userOptions,
+        }
+
+        const { once, filter } = options;
+        const withMetadata = 'withMetadata' in options ? options.withMetadata : false;
+
+        const args: Subscription<MaybeStreamResponse<T, ShowMetadata>> = {
             next: (callback: (data: MaybeStreamResponse<T, ShowMetadata>) => void) => {
                 ws.onmessage = async (event) => {
                     const payload = await this.parsePayload<T>(event);
+
+                    if ('error' in payload) {
+                        callback({ data: undefined, error: payload as ErrorStreamReturn });
+                        return;
+                    }
 
                     if ('result' in payload) {
                         subscriptionId = payload.result;
                         return;
                     }
 
-                    if ('error' in payload) {
-                        callback({ data: undefined, error: payload as ErrorStreamReturn });
-                    } else {
-                        const data = (withMetadata ? (payload as StreamResponse<T>).params.result : (payload as StreamResponse<T>).params.result.data) as CallbackParam<T, ShowMetadata>;
-                        callback({data, error: undefined});
+                    const data = (withMetadata ? (payload as StreamResponse<T>).params.result : (payload as StreamResponse<T>).params.result.data) as CallbackParam<T, ShowMetadata>;
+
+                    if (filter && !filter(data)) {
+                        return;
                     }
+
+                    callback({data, error: undefined});
 
                     if (once) {
                         ws.close();

@@ -1,9 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import { Client, Transaction } from '.';
+import { BlockType } from '../dist';
 
 function getClient() {
     const secret = process.env.NIMIQ_SECRET || '';
-    const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
+    // const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
+    const url = new URL(`http://localhost:10200`);
     url.searchParams.append('secret', secret);
     return new Client(url)
 }
@@ -39,27 +41,27 @@ describe('Test for block module', async () => {
 describe('Test for subscriptions', async () => {
     const client = getClient();
     it('subscribe to new full blocks', async () => {
-        const { next, close } = await client.block.subscribe({filter: 'FULL'})
+        const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL'})
         next(data => expect(data).toHaveProperty('transactions'))
         close()
     })
     it('subscribe to new partial blocks', async () => {
-        const { next, close } = await client.block.subscribe({filter: 'PARTIAL'})
+        const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL'})
         next(data => expect(data).toHaveProperty('hash'))
         close()
     })
     it('subscribe to new hashes blocks', async () => {
-        const { next, close } = await client.block.subscribe({filter: 'HASH'})
+        const { next, close } = await client.block.subscribe({retrieve: 'HASH'})
         next(data => expect(data).toBeInstanceOf(String))
         close()
     })
     it('subscribe to logs', async () => {
-        const { next, close } = await client.logs.subscribe()
+        const { next, close } = await client.logs.subscribe({addresses: []})
         next(data => expect(data).toHaveProperty('hash'))
         close()
     })
     it('subscribe to logs metadata', async () => {
-        const { next, close } = await client.logs.subscribe({withMetadata: true})
+        const { next, close } = await client.logs.subscribe({addresses: []}, { withMetadata: true})
         next(data => expect(data).toHaveProperty('metadata'))
         close()
     })

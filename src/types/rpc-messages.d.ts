@@ -107,8 +107,16 @@ export type CallbackParam<T extends StreamName, ShowMetadata extends boolean | u
             ? StreamResponse<T>['params']['result']
             : StreamResponse<T>['params']['result']['data']
 
+export type FilterStreamFn<T extends StreamName> = (data: Streams[T]["result"]) => boolean;
 
-export type StreamOptions = {
+// Only withMetadata if T extends subscribeForValidatorElectionByAddress or subscribeForLogsByAddressesAndTypes
+
+export type StreamOptions<T extends StreamName = any> = {
     once: boolean,
+    filter?: FilterStreamFn<T>,
     // timeout: number, TODO
-}
+} & (
+    T extends 'subscribeForValidatorElectionByAddress' | 'subscribeForLogsByAddressesAndTypes'
+        ? { withMetadata: boolean }
+        : {}
+);

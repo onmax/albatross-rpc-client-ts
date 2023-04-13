@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.29
+
+### Patch Changes
+
+- b0e0c96: options in stream
+
 ## 0.0.28
 
 ### Patch Changes

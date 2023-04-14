@@ -211,7 +211,7 @@ type Staker = {
     delegation?: Address$1;
 }
 
-type PartialValidator$1 = {
+type PartialValidator = {
     address: Address$1;
     signingKey: string;
     votingKey: string;
@@ -220,7 +220,7 @@ type PartialValidator$1 = {
     numStakers: number;
 }
 
-type Validator = PartialValidator$1 & {
+type Validator = PartialValidator & {
     signalData?: string;
     inactivityFlag?: number;
     stakers?: Staker[];
@@ -466,7 +466,8 @@ type BlockchainMethods = {
     'getCurrentSlashedSlots': Interaction$1<[], SlashedSlot[], BlockchainState>,
     'getPreviousSlashedSlots': Interaction$1<[], SlashedSlot[], BlockchainState>,
     'getParkedValidators': Interaction$1<[], { blockNumber: BlockNumber, validators: Validator[]}, BlockchainState>,
-    'getValidatorByAddress': Interaction$1<[Address$1, /* include_stakers */Maybe<Boolean>], Validator | PartialValidator, BlockchainState>,
+    'getValidatorByAddress': Interaction$1<[Address$1], PartialValidator, BlockchainState>,
+    'getStakersByAddress': Interaction$1<[Address$1], Staker[], BlockchainState>,
     'getStakerByAddress': Interaction$1<[Address$1], Staker, BlockchainState>,
 }
 
@@ -778,7 +779,9 @@ type GetAccountByAddressParams = {
 };
 type GetValidatorByAddressParams = {
     address: Address$1;
-    includeStakers?: boolean;
+};
+type GetStakersByAddressParams = {
+    address: Address$1;
 };
 type GetStakerByAddressParams = {
     address: Address$1;
@@ -810,7 +813,7 @@ type ResultGetTransactionsBy<T> = T extends {
     address: Address$1;
 } ? ResultGetTransactionsByAddress<T> : Transaction[];
 type SpecificBlock<T extends SubscribeForHeadBlockParams> = T["blockType"] extends 'MICRO' ? (T["retrieve"] extends 'FULL' ? MicroBlock : PartialMicroBlock) : (T["retrieve"] extends 'FULL' ? MacroBlock : PartialMacroBlock);
-type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<T extends SubscribeForHeadBlockParams ? SpecificBlock<T> : string>;
+type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<MaybeStreamResponse<T extends SubscribeForHeadBlockParams ? SpecificBlock<T> : string>>;
 declare class BlockchainClient extends Client$1 {
     constructor(url: URL);
     /**
@@ -910,13 +913,18 @@ declare class BlockchainClient extends Client$1 {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    getValidatorBy<T extends GetValidatorByAddressParams>(p?: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
+    getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
         withMetadata: true;
-    } ? WithMetadata<T extends {
-        includeStakers: true;
-    } ? Validator : PartialValidator$1> : T extends {
-        includeStakers: true;
-    } ? Validator : PartialValidator$1>>;
+    } ? WithMetadata<PartialValidator> : PartialValidator>>;
+    /**
+     * Fetches all stakers for a given validator.
+     * IMPORTANT: This operation iterates over all stakers of the staking contract
+     * and thus is extremely computationally expensive.
+     * This function requires the read lock acquisition prior to its execution.
+     */
+    getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options?: CallOptions): Promise<MaybeCallResponse<T extends {
+        withMetadata: true;
+    } ? WithMetadata<Staker> : Staker>>;
     /**
      * Tries to fetch a staker information given its address.
      */
@@ -1717,16 +1725,12 @@ declare class Client {
         }, options?: CallOptions) => Promise<MaybeCallResponse<Boolean>>;
     };
     validator: {
-        byAddress: <T extends GetValidatorByAddressParams>(p?: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
+        byAddress: <T extends GetValidatorByAddressParams>({ address }: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
             withMetadata: true;
         } ? {
-            data: T extends {
-                includeStakers: true;
-            } ? Validator : PartialValidator$1;
+            data: PartialValidator;
             metadata: BlockchainState;
-        } : T extends {
-            includeStakers: true;
-        } ? Validator : PartialValidator$1>>;
+        } : PartialValidator>>;
         setAutomaticReactivation: ({ automaticReactivation }: {
             automaticReactivation: boolean;
         }, options?: CallOptions) => Promise<MaybeCallResponse<null>>;
@@ -1827,7 +1831,13 @@ declare class Client {
         };
     };
     staker: {
-        byAddress: <T extends GetStakerByAddressParams>({ address }: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
+        fromValidator: <T extends GetStakersByAddressParams>({ address }: T, options?: CallOptions) => Promise<MaybeCallResponse<T extends {
+            withMetadata: true;
+        } ? {
+            data: Staker;
+            metadata: BlockchainState;
+        } : Staker>>;
+        getBy: <T_1 extends GetStakerByAddressParams>({ address }: T_1, options?: CallOptions) => Promise<MaybeCallResponse<T_1 extends {
             withMetadata: true;
         } ? {
             data: Staker;
@@ -1907,4 +1917,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { Account, AccountType$1 as AccountType, Address$1 as Address, AppliedBlockLog, BasicAccount, BatchIndex, Block$1 as Block, BlockLog, BlockNumber, BlockSubscription, BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin$1 as Coin, ConsensusClient, ContextRequest, CreateStakerLog, CreateValidatorLog, CurrentTime$1 as CurrentTime, DeleteValidatorLog, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, FailedTransactionLog, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactivateValidatorLog, InactiveValidatorTxParams, Inherent, InherentLog, Log, LogType, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkInherentLog, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator$1 as PartialValidator, PayFeeLog, PayoutInherentLog, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorLog, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, RevertContractInherentLog, RevertedBlockLog, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashInherentLog, SlashedSlot, Slot, StakeLog, StakeTxParams, Staker, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionLog, TransactionParams, TransferLog, UnparkValidatorLog, UnparkValidatorTxParams, UnstakeLog, UnstakeTxParams, UpdateStakerLog, UpdateStakerTxParams, UpdateValidatorLog, UpdateValidatorTxParams, Validator, ValidatorClient, VestingAccount, VestingTxParams, WalletAccount, WalletClient, ZKPState, ZkpComponentClient };
+export { Account, AccountType$1 as AccountType, Address$1 as Address, AppliedBlockLog, BasicAccount, BatchIndex, Block$1 as Block, BlockLog, BlockNumber, BlockSubscription, BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin$1 as Coin, ConsensusClient, ContextRequest, CreateStakerLog, CreateValidatorLog, CurrentTime$1 as CurrentTime, DeleteValidatorLog, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, FailedTransactionLog, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactivateValidatorLog, InactiveValidatorTxParams, Inherent, InherentLog, Log, LogType, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkInherentLog, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutInherentLog, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorLog, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, RevertContractInherentLog, RevertedBlockLog, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashInherentLog, SlashedSlot, Slot, StakeLog, StakeTxParams, Staker, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionLog, TransactionParams, TransferLog, UnparkValidatorLog, UnparkValidatorTxParams, UnstakeLog, UnstakeTxParams, UpdateStakerLog, UpdateStakerTxParams, UpdateValidatorLog, UpdateValidatorTxParams, Validator, ValidatorClient, VestingAccount, VestingTxParams, WalletAccount, WalletClient, ZKPState, ZkpComponentClient };

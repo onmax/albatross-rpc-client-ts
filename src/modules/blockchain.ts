@@ -4,7 +4,7 @@ import { MaybeSubscription, Subscription, WS_DEFAULT_OPTIONS } from "../client/w
 import { Account, Address, BatchIndex, Block, BlockNumber, Hash, Inherent, MacroBlock, MicroBlock, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockchainState } from "../types/modules";
-import { FilterStreamFn, MaybeCallResponse, StreamOptions } from "../types/rpc-messages";
+import { FilterStreamFn, MaybeCallResponse, MaybeStreamResponse, StreamOptions } from "../types/rpc-messages";
 
 export type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber }) & { includeTransactions?: boolean };
 export type GetLatestBlockParams = { includeTransactions?: boolean };
@@ -32,9 +32,9 @@ export type SpecificBlock<T extends SubscribeForHeadBlockParams> =
         ? (T["retrieve"] extends 'FULL' ? MicroBlock : PartialMicroBlock)
         : (T["retrieve"] extends 'FULL' ? MacroBlock : PartialMacroBlock)
 
-export type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<
+export type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<MaybeStreamResponse<
     T extends SubscribeForHeadBlockParams ? SpecificBlock<T> : string
->;
+>>;
 
 export class BlockchainClient extends Client {
     constructor(url: URL) {

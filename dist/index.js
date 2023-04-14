@@ -1,43 +1,3 @@
-var __defProp = Object.defineProperty;
-var __defProps = Object.defineProperties;
-var __getOwnPropDescs = Object.getOwnPropertyDescriptors;
-var __getOwnPropSymbols = Object.getOwnPropertySymbols;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
-var __propIsEnum = Object.prototype.propertyIsEnumerable;
-var __defNormalProp = (obj, key, value) => key in obj ? __defProp(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
-var __spreadValues = (a, b) => {
-  for (var prop in b || (b = {}))
-    if (__hasOwnProp.call(b, prop))
-      __defNormalProp(a, prop, b[prop]);
-  if (__getOwnPropSymbols)
-    for (var prop of __getOwnPropSymbols(b)) {
-      if (__propIsEnum.call(b, prop))
-        __defNormalProp(a, prop, b[prop]);
-    }
-  return a;
-};
-var __spreadProps = (a, b) => __defProps(a, __getOwnPropDescs(b));
-var __async = (__this, __arguments, generator) => {
-  return new Promise((resolve, reject) => {
-    var fulfilled = (value) => {
-      try {
-        step(generator.next(value));
-      } catch (e) {
-        reject(e);
-      }
-    };
-    var rejected = (value) => {
-      try {
-        step(generator.throw(value));
-      } catch (e) {
-        reject(e);
-      }
-    };
-    var step = (x) => x.done ? resolve(x.value) : Promise.resolve(x.value).then(fulfilled, rejected);
-    step((generator = generator.apply(__this, __arguments)).next());
-  });
-};
-
 // src/client/http.ts
 import fetch from "node-fetch";
 var DEFAULT_OPTIONS = {
@@ -47,79 +7,77 @@ var _HttpClient = class {
   constructor(url) {
     this.url = url;
   }
-  call(method, params, withMetadata, options) {
-    return __async(this, null, function* () {
-      const { timeout } = options;
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), timeout);
-      params = params.map((param) => param === void 0 ? null : param);
-      const context = {
+  async call(method, params, withMetadata, options) {
+    const { timeout } = options;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    params = params.map((param) => param === void 0 ? null : param);
+    const context = {
+      method,
+      params,
+      id: _HttpClient.id,
+      timestamp: Date.now()
+    };
+    const response = await fetch(this.url.href, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        jsonrpc: "2.0",
         method,
         params,
-        id: _HttpClient.id,
-        timestamp: Date.now()
-      };
-      const response = yield fetch(this.url.href, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          jsonrpc: "2.0",
-          method,
-          params,
-          id: _HttpClient.id++
-        }),
-        signal: controller.signal
-      }).catch((error) => {
-        if (error.name === "AbortError") {
-          return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` };
-        } else if (error.name === "FetchError") {
-          return { ok: false, status: 503, statusText: `FetchError: Service Unavailable: ${error.message}` };
-        } else {
-          return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message}` };
-        }
-      });
-      clearTimeout(timeoutId);
-      if (!response.ok) {
-        return {
-          error: {
-            code: response.status,
-            message: response.status === 401 ? "Server requires authorization." : `Response status code not OK: ${response.status} ${response.statusText}`
-          },
-          data: void 0,
-          context
-        };
+        id: _HttpClient.id++
+      }),
+      signal: controller.signal
+    }).catch((error) => {
+      if (error.name === "AbortError") {
+        return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` };
+      } else if (error.name === "FetchError") {
+        return { ok: false, status: 503, statusText: `FetchError: Service Unavailable: ${error.message}` };
+      } else {
+        return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message}` };
       }
-      const json = yield response.json();
-      const typedData = json;
-      if ("result" in typedData) {
-        const data = !withMetadata || !typedData.result.metadata ? typedData.result.data : typedData.result;
-        return {
-          error: void 0,
-          data,
-          context
-        };
-      }
-      if ("error" in typedData) {
-        return {
-          error: {
-            code: typedData.error.code,
-            message: `${typedData.error.message}: ${typedData.error.data}`
-          },
-          data: void 0,
-          context
-        };
-      }
+    });
+    clearTimeout(timeoutId);
+    if (!response.ok) {
       return {
         error: {
-          code: -1,
-          message: `Unexpected format of data ${JSON.stringify(json)}`
+          code: response.status,
+          message: response.status === 401 ? "Server requires authorization." : `Response status code not OK: ${response.status} ${response.statusText}`
         },
         data: void 0,
         context
       };
-    });
+    }
+    const json = await response.json();
+    const typedData = json;
+    if ("result" in typedData) {
+      const data = !withMetadata || !typedData.result.metadata ? typedData.result.data : typedData.result;
+      return {
+        error: void 0,
+        data,
+        context
+      };
+    }
+    if ("error" in typedData) {
+      return {
+        error: {
+          code: typedData.error.code,
+          message: `${typedData.error.message}: ${typedData.error.data}`
+        },
+        data: void 0,
+        context
+      };
+    }
+    return {
+      error: {
+        code: -1,
+        message: `Unexpected format of data ${JSON.stringify(json)}`
+      },
+      data: void 0,
+      context
+    };
   }
 };
 var HttpClient = _HttpClient;
@@ -140,84 +98,84 @@ var WebSocketClient = class {
     this.url = wsUrl;
     this.textDecoder = new TextDecoder();
   }
-  subscribe(event, params, userOptions) {
-    return __async(this, null, function* () {
-      const ws = new WebSocket(this.url.href);
-      let subscriptionId;
-      const requestBody = {
-        jsonrpc: "2.0",
-        method: event,
-        params,
-        id: this.id++
-      };
-      const options = __spreadValues(__spreadValues({}, WS_DEFAULT_OPTIONS), userOptions);
-      const { once, filter } = options;
-      const withMetadata = "withMetadata" in options ? options.withMetadata : false;
-      const args = {
-        next: (callback) => {
-          ws.onmessage = (event2) => __async(this, null, function* () {
-            const payload = yield this.parsePayload(event2);
-            if ("error" in payload) {
-              callback({ data: void 0, error: payload });
-              return;
-            }
-            if ("result" in payload) {
-              subscriptionId = payload.result;
-              return;
-            }
-            const data = withMetadata ? payload.params.result : payload.params.result.data;
-            if (filter && !filter(data)) {
-              return;
-            }
-            callback({ data, error: void 0 });
-            if (once) {
-              ws.close();
-            }
-          });
-        },
-        error: (callback) => {
-          ws.onerror = (error) => {
-            callback(error);
-          };
-        },
-        close: () => {
-          ws.close();
-        },
-        getSubscriptionId: () => subscriptionId,
-        context: __spreadProps(__spreadValues({}, requestBody), {
-          timestamp: Date.now()
-        })
-      };
-      return new Promise((resolve) => {
-        ws.onopen = () => {
-          ws.send(JSON.stringify(requestBody));
-          resolve(args);
+  async subscribe(event, params, userOptions) {
+    const ws = new WebSocket(this.url.href);
+    let subscriptionId;
+    const requestBody = {
+      jsonrpc: "2.0",
+      method: event,
+      params,
+      id: this.id++
+    };
+    const options = {
+      ...WS_DEFAULT_OPTIONS,
+      ...userOptions
+    };
+    const { once, filter } = options;
+    const withMetadata = "withMetadata" in options ? options.withMetadata : false;
+    const args = {
+      next: (callback) => {
+        ws.onmessage = async (event2) => {
+          const payload = await this.parsePayload(event2);
+          if ("error" in payload) {
+            callback({ data: void 0, error: payload });
+            return;
+          }
+          if ("result" in payload) {
+            subscriptionId = payload.result;
+            return;
+          }
+          const data = withMetadata ? payload.params.result : payload.params.result.data;
+          if (filter && !filter(data)) {
+            return;
+          }
+          callback({ data, error: void 0 });
+          if (once) {
+            ws.close();
+          }
         };
-      });
+      },
+      error: (callback) => {
+        ws.onerror = (error) => {
+          callback(error);
+        };
+      },
+      close: () => {
+        ws.close();
+      },
+      getSubscriptionId: () => subscriptionId,
+      context: {
+        ...requestBody,
+        timestamp: Date.now()
+      }
+    };
+    return new Promise((resolve) => {
+      ws.onopen = () => {
+        ws.send(JSON.stringify(requestBody));
+        resolve(args);
+      };
     });
   }
-  parsePayload(event) {
-    return __async(this, null, function* () {
-      let payloadStr;
-      if (event.data instanceof Blob) {
-        payloadStr = this.textDecoder.decode(yield event.data.arrayBuffer());
-      } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
-        payloadStr = this.textDecoder.decode(event.data);
-      } else {
-        return {
-          code: 1001,
-          message: "Unexpected data type"
-        };
-      }
-      try {
-        return JSON.parse(payloadStr);
-      } catch (e) {
-        return {
-          code: 1002,
-          message: `Unexpected payload: ${payloadStr}`
-        };
-      }
-    });
+  async parsePayload(event) {
+    let payloadStr;
+    if (event.data instanceof Blob) {
+      payloadStr = this.textDecoder.decode(await event.data.arrayBuffer());
+    } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
+      payloadStr = this.textDecoder.decode(event.data);
+    } else {
+      return {
+        code: 1001,
+        message: "Unexpected data type"
+      };
+    }
+    try {
+      return JSON.parse(payloadStr);
+    } catch (e) {
+      return {
+        code: 1002,
+        message: `Unexpected payload: ${payloadStr}`
+      };
+    }
   }
 };
 
@@ -227,15 +185,11 @@ var Client = class {
     this.httpClient = new HttpClient(url);
     this.webSocketClient = new WebSocketClient(url);
   }
-  call(method, params, options, withMetadata = false) {
-    return __async(this, null, function* () {
-      return this.httpClient.call(method, params, withMetadata, options);
-    });
+  async call(method, params, options, withMetadata = false) {
+    return this.httpClient.call(method, params, withMetadata, options);
   }
-  subscribe(event, params, options) {
-    return __async(this, null, function* () {
-      return this.webSocketClient.subscribe(event, params, options);
-    });
+  async subscribe(event, params, options) {
+    return this.webSocketClient.subscribe(event, params, options);
   }
 };
 
@@ -247,56 +201,44 @@ var BlockchainClient = class extends Client {
   /**
    * Returns the block number for the current head.
    */
-  getBlockNumber() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getBlockNumber", [], options);
-    });
+  async getBlockNumber(options = DEFAULT_OPTIONS) {
+    return this.call("getBlockNumber", [], options);
   }
   /**
    * Returns the batch number for the current head.
    */
-  getBatchNumber() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getBatchNumber", [], options);
-    });
+  async getBatchNumber(options = DEFAULT_OPTIONS) {
+    return this.call("getBatchNumber", [], options);
   }
   /**
    * Returns the epoch number for the current head.
    */
-  getEpochNumber() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getEpochNumber", [], options);
-    });
+  async getEpochNumber(options = DEFAULT_OPTIONS) {
+    return this.call("getEpochNumber", [], options);
   }
   /**
    * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
    */
-  getBlockBy() {
-    return __async(this, arguments, function* (p = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
-      if ("hash" in p) {
-        return this.call("getBlockByHash", [p.hash, p.includeTransactions], options);
-      }
-      return this.call("getBlockByNumber", [p.blockNumber, p.includeTransactions], options);
-    });
+  async getBlockBy(p = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
+    if ("hash" in p) {
+      return this.call("getBlockByHash", [p.hash, p.includeTransactions], options);
+    }
+    return this.call("getBlockByNumber", [p.blockNumber, p.includeTransactions], options);
   }
   /**
    * Returns the block at the head of the main chain. It has an option to include the
    * transactions in the block, which defaults to false.
    */
-  getLatestBlock() {
-    return __async(this, arguments, function* (p = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
-      return this.call("getLatestBlock", [p.includeTransactions], options);
-    });
+  async getLatestBlock(p = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
+    return this.call("getLatestBlock", [p.includeTransactions], options);
   }
   /**
    * Returns the information for the slot owner at the given block height and offset. The
    * offset is optional, it will default to getting the offset for the existing block
    * at the given height.
    */
-  getSlotAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber, offsetOpt, withMetadata }, options = DEFAULT_OPTIONS) {
-      return this.call("getSlotAt", [blockNumber, offsetOpt], options, withMetadata);
-    });
+  async getSlotAt({ blockNumber, offsetOpt, withMetadata }, options = DEFAULT_OPTIONS) {
+    return this.call("getSlotAt", [blockNumber, offsetOpt], options, withMetadata);
   }
   /**
    * Fetchs the transaction(s) given the parameters. The parameters can be a hash, a block number, a batch number or an address.
@@ -306,154 +248,139 @@ var BlockchainClient = class extends Client {
    * transactions are also returned. It has an option to specify the maximum number of transactions
    * to fetch, it defaults to 500.
    */
-  getTransactionBy(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      if ("hash" in p) {
-        return this.call("getTransactionByHash", [p.hash], options);
-      } else if ("blockNumber" in p) {
-        return this.call("getTransactionsByBlockNumber", [p.blockNumber], options);
-      } else if ("batchNumber" in p) {
-        return this.call("getTransactionsByBatchNumber", [p.batchNumber], options);
-      } else if ("address" in p) {
-        if (p.justHashes === true) {
-          return this.call("getTransactionHashesByAddress", [p.address, p.max], options);
-        } else {
-          return this.call("getTransactionsByAddress", [p.address, p.max], options);
-        }
+  async getTransactionBy(p, options = DEFAULT_OPTIONS) {
+    if ("hash" in p) {
+      return this.call("getTransactionByHash", [p.hash], options);
+    } else if ("blockNumber" in p) {
+      return this.call("getTransactionsByBlockNumber", [p.blockNumber], options);
+    } else if ("batchNumber" in p) {
+      return this.call("getTransactionsByBatchNumber", [p.batchNumber], options);
+    } else if ("address" in p) {
+      if (p.justHashes === true) {
+        return this.call("getTransactionHashesByAddress", [p.address, p.max], options);
+      } else {
+        return this.call("getTransactionsByAddress", [p.address, p.max], options);
       }
-      throw new Error("Invalid parameters");
-    });
+    }
+    throw new Error("Invalid parameters");
   }
   /**
    * Returns all the inherents (including reward inherents) for the parameter. Note
    * that this only considers blocks in the main chain.
    */
-  getInherentsBy(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      if ("blockNumber" in p) {
-        return this.call("getInherentsByBlockNumber", [p.blockNumber], options);
-      } else if ("batchNumber" in p) {
-        return this.call("getInherentsByBatchNumber", [p.batchNumber], options);
-      }
-      throw new Error("Invalid parameters");
-    });
+  async getInherentsBy(p, options = DEFAULT_OPTIONS) {
+    if ("blockNumber" in p) {
+      return this.call("getInherentsByBlockNumber", [p.blockNumber], options);
+    } else if ("batchNumber" in p) {
+      return this.call("getInherentsByBatchNumber", [p.batchNumber], options);
+    }
+    throw new Error("Invalid parameters");
   }
   /**
    * Tries to fetch the account at the given address.
    */
-  getAccountBy(_0) {
-    return __async(this, arguments, function* ({ address, withMetadata }, options = DEFAULT_OPTIONS) {
-      return this.call("getAccountByAddress", [address], options, withMetadata);
-    });
+  async getAccountBy({ address, withMetadata }, options = DEFAULT_OPTIONS) {
+    return this.call("getAccountByAddress", [address], options, withMetadata);
   }
   /**
   * Returns a collection of the currently active validator's addresses and balances.
   */
-  getActiveValidators() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
-      return this.call("getActiveValidators", [], options, withMetadata);
-    });
+  async getActiveValidators({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+    return this.call("getActiveValidators", [], options, withMetadata);
   }
   /**
    * Returns information about the currently slashed slots. This includes slots that lost rewards
    * and that were disabled.
    */
-  getCurrentSlashedSlots() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
-      return this.call("getCurrentSlashedSlots", [], options, withMetadata);
-    });
+  async getCurrentSlashedSlots({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+    return this.call("getCurrentSlashedSlots", [], options, withMetadata);
   }
   /**
    * Returns information about the slashed slots of the previous batch. This includes slots that
    * lost rewards and that were disabled.
    */
-  getPreviousSlashedSlots() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
-      return this.call("getPreviousSlashedSlots", [], options, withMetadata);
-    });
+  async getPreviousSlashedSlots({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+    return this.call("getPreviousSlashedSlots", [], options, withMetadata);
   }
   /**
    * Returns information about the currently parked validators.
    */
-  getParkedValidators() {
-    return __async(this, arguments, function* ({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
-      return this.call("getParkedValidators", [], options, withMetadata);
-    });
+  async getParkedValidators({ withMetadata } = { withMetadata: false }, options = DEFAULT_OPTIONS) {
+    return this.call("getParkedValidators", [], options, withMetadata);
   }
   /**
    * Tries to fetch a validator information given its address. It has an option to include a map
    * containing the addresses and stakes of all the stakers that are delegating to the validator.
    */
-  getValidatorBy() {
-    return __async(this, arguments, function* (p = { includeStakers: false }, options = DEFAULT_OPTIONS) {
-      return this.call("getValidatorByAddress", [p.address, p.includeStakers], options);
-    });
+  async getValidatorBy({ address }, options = DEFAULT_OPTIONS) {
+    return this.call("getValidatorByAddress", [address], options);
+  }
+  /**
+   * Fetches all stakers for a given validator.
+   * IMPORTANT: This operation iterates over all stakers of the staking contract
+   * and thus is extremely computationally expensive.
+   * This function requires the read lock acquisition prior to its execution.
+   */
+  async getStakersByAddress({ address }, options = DEFAULT_OPTIONS) {
+    return this.call("getStakerByAddress", [address], options);
   }
   /**
    * Tries to fetch a staker information given its address.
    */
-  getStakerByAddress(_0) {
-    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
-      return this.call("getStakerByAddress", [address], options);
-    });
+  async getStakerByAddress({ address }, options = DEFAULT_OPTIONS) {
+    return this.call("getStakerByAddress", [address], options);
   }
   /**
    * Subscribes to new block events.
    */
-  subscribeForBlocks(params, userOptions) {
-    return __async(this, null, function* () {
-      if (params.retrieve === "HASH") {
-        const options2 = __spreadValues(__spreadValues({}, WS_DEFAULT_OPTIONS), userOptions);
-        return this.subscribe("subscribeForHeadBlockHash", [], options2);
+  async subscribeForBlocks(params, userOptions) {
+    if (params.retrieve === "HASH") {
+      const options2 = { ...WS_DEFAULT_OPTIONS, ...userOptions };
+      return this.subscribe("subscribeForHeadBlockHash", [], options2);
+    }
+    let filter = void 0;
+    if (!userOptions || !userOptions.filter) {
+      switch (params.blockType) {
+        case "ELECTION":
+          filter = (block) => block.isElectionBlock;
+          break;
+        case "MACRO":
+          filter = (block) => "isElectionBlock" in block;
+          break;
+        case "MICRO":
+          filter = (block) => !("isElectionBlock" in block);
+          break;
       }
-      let filter = void 0;
-      if (!userOptions || !userOptions.filter) {
-        switch (params.blockType) {
-          case "ELECTION":
-            filter = (block) => block.isElectionBlock;
-            break;
-          case "MACRO":
-            filter = (block) => "isElectionBlock" in block;
-            break;
-          case "MICRO":
-            filter = (block) => !("isElectionBlock" in block);
-            break;
-        }
-      }
-      const options = __spreadValues(__spreadProps(__spreadValues({}, WS_DEFAULT_OPTIONS), { filter }), userOptions);
-      switch (params.retrieve) {
-        case "FULL":
-          return this.subscribe("subscribeForHeadBlock", [
-            /*includeTransactions*/
-            true
-          ], options);
-        case "PARTIAL":
-          return this.subscribe("subscribeForHeadBlock", [
-            /*includeTransactions*/
-            false
-          ], options);
-      }
-    });
+    }
+    const options = { ...WS_DEFAULT_OPTIONS, filter, ...userOptions };
+    switch (params.retrieve) {
+      case "FULL":
+        return this.subscribe("subscribeForHeadBlock", [
+          /*includeTransactions*/
+          true
+        ], options);
+      case "PARTIAL":
+        return this.subscribe("subscribeForHeadBlock", [
+          /*includeTransactions*/
+          false
+        ], options);
+    }
   }
   /**
    * Subscribes to pre epoch validators events.
    */
-  subscribeForValidatorElectionByAddress(p, userOptions) {
-    return __async(this, null, function* () {
-      const options = __spreadValues(__spreadProps(__spreadValues({}, WS_DEFAULT_OPTIONS), { withMetadata: false }), userOptions);
-      return this.subscribe("subscribeForValidatorElectionByAddress", [p == null ? void 0 : p.address], options);
-    });
+  async subscribeForValidatorElectionByAddress(p, userOptions) {
+    const options = { ...WS_DEFAULT_OPTIONS, withMetadata: false, ...userOptions };
+    return this.subscribe("subscribeForValidatorElectionByAddress", [p == null ? void 0 : p.address], options);
   }
   /**
    * Subscribes to log events related to a given list of addresses and of any of the log types provided.
    * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
    * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
    */
-  subscribeForLogsByAddressesAndTypes(p, userOptions) {
-    return __async(this, null, function* () {
-      const options = __spreadValues(__spreadProps(__spreadValues({}, WS_DEFAULT_OPTIONS), { withMetadata: false }), userOptions);
-      return this.subscribe("subscribeForLogsByAddressesAndTypes", [(p == null ? void 0 : p.addresses) || [], (p == null ? void 0 : p.types) || []], options);
-    });
+  async subscribeForLogsByAddressesAndTypes(p, userOptions) {
+    const options = { ...WS_DEFAULT_OPTIONS, withMetadata: false, ...userOptions };
+    return this.subscribe("subscribeForLogsByAddressesAndTypes", [(p == null ? void 0 : p.addresses) || [], (p == null ? void 0 : p.types) || []], options);
   }
 };
 
@@ -468,391 +395,341 @@ var ConsensusClient = class extends Client {
   /**
    * Returns a boolean specifying if we have established consensus with the network
    */
-  isConsensusEstablished() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("isConsensusEstablished", [], options);
-    });
+  async isConsensusEstablished(options = DEFAULT_OPTIONS) {
+    return this.call("isConsensusEstablished", [], options);
   }
   /**
    * Given a serialized transaction, it will return the corresponding transaction struct
    */
-  getRawTransactionInfo(_0) {
-    return __async(this, arguments, function* ({ rawTransaction }, options = DEFAULT_OPTIONS) {
-      return this.call("getRawTransactionInfo", [rawTransaction], options);
-    });
+  async getRawTransactionInfo({ rawTransaction }, options = DEFAULT_OPTIONS) {
+    return this.call("getRawTransactionInfo", [rawTransaction], options);
   }
   /**
    * Creates a serialized transaction
    */
-  createTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      if (p.data) {
-        return this.call("createBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
-      } else {
-        return this.call("createBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
-      }
-    });
+  async createTransaction(p, options = DEFAULT_OPTIONS) {
+    if (p.data) {
+      return this.call("createBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
+    } else {
+      return this.call("createBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
+    }
   }
   /**
    * Sends a transaction
    */
-  sendTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      const h = this.getValidityStartHeight(p);
-      if (p.data) {
-        return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
-      } else {
-        return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
-      }
-    });
+  async sendTransaction(p, options = DEFAULT_OPTIONS) {
+    const h = this.getValidityStartHeight(p);
+    if (p.data) {
+      return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
+    } else {
+      return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
+    }
   }
   /**
    * Returns a serialized transaction creating a new vesting contract
    */
-  createNewVestingTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createNewVestingTransaction", [
-        p.wallet,
-        p.owner,
-        p.startTime,
-        p.timeStep,
-        p.numSteps,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createNewVestingTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createNewVestingTransaction", [
+      p.wallet,
+      p.owner,
+      p.startTime,
+      p.timeStep,
+      p.numSteps,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a transaction creating a new vesting contract to the network
    */
-  sendNewVestingTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendNewVestingTransaction", [
-        p.wallet,
-        p.owner,
-        p.startTime,
-        p.timeStep,
-        p.numSteps,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendNewVestingTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendNewVestingTransaction", [
+      p.wallet,
+      p.owner,
+      p.startTime,
+      p.timeStep,
+      p.numSteps,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized transaction redeeming a vesting contract
    */
-  createRedeemVestingTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createRedeemVestingTransaction", [
-        p.wallet,
-        p.contractAddress,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createRedeemVestingTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createRedeemVestingTransaction", [
+      p.wallet,
+      p.contractAddress,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a transaction redeeming a vesting contract
    */
-  sendRedeemVestingTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendRedeemVestingTransaction", [
-        p.wallet,
-        p.contractAddress,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendRedeemVestingTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendRedeemVestingTransaction", [
+      p.wallet,
+      p.contractAddress,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized transaction creating a new HTLC contract
    */
-  createNewHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createNewHtlcTransaction", [
-        p.wallet,
-        p.htlcSender,
-        p.htlcRecipient,
-        p.hashRoot,
-        p.hashCount,
-        p.hashAlgorithm,
-        p.timeout,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createNewHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createNewHtlcTransaction", [
+      p.wallet,
+      p.htlcSender,
+      p.htlcRecipient,
+      p.hashRoot,
+      p.hashCount,
+      p.hashAlgorithm,
+      p.timeout,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a transaction creating a new HTLC contract
    */
-  sendNewHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendNewHtlcTransaction", [
-        p.wallet,
-        p.htlcSender,
-        p.htlcRecipient,
-        p.hashRoot,
-        p.hashCount,
-        p.hashAlgorithm,
-        p.timeout,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendNewHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendNewHtlcTransaction", [
+      p.wallet,
+      p.htlcSender,
+      p.htlcRecipient,
+      p.hashRoot,
+      p.hashCount,
+      p.hashAlgorithm,
+      p.timeout,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized transaction redeeming an HTLC contract
    */
-  createRedeemRegularHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createRedeemRegularHtlcTransaction", [
-        p.wallet,
-        p.contractAddress,
-        p.recipient,
-        p.preImage,
-        p.hashRoot,
-        p.hashCount,
-        p.hashAlgorithm,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createRedeemRegularHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createRedeemRegularHtlcTransaction", [
+      p.wallet,
+      p.contractAddress,
+      p.recipient,
+      p.preImage,
+      p.hashRoot,
+      p.hashCount,
+      p.hashAlgorithm,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a transaction redeeming an HTLC contract
    */
-  sendRedeemRegularHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendRedeemRegularHtlcTransaction", [
-        p.wallet,
-        p.contractAddress,
-        p.recipient,
-        p.preImage,
-        p.hashRoot,
-        p.hashCount,
-        p.hashAlgorithm,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendRedeemRegularHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendRedeemRegularHtlcTransaction", [
+      p.wallet,
+      p.contractAddress,
+      p.recipient,
+      p.preImage,
+      p.hashRoot,
+      p.hashCount,
+      p.hashAlgorithm,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized transaction redeeming a HTLC contract using the `TimeoutResolve`
    * method 
    */
-  createRedeemTimeoutHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createRedeemTimeoutHtlcTransaction", [
-        p.wallet,
-        p.contractAddress,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createRedeemTimeoutHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createRedeemTimeoutHtlcTransaction", [
+      p.wallet,
+      p.contractAddress,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
    * method to network
    */
-  sendRedeemTimeoutHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendRedeemTimeoutHtlcTransaction", [
-        p.wallet,
-        p.contractAddress,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendRedeemTimeoutHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendRedeemTimeoutHtlcTransaction", [
+      p.wallet,
+      p.contractAddress,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
    * method.
    */
-  createRedeemEarlyHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createRedeemEarlyHtlcTransaction", [
-        p.wallet,
-        p.htlcAddress,
-        p.recipient,
-        p.htlcSenderSignature,
-        p.htlcRecipientSignature,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createRedeemEarlyHtlcTransaction", [
+      p.wallet,
+      p.htlcAddress,
+      p.recipient,
+      p.htlcSenderSignature,
+      p.htlcRecipientSignature,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
    * method.
    */
-  sendRedeemEarlyHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendRedeemEarlyHtlcTransaction", [
-        p.wallet,
-        p.htlcAddress,
-        p.recipient,
-        p.htlcSenderSignature,
-        p.htlcRecipientSignature,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendRedeemEarlyHtlcTransaction", [
+      p.wallet,
+      p.htlcAddress,
+      p.recipient,
+      p.htlcSenderSignature,
+      p.htlcRecipientSignature,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
    * the `EarlyResolve` method.
    */
-  signRedeemEarlyHtlcTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("signRedeemEarlyHtlcTransaction", [
-        p.wallet,
-        p.htlcAddress,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async signRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("signRedeemEarlyHtlcTransaction", [
+      p.wallet,
+      p.htlcAddress,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createNewStakerTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createNewStakerTransaction", [
-        p.senderWallet,
-        p.staker,
-        p.delegation,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createNewStakerTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createNewStakerTransaction", [
+      p.senderWallet,
+      p.staker,
+      p.delegation,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `new_staker` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendNewStakerTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendNewStakerTransaction", [
-        p.senderWallet,
-        p.staker,
-        p.delegation,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendNewStakerTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendNewStakerTransaction", [
+      p.senderWallet,
+      p.staker,
+      p.delegation,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
    * be paid from the `sender_wallet`.
    */
-  createStakeTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createStakeTransaction", [
-        p.senderWallet,
-        p.staker,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createStakeTransaction", [
+      p.senderWallet,
+      p.staker,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `stake` transaction. The funds to be staked and the transaction fee will
    * be paid from the `sender_wallet`.
    */
-  sendStakeTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendStakeTransaction", [
-        p.senderWallet,
-        p.staker,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendStakeTransaction", [
+      p.senderWallet,
+      p.staker,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `update_staker` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet).
    */
-  createUpdateStakerTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createUpdateStakerTransaction", [
-        p.senderWallet,
-        p.staker,
-        p.newDelegation,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createUpdateStakerTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createUpdateStakerTransaction", [
+      p.senderWallet,
+      p.staker,
+      p.newDelegation,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet).
    */
-  sendUpdateStakerTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendUpdateStakerTransaction", [
-        p.senderWallet,
-        p.staker,
-        p.newDelegation,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendUpdateStakerTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendUpdateStakerTransaction", [
+      p.senderWallet,
+      p.staker,
+      p.newDelegation,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
    * being unstaked.
    */
-  createUnstakeTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createUnstakeTransaction", [
-        p.staker,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createUnstakeTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createUnstakeTransaction", [
+      p.staker,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `unstake` transaction. The transaction fee will be paid from the funds
    * being unstaked.
    */
-  sendUnstakeTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendUnstakeTransaction", [
-        p.staker,
-        p.recipient,
-        p.value,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendUnstakeTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendUnstakeTransaction", [
+      p.staker,
+      p.recipient,
+      p.value,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
@@ -862,19 +739,17 @@ var ConsensusClient = class extends Client {
    * "" = Set the signal data field to None.
    * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
    */
-  createNewValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createNewValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.votingSecretKey,
-        p.rewardAddress,
-        p.signalData,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createNewValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createNewValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.votingSecretKey,
+      p.rewardAddress,
+      p.signalData,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `new_validator` transaction. You need to provide the address of a basic
@@ -884,19 +759,17 @@ var ConsensusClient = class extends Client {
    * "" = Set the signal data field to None.
    * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
    */
-  sendNewValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendNewValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.votingSecretKey,
-        p.rewardAddress,
-        p.signalData,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendNewValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendNewValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.votingSecretKey,
+      p.rewardAddress,
+      p.signalData,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `update_validator` transaction. You need to provide the address of a basic
@@ -907,19 +780,17 @@ var ConsensusClient = class extends Client {
    * "" = Change the signal data field to None.
    * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
    */
-  createUpdateValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createUpdateValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.newSigningSecretKey,
-        p.newVotingSecretKey,
-        p.newRewardAddress,
-        p.newSignalData,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createUpdateValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createUpdateValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.newSigningSecretKey,
+      p.newVotingSecretKey,
+      p.newRewardAddress,
+      p.newSignalData,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `update_validator` transaction. You need to provide the address of a basic
@@ -930,137 +801,119 @@ var ConsensusClient = class extends Client {
    * "" = Change the signal data field to None.
    * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
    */
-  sendUpdateValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendUpdateValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.newSigningSecretKey,
-        p.newVotingSecretKey,
-        p.newRewardAddress,
-        p.newSignalData,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendUpdateValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendUpdateValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.newSigningSecretKey,
+      p.newVotingSecretKey,
+      p.newRewardAddress,
+      p.newSignalData,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createDeactivateValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createDeactivateValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createDeactivateValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createDeactivateValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendDeactivateValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendDeactivateValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendDeactivateValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendDeactivateValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createReactivateValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createReactivateValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createReactivateValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createReactivateValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendReactivateValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendReactivateValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendReactivateValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendReactivateValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createUnparkValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createUnparkValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createUnparkValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createUnparkValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `unpark_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendUnparkValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendUnparkValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.signingSecretKey,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendUnparkValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendUnparkValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.signingSecretKey,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  createRetireValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createRetireValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createRetireValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createRetireValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `retire_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
-  sendRetireValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendRetireValidatorTransaction", [
-        p.senderWallet,
-        p.validator,
-        p.fee,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendRetireValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendRetireValidatorTransaction", [
+      p.senderWallet,
+      p.validator,
+      p.fee,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Returns a serialized `delete_validator` transaction. The transaction fee will be paid from the
@@ -1068,16 +921,14 @@ var ConsensusClient = class extends Client {
    * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
    * Failed delete validator transactions can diminish the validator deposit
    */
-  createDeleteValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createDeleteValidatorTransaction", [
-        p.validator,
-        p.recipient,
-        p.fee,
-        p.value,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async createDeleteValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("createDeleteValidatorTransaction", [
+      p.validator,
+      p.recipient,
+      p.fee,
+      p.value,
+      this.getValidityStartHeight(p)
+    ], options);
   }
   /**
    * Sends a `delete_validator` transaction. The transaction fee will be paid from the
@@ -1085,16 +936,14 @@ var ConsensusClient = class extends Client {
    * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
    * Failed delete validator transactions can diminish the validator deposit
    */
-  sendDeleteValidatorTransaction(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("sendDeleteValidatorTransaction", [
-        p.validator,
-        p.recipient,
-        p.fee,
-        p.value,
-        this.getValidityStartHeight(p)
-      ], options);
-    });
+  async sendDeleteValidatorTransaction(p, options = DEFAULT_OPTIONS) {
+    return this.call("sendDeleteValidatorTransaction", [
+      p.validator,
+      p.recipient,
+      p.fee,
+      p.value,
+      this.getValidityStartHeight(p)
+    ], options);
   }
 };
 
@@ -1148,26 +997,20 @@ var NetworkClient = class extends Client {
   /**
    * The peer ID for our local peer.
    */
-  getPeerId() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getPeerId", [], options);
-    });
+  async getPeerId(options = DEFAULT_OPTIONS) {
+    return this.call("getPeerId", [], options);
   }
   /**
    * Returns the number of peers. 
    */
-  getPeerCount() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getPeerCount", [], options);
-    });
+  async getPeerCount(options = DEFAULT_OPTIONS) {
+    return this.call("getPeerCount", [], options);
   }
   /**
    * Returns a list with the IDs of all our peers.
    */
-  getPeerList() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getPeerList", [], options);
-    });
+  async getPeerList(options = DEFAULT_OPTIONS) {
+    return this.call("getPeerList", [], options);
   }
 };
 
@@ -1179,10 +1022,8 @@ var PolicyClient = class extends Client {
   /**
    * Gets a bundle of policy constants
    */
-  getPolicyConstants() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getPolicyConstants", [], options);
-    });
+  async getPolicyConstants(options = DEFAULT_OPTIONS) {
+    return this.call("getPolicyConstants", [], options);
   }
   /**
    * Gets the epoch number at a given `block_number` (height)
@@ -1192,14 +1033,12 @@ var PolicyClient = class extends Client {
    * For example, the first block of any epoch always has an epoch index of 0.
    * @returns The epoch number at the given block number (height) or index
    */
-  getEpochAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber, justIndex }, options = DEFAULT_OPTIONS) {
-      if (justIndex) {
-        return this.call("getEpochIndexAt", [blockNumber], options);
-      } else {
-        return this.call("getEpochAt", [blockNumber], options);
-      }
-    });
+  async getEpochAt({ blockNumber, justIndex }, options = DEFAULT_OPTIONS) {
+    if (justIndex) {
+      return this.call("getEpochIndexAt", [blockNumber], options);
+    } else {
+      return this.call("getEpochAt", [blockNumber], options);
+    }
   }
   /**
    * Gets the batch number at a given `block_number` (height)
@@ -1209,14 +1048,12 @@ var PolicyClient = class extends Client {
    * For example, the first block of any batch always has an epoch index of 0.
    * @returns The epoch number at the given block number (height).
    */
-  getBatchAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber, justIndex }, options = DEFAULT_OPTIONS) {
-      if (justIndex) {
-        return this.call("getBatchIndexAt", [blockNumber], options);
-      } else {
-        return this.call("getBatchAt", [blockNumber], options);
-      }
-    });
+  async getBatchAt({ blockNumber, justIndex }, options = DEFAULT_OPTIONS) {
+    if (justIndex) {
+      return this.call("getBatchIndexAt", [blockNumber], options);
+    } else {
+      return this.call("getBatchAt", [blockNumber], options);
+    }
   }
   /**
    * Gets the number (height) of the next election macro block after a given block number (height).
@@ -1224,10 +1061,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns The number (height) of the next election macro block after a given block number (height).
    */
-  getElectionBlockAfter(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getElectionBlockAfter", [blockNumber], options);
-    });
+  async getElectionBlockAfter({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getElectionBlockAfter", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the preceding election macro block before a given block number (height).
@@ -1236,10 +1071,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the preceding election macro block before a given block number (height).
    */
-  getElectionBlockBefore(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getElectionBlockBefore", [blockNumber], options);
-    });
+  async getElectionBlockBefore({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getElectionBlockBefore", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the last election macro block at a given block number (height).
@@ -1248,10 +1081,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns 
    */
-  getLastElectionBlock(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getLastElectionBlock", [blockNumber], options);
-    });
+  async getLastElectionBlock({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getLastElectionBlock", [blockNumber], options);
   }
   /**
    * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
@@ -1259,10 +1090,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
    */
-  getIsElectionBlockAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getIsElectionBlockAt", [blockNumber], options);
-    });
+  async getIsElectionBlockAt({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getIsElectionBlockAt", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the next macro block after a given block number (height).
@@ -1270,10 +1099,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the next macro block after a given block number (height).
    */
-  getMacroBlockAfter(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getMacroBlockAfter", [blockNumber], options);
-    });
+  async getMacroBlockAfter({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getMacroBlockAfter", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the preceding macro block before a given block number (height).
@@ -1281,10 +1108,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the preceding macro block before a given block number (height).
    */
-  getMacroBlockBefore(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getMacroBlockBefore", [blockNumber], options);
-    });
+  async getMacroBlockBefore({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getMacroBlockBefore", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the last macro block at a given block number (height).
@@ -1293,10 +1118,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the last macro block at a given block number (height).
    */
-  getLastMacroBlock(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getLastMacroBlock", [blockNumber], options);
-    });
+  async getLastMacroBlock({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getLastMacroBlock", [blockNumber], options);
   }
   /**
    * Gets a boolean expressing if the block at a given block number (height) is a macro block.
@@ -1304,10 +1127,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns A boolean expressing if the block at a given block number (height) is a macro block.
    */
-  getIsMacroBlockAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getIsMacroBlockAt", [blockNumber], options);
-    });
+  async getIsMacroBlockAt({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getIsMacroBlockAt", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the next micro block after a given block number (height).
@@ -1315,10 +1136,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the next micro block after a given block number (height).
    */
-  getIsMicroBlockAt(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getIsMicroBlockAt", [blockNumber], options);
-    });
+  async getIsMicroBlockAt({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getIsMicroBlockAt", [blockNumber], options);
   }
   /**
    * Gets the block number (height) of the first block of the given epoch (which is always a micro block).
@@ -1326,10 +1145,8 @@ var PolicyClient = class extends Client {
    * @param epochIndex The epoch index to query.
    * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
    */
-  getFirstBlockOf(_0) {
-    return __async(this, arguments, function* ({ epochIndex }, options = DEFAULT_OPTIONS) {
-      return this.call("getFirstBlockOf", [epochIndex], options);
-    });
+  async getFirstBlockOf({ epochIndex }, options = DEFAULT_OPTIONS) {
+    return this.call("getFirstBlockOf", [epochIndex], options);
   }
   /**
    * Gets the block number of the first block of the given batch (which is always a micro block).
@@ -1337,10 +1154,8 @@ var PolicyClient = class extends Client {
    * @param batchIndex The batch index to query.
    * @returns The block number of the first block of the given batch (which is always a micro block).
    */
-  getFirstBlockOfBatch(_0) {
-    return __async(this, arguments, function* ({ batchIndex }, options = DEFAULT_OPTIONS) {
-      return this.call("getFirstBlockOfBatch", [batchIndex], options);
-    });
+  async getFirstBlockOfBatch({ batchIndex }, options = DEFAULT_OPTIONS) {
+    return this.call("getFirstBlockOfBatch", [batchIndex], options);
   }
   /**
    * Gets the block number of the election macro block of the given epoch (which is always the last block).
@@ -1348,10 +1163,8 @@ var PolicyClient = class extends Client {
    * @param epochIndex The epoch index to query.
    * @returns The block number of the election macro block of the given epoch (which is always the last block).
    */
-  getElectionBlockOf(_0) {
-    return __async(this, arguments, function* ({ epochIndex }, options = DEFAULT_OPTIONS) {
-      return this.call("getElectionBlockOf", [epochIndex], options);
-    });
+  async getElectionBlockOf({ epochIndex }, options = DEFAULT_OPTIONS) {
+    return this.call("getElectionBlockOf", [epochIndex], options);
   }
   /**
    * Gets the block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
@@ -1359,10 +1172,8 @@ var PolicyClient = class extends Client {
    * @param batchIndex The batch index to query.
    * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
    */
-  getMacroBlockOf(_0) {
-    return __async(this, arguments, function* ({ batchIndex }, options = DEFAULT_OPTIONS) {
-      return this.call("getMacroBlockOf", [batchIndex], options);
-    });
+  async getMacroBlockOf({ batchIndex }, options = DEFAULT_OPTIONS) {
+    return this.call("getMacroBlockOf", [batchIndex], options);
   }
   /**
    * Gets a boolean expressing if the batch at a given block number (height) is the first batch
@@ -1371,10 +1182,8 @@ var PolicyClient = class extends Client {
    * @param blockNumber The block number (height) to query.
    * @returns A boolean expressing if the batch at a given block number (height) is the first batch
    */
-  getFirstBatchOfEpoch(_0) {
-    return __async(this, arguments, function* ({ blockNumber }, options = DEFAULT_OPTIONS) {
-      return this.call("getFirstBatchOfEpoch", [blockNumber], options);
-    });
+  async getFirstBatchOfEpoch({ blockNumber }, options = DEFAULT_OPTIONS) {
+    return this.call("getFirstBatchOfEpoch", [blockNumber], options);
   }
   /**
    * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
@@ -1388,10 +1197,8 @@ var PolicyClient = class extends Client {
    * @param currentTime timestamp to calculate supply at
    * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
    */
-  getSupplyAt(_0) {
-    return __async(this, arguments, function* ({ genesisSupply, genesisTime, currentTime }, options = DEFAULT_OPTIONS) {
-      return this.call("getSupplyAt", [genesisSupply, genesisTime, currentTime], options);
-    });
+  async getSupplyAt({ genesisSupply, genesisTime, currentTime }, options = DEFAULT_OPTIONS) {
+    return this.call("getSupplyAt", [genesisSupply, genesisTime, currentTime], options);
   }
 };
 
@@ -1403,34 +1210,26 @@ var ValidatorClient = class extends Client {
   /**
    * Returns our validator address.
    */
-  getAddress() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getAddress", [], options);
-    });
+  async getAddress(options = DEFAULT_OPTIONS) {
+    return this.call("getAddress", [], options);
   }
   /**
    * Returns our validator signing key
    */
-  getSigningKey() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getSigningKey", [], options);
-    });
+  async getSigningKey(options = DEFAULT_OPTIONS) {
+    return this.call("getSigningKey", [], options);
   }
   /**
    * Returns our validator voting key
    */
-  getVotingKey() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("getVotingKey", [], options);
-    });
+  async getVotingKey(options = DEFAULT_OPTIONS) {
+    return this.call("getVotingKey", [], options);
   }
   /**
    * Updates the configuration setting to automatically reactivate our validator
    */
-  setAutomaticReactivation(_0) {
-    return __async(this, arguments, function* ({ automaticReactivation }, options = DEFAULT_OPTIONS) {
-      return this.call("setAutomaticReactivation", [automaticReactivation], options);
-    });
+  async setAutomaticReactivation({ automaticReactivation }, options = DEFAULT_OPTIONS) {
+    return this.call("setAutomaticReactivation", [automaticReactivation], options);
   }
 };
 
@@ -1439,50 +1238,32 @@ var WalletClient = class extends Client {
   constructor(url) {
     super(url);
   }
-  importRawKey(_0) {
-    return __async(this, arguments, function* ({ keyData, passphrase }, options = DEFAULT_OPTIONS) {
-      return this.call("importRawKey", [keyData, passphrase], options);
-    });
+  async importRawKey({ keyData, passphrase }, options = DEFAULT_OPTIONS) {
+    return this.call("importRawKey", [keyData, passphrase], options);
   }
-  isAccountImported(_0) {
-    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
-      return this.call("isAccountImported", [address], options);
-    });
+  async isAccountImported({ address }, options = DEFAULT_OPTIONS) {
+    return this.call("isAccountImported", [address], options);
   }
-  listAccounts() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      return this.call("listAccounts", [], options);
-    });
+  async listAccounts(options = DEFAULT_OPTIONS) {
+    return this.call("listAccounts", [], options);
   }
-  lockAccount(_0) {
-    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
-      return this.call("lockAccount", [address], options);
-    });
+  async lockAccount({ address }, options = DEFAULT_OPTIONS) {
+    return this.call("lockAccount", [address], options);
   }
-  createAccount(_0) {
-    return __async(this, arguments, function* (p, options = DEFAULT_OPTIONS) {
-      return this.call("createAccount", [p == null ? void 0 : p.passphrase], options);
-    });
+  async createAccount(p, options = DEFAULT_OPTIONS) {
+    return this.call("createAccount", [p == null ? void 0 : p.passphrase], options);
   }
-  unlockAccount(_0) {
-    return __async(this, arguments, function* ({ address, passphrase, duration }, options = DEFAULT_OPTIONS) {
-      return this.call("unlockAccount", [address, passphrase, duration], options);
-    });
+  async unlockAccount({ address, passphrase, duration }, options = DEFAULT_OPTIONS) {
+    return this.call("unlockAccount", [address, passphrase, duration], options);
   }
-  isAccountLocked(_0) {
-    return __async(this, arguments, function* ({ address }, options = DEFAULT_OPTIONS) {
-      return this.call("isAccountLocked", [address], options);
-    });
+  async isAccountLocked({ address }, options = DEFAULT_OPTIONS) {
+    return this.call("isAccountLocked", [address], options);
   }
-  sign(_0) {
-    return __async(this, arguments, function* ({ message, address, passphrase, isHex }, options = DEFAULT_OPTIONS) {
-      return this.call("sign", [message, address, passphrase, isHex], options);
-    });
+  async sign({ message, address, passphrase, isHex }, options = DEFAULT_OPTIONS) {
+    return this.call("sign", [message, address, passphrase, isHex], options);
   }
-  verifySignature(_0) {
-    return __async(this, arguments, function* ({ message, publicKey, signature, isHex }, options = DEFAULT_OPTIONS) {
-      return this.call("verifySignature", [message, publicKey, signature, isHex], options);
-    });
+  async verifySignature({ message, publicKey, signature, isHex }, options = DEFAULT_OPTIONS) {
+    return this.call("verifySignature", [message, publicKey, signature, isHex], options);
   }
 };
 
@@ -1491,23 +1272,21 @@ var ZkpComponentClient = class extends Client {
   constructor(url) {
     super(url);
   }
-  getZkpState() {
-    return __async(this, arguments, function* (options = DEFAULT_OPTIONS) {
-      const { data, error, context } = yield this.call("getZkpState", [], options);
-      if (error) {
-        return { error, data, context };
-      } else {
-        return {
-          error,
-          data: {
-            latestHeaderHash: data["latest-header-number"],
-            latestBlockNumber: data["latest-block-number"],
-            latestProof: data["latest-proof"]
-          },
-          context
-        };
-      }
-    });
+  async getZkpState(options = DEFAULT_OPTIONS) {
+    const { data, error, context } = await this.call("getZkpState", [], options);
+    if (error) {
+      return { error, data, context };
+    } else {
+      return {
+        error,
+        data: {
+          latestHeaderHash: data["latest-header-number"],
+          latestBlockNumber: data["latest-block-number"],
+          latestProof: data["latest-proof"]
+        },
+        context
+      };
+    }
   }
 };
 
@@ -1662,7 +1441,8 @@ var Client2 = class {
       }
     };
     this.staker = {
-      byAddress: blockchain.getStakerByAddress.bind(blockchain),
+      fromValidator: blockchain.getStakersByAddress.bind(blockchain),
+      getBy: blockchain.getStakerByAddress.bind(blockchain),
       new: {
         createTx: consensus.createNewStakerTransaction.bind(consensus),
         sendTx: consensus.sendNewStakerTransaction.bind(consensus)

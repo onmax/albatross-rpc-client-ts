@@ -2,9 +2,15 @@
   "name": "nimiq-rpc-client-ts",
   "version": "0.0.30",
   "description": "A Nimiq RPC client for TypeScript",
-  "main": "./dist/index.js",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.ts",
+  "main": "dist/index.js",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "require": "./dist/index.js"
+    }
+  },
   "files": [
     "./dist"
   ],

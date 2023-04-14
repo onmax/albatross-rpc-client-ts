@@ -51,6 +51,11 @@ describe('Test for subscriptions', async () => {
         close()
     })
     it('subscribe to new partial blocks', async () => {
+        const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL', blockType: 'ELECTION'})
+        next(data => expect(data).toHaveProperty('hash'))
+        close()
+    })
+    it('subscribe to new partial blocks', async () => {
         const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL'})
         next(data => expect(data).not.toHaveProperty('transactions'))
         close()

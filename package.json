@@ -1,6 +1,6 @@
 {
   "name": "nimiq-rpc-client-ts",
-  "version": "0.0.29",
+  "version": "0.0.30",
   "description": "A Nimiq RPC client for TypeScript",
   "main": "./dist/index.js",
   "module": "./dist/index.mjs",

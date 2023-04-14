@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.0.30
+
+### Patch Changes
+
+- 0cad803: updated blockchain module
+
 ## 0.0.29
 
 ### Patch Changes

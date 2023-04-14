@@ -41,13 +41,18 @@ describe('Test for block module', async () => {
 describe('Test for subscriptions', async () => {
     const client = getClient();
     it('subscribe to new full blocks', async () => {
-        const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL'})
+        const { next, close } = await client.block.subscribe({retrieve: 'FULL'})
         next(data => expect(data).toHaveProperty('transactions'))
         close()
     })
     it('subscribe to new partial blocks', async () => {
         const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL'})
         next(data => expect(data).toHaveProperty('hash'))
+        close()
+    })
+    it('subscribe to new partial blocks', async () => {
+        const { next, close } = await client.block.subscribe({retrieve: 'PARTIAL'})
+        next(data => expect(data).not.toHaveProperty('transactions'))
         close()
     })
     it('subscribe to new hashes blocks', async () => {
@@ -133,17 +138,17 @@ describe.skip('Test for staker module', async () => {
 
 describe('Test for inherent module', async () => {
     const { inherent } = getClient();
-    it('.get blockNumber', async () => expect(await (await inherent.getBy({blockNumber: 0})).data).toBeInstanceOf(Array));
-    it('.get batchNumber', async () => expect(await (await inherent.getBy({batchNumber: 0})).data).toBeInstanceOf(Array));
+    it('.get blockNumber', async () => expect((await inherent.getBy({blockNumber: 0})).data).toBeInstanceOf(Array));
+    it('.get batchNumber', async () => expect((await inherent.getBy({batchNumber: 0})).data).toBeInstanceOf(Array));
 });
 
 describe('Test for validator module', async () => {
     const { validator } = getClient();
-    const validatorAddresses = await (await validator.activeList()).data!;
+    const validatorAddresses = (await validator.activeList()).data!;
     it('.active ok', async () => expect(validatorAddresses).toBeInstanceOf(Array));
     const validatorInfo = validatorAddresses[0];
-    it('.byAddress ok', async () => expect(await (await validator.byAddress({ address: validatorInfo.address })).data).toHaveProperty('address'));
-    it('.active metadata ok', async () => expect((await (await validator.activeList({withMetadata: true})).data!).data).toBeInstanceOf(Array));
+    it('.byAddress ok', async () => expect((await validator.byAddress({ address: validatorInfo.address })).data).toHaveProperty('address'));
+    it('.active metadata ok', async () => expect((await validator.activeList({withMetadata: true})).data?.data).toBeInstanceOf(Array));
     it('.parked ok', async () => expect((await validator.parked()).data!.validators).toBeInstanceOf(Array));
     it('.parked metadata ok', async () => expect((await validator.parked({withMetadata: true})).data!.data.validators).toBeInstanceOf(Array));
     // TODO Figure out how validator.selfNode works

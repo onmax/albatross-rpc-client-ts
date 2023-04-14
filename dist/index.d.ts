@@ -683,12 +683,13 @@ type ErrorStreamReturn = {
     message: string,
 }
 
-type MaybeStreamResponse<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+// export type MaybeStreamResponse<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+type MaybeStreamResponse<T extends CallbackParam> = {
     error: ErrorStreamReturn,
     data: undefined
 } | {
     error: undefined,
-    data: CallbackParam<T, ShowMetadata, IncludeBody>,
+    data: T,
 }
 
 type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
@@ -737,6 +738,7 @@ type Subscription<CallbackItem> = {
     context: ContextRequest;
     getSubscriptionId: () => number;
 };
+type MaybeSubscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = Subscription<MaybeStreamResponse<CallbackParam<T, ShowMetadata, IncludeBody>>>;
 
 type GetBlockByParams = ({
     hash: Hash;
@@ -928,17 +930,17 @@ declare class BlockchainClient extends Client$1 {
     /**
      * Subscribes to pre epoch validators events.
      */
-    subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<"subscribeForValidatorElectionByAddress">>(p: T, userOptions?: Partial<O>): Promise<Subscription<MaybeStreamResponse<"subscribeForValidatorElectionByAddress", O extends {
+    subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<"subscribeForValidatorElectionByAddress">>(p: T, userOptions?: Partial<O>): Promise<MaybeSubscription<"subscribeForValidatorElectionByAddress", O extends {
         withMetadata: true;
-    } ? true : false>>>;
+    } ? true : false>>;
     /**
      * Subscribes to log events related to a given list of addresses and of any of the log types provided.
      * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
      * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
      */
-    subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<"subscribeForLogsByAddressesAndTypes">>(p?: T, userOptions?: Partial<O>): Promise<Subscription<MaybeStreamResponse<"subscribeForLogsByAddressesAndTypes", O extends {
+    subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<"subscribeForLogsByAddressesAndTypes">>(p?: T, userOptions?: Partial<O>): Promise<MaybeSubscription<"subscribeForLogsByAddressesAndTypes", O extends {
         withMetadata: true;
-    } ? true : false>>>;
+    } ? true : false>>;
 }
 
 type RawTransactionInfoParams = {
@@ -1601,9 +1603,9 @@ declare class Client {
             getBy: ({ epochIndex }: {
                 epochIndex: number;
             }, options?: CallOptions) => Promise<MaybeCallResponse<number>>;
-            subscribe: <T_2 extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<"subscribeForValidatorElectionByAddress">>(p: T_2, userOptions?: Partial<O> | undefined) => Promise<Subscription<MaybeStreamResponse<"subscribeForValidatorElectionByAddress", O extends {
+            subscribe: <T_2 extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<"subscribeForValidatorElectionByAddress">>(p: T_2, userOptions?: Partial<O> | undefined) => Promise<MaybeSubscription<"subscribeForValidatorElectionByAddress", O extends {
                 withMetadata: true;
-            } ? true : false, false>>>;
+            } ? true : false, false>>;
         };
         isElection: ({ blockNumber }: {
             blockNumber: number;
@@ -1888,9 +1890,9 @@ declare class Client {
         state: (options?: CallOptions) => Promise<MaybeCallResponse<ZKPState>>;
     };
     logs: {
-        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<"subscribeForLogsByAddressesAndTypes">>(p?: T | undefined, userOptions?: Partial<O> | undefined) => Promise<Subscription<MaybeStreamResponse<"subscribeForLogsByAddressesAndTypes", O extends {
+        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<"subscribeForLogsByAddressesAndTypes">>(p?: T | undefined, userOptions?: Partial<O> | undefined) => Promise<MaybeSubscription<"subscribeForLogsByAddressesAndTypes", O extends {
             withMetadata: true;
-        } ? true : false, false>>>;
+        } ? true : false, false>>;
     };
     _modules: {
         blockchain: BlockchainClient;

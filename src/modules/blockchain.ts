@@ -1,10 +1,10 @@
 import { Client } from "../client/client";
 import { DEFAULT_OPTIONS } from "../client/http";
-import { Subscription, WS_DEFAULT_OPTIONS } from "../client/web-socket";
+import { MaybeSubscription, Subscription, WS_DEFAULT_OPTIONS } from "../client/web-socket";
 import { Account, Address, BatchIndex, Block, BlockNumber, Hash, Inherent, MacroBlock, MicroBlock, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockchainState } from "../types/modules";
-import { FilterStreamFn, MaybeCallResponse, MaybeStreamResponse, StreamOptions } from "../types/rpc-messages";
+import { FilterStreamFn, MaybeCallResponse, StreamOptions } from "../types/rpc-messages";
 
 export type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber }) & { includeTransactions?: boolean };
 export type GetLatestBlockParams = { includeTransactions?: boolean };
@@ -13,7 +13,8 @@ export type GetTransactionsByAddressParams = { address: Address, max?: number, j
 export type GetTransactionByParams = { hash: Hash } | { blockNumber: BlockNumber } | { batchNumber: BatchIndex } | GetTransactionsByAddressParams;
 export type GetInherentsByParams = { batchNumber: BatchIndex } | { blockNumber: BlockNumber };
 export type GetAccountByAddressParams = { address: Address, withMetadata?: boolean };
-export type GetValidatorByAddressParams = { address: Address, includeStakers?: boolean };
+export type GetValidatorByAddressParams = { address: Address };
+export type GetStakersByAddressParams = { address: Address };
 export type GetStakerByAddressParams = { address: Address };
 export type SubscribeForHeadBlockParams = { retrieve: 'FULL' | 'PARTIAL', blockType?: 'MACRO' | 'MICRO' | 'ELECTION' };
 export type SubscribeForHeadHashParams = { retrieve: 'HASH' };
@@ -31,7 +32,9 @@ export type SpecificBlock<T extends SubscribeForHeadBlockParams> =
         ? (T["retrieve"] extends 'FULL' ? MicroBlock : PartialMicroBlock)
         : (T["retrieve"] extends 'FULL' ? MacroBlock : PartialMacroBlock)
 
-export type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<T extends SubscribeForHeadBlockParams ? SpecificBlock<T> : string>;
+export type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<
+    T extends SubscribeForHeadBlockParams ? SpecificBlock<T> : string
+>;
 
 export class BlockchainClient extends Client {
     constructor(url: URL) {
@@ -173,11 +176,22 @@ export class BlockchainClient extends Client {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    public async getValidatorBy<T extends GetValidatorByAddressParams>(p = { includeStakers: false } as T, options = DEFAULT_OPTIONS):
+    public async getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options = DEFAULT_OPTIONS):
         Promise<MaybeCallResponse<T extends { withMetadata: true }
-            ? WithMetadata<T extends { includeStakers: true } ? Validator : PartialValidator>
-            : T extends { includeStakers: true } ? Validator : PartialValidator>> {
-        return this.call("getValidatorByAddress", [p.address, p.includeStakers], options);
+            ? WithMetadata<PartialValidator>
+            : PartialValidator>> {
+        return this.call("getValidatorByAddress", [address], options);
+    }
+
+    /**
+     * Fetches all stakers for a given validator.
+     * IMPORTANT: This operation iterates over all stakers of the staking contract
+     * and thus is extremely computationally expensive.
+     * This function requires the read lock acquisition prior to its execution.
+     */
+    public async getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options = DEFAULT_OPTIONS):
+        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<Staker> : Staker>> {
+        return this.call("getStakerByAddress", [address], options);
     }
 
     /**
@@ -233,10 +247,10 @@ export class BlockchainClient extends Client {
         T extends SubscribeForValidatorElectionByAddressParams,
         O extends StreamOptions<"subscribeForValidatorElectionByAddress">
     >(p: T, userOptions?: Partial<O>):
-        Promise<Subscription<MaybeStreamResponse<"subscribeForValidatorElectionByAddress", O extends { withMetadata: true } ? true : false>>> {
+        Promise<MaybeSubscription<"subscribeForValidatorElectionByAddress", O extends { withMetadata: true } ? true : false>> {
         const options: StreamOptions<"subscribeForValidatorElectionByAddress"> = { ...WS_DEFAULT_OPTIONS, withMetadata: false, ...userOptions }
         return this.subscribe("subscribeForValidatorElectionByAddress", [p?.address], options) as
-            Promise<Subscription<MaybeStreamResponse<"subscribeForValidatorElectionByAddress", O extends { withMetadata: true } ? true : false>>>;
+            Promise<MaybeSubscription<"subscribeForValidatorElectionByAddress", O extends { withMetadata: true } ? true : false>>;
     }
 
     /**
@@ -248,8 +262,8 @@ export class BlockchainClient extends Client {
         T extends SubscribeForLogsByAddressesAndTypesParams,
         O extends StreamOptions<"subscribeForLogsByAddressesAndTypes">
     >(p?: T, userOptions?: Partial<O>):
-        Promise<Subscription<MaybeStreamResponse<"subscribeForLogsByAddressesAndTypes", O extends { withMetadata: true } ? true : false>>> {
+        Promise<MaybeSubscription<"subscribeForLogsByAddressesAndTypes", O extends { withMetadata: true } ? true : false>> {
         const options: StreamOptions<"subscribeForLogsByAddressesAndTypes"> = { ...WS_DEFAULT_OPTIONS, withMetadata: false, ...userOptions }
-        return this.subscribe("subscribeForLogsByAddressesAndTypes", [p?.addresses || [], p?.types || []], options) as  Promise<Subscription<MaybeStreamResponse<"subscribeForLogsByAddressesAndTypes", O extends { withMetadata: true } ? true : false>>>;
+        return this.subscribe("subscribeForLogsByAddressesAndTypes", [p?.addresses || [], p?.types || []], options) as  Promise<MaybeSubscription<"subscribeForLogsByAddressesAndTypes", O extends { withMetadata: true } ? true : false>>;
     }
 }

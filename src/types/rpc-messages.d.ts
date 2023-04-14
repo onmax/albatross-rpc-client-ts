@@ -90,12 +90,13 @@ export type ErrorStreamReturn = {
     message: string,
 }
 
-export type MaybeStreamResponse<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+// export type MaybeStreamResponse<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = {
+export type MaybeStreamResponse<T extends CallbackParam> = {
     error: ErrorStreamReturn,
     data: undefined
 } | {
     error: undefined,
-    data: CallbackParam<T, ShowMetadata, IncludeBody>,
+    data: T,
 }
 
 export type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =

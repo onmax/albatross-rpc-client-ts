@@ -143,7 +143,8 @@ class Client {
         }
 
         this.staker = {
-            byAddress: blockchain.getStakerByAddress.bind(blockchain),
+            fromValidator: blockchain.getStakersByAddress.bind(blockchain),
+            getBy: blockchain.getStakerByAddress.bind(blockchain),
             new: {
                 createTx: consensus.createNewStakerTransaction.bind(consensus),
                 sendTx: consensus.sendNewStakerTransaction.bind(consensus),

@@ -14,6 +14,8 @@ export type Subscription<CallbackItem> = {
     getSubscriptionId: () => number;
 }
 
+export type MaybeSubscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = 
+    Subscription<MaybeStreamResponse<CallbackParam<T, ShowMetadata, IncludeBody>>>
 
 export const WS_DEFAULT_OPTIONS: StreamOptions = {
     once: false,
@@ -32,7 +34,7 @@ export class WebSocketClient {
         this.textDecoder = new TextDecoder()
     }
 
-    async subscribe<T extends StreamName, ShowMetadata extends boolean>(event: T, params: RpcRequest<T>["params"], userOptions: StreamOptions<T>) {
+    async subscribe<T extends StreamName, ShowMetadata extends boolean, IncludeBody extends boolean>(event: T, params: RpcRequest<T>["params"], userOptions: StreamOptions<T>) {
         const ws = new WebSocket(this.url.href);
         let subscriptionId : number;
 
@@ -51,8 +53,8 @@ export class WebSocketClient {
         const { once, filter } = options;
         const withMetadata = 'withMetadata' in options ? options.withMetadata : false;
 
-        const args: Subscription<MaybeStreamResponse<T, ShowMetadata>> = {
-            next: (callback: (data: MaybeStreamResponse<T, ShowMetadata>) => void) => {
+        const args: MaybeSubscription<T, ShowMetadata> = {
+            next: (callback: (data: MaybeStreamResponse<CallbackParam<T, ShowMetadata, IncludeBody>>) => void) => {
                 ws.onmessage = async (event) => {
                     const payload = await this.parsePayload<T>(event);
 

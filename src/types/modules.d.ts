@@ -1,4 +1,4 @@
-import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, PartialBlock, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
+import { Account, Address, BatchIndex, Block, BlockNumber, Coin, EpochIndex, Hash, Inherent, MempoolInfo, PartialBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, WalletAccount } from "./common";
 import { BlockLog } from "./logs";
 import { LogType } from "./enums";
 
@@ -39,7 +39,8 @@ export type BlockchainMethods = {
     'getCurrentSlashedSlots': Interaction<[], SlashedSlot[], BlockchainState>,
     'getPreviousSlashedSlots': Interaction<[], SlashedSlot[], BlockchainState>,
     'getParkedValidators': Interaction<[], { blockNumber: BlockNumber, validators: Validator[]}, BlockchainState>,
-    'getValidatorByAddress': Interaction<[Address, /* include_stakers */Maybe<Boolean>], Validator | PartialValidator, BlockchainState>,
+    'getValidatorByAddress': Interaction<[Address], PartialValidator, BlockchainState>,
+    'getStakersByAddress': Interaction<[Address], Staker[], BlockchainState>,
     'getStakerByAddress': Interaction<[Address], Staker, BlockchainState>,
 }
 

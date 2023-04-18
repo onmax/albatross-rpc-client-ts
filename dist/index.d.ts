@@ -1065,7 +1065,7 @@ type UpdateValidatorTxParams = {
     newSignalData: string;
     fee: Coin$1;
 } & ValidityStartHeight$1;
-type InactiveValidatorTxParams = {
+type DeactiveValidatorTxParams = {
     senderWallet: Address$1;
     validator: Address$1;
     signingSecretKey: string;
@@ -1254,12 +1254,12 @@ declare class ConsensusClient extends Client$1 {
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
+    createDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
     /**
      * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
     /**
      * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1770,9 +1770,9 @@ declare class Client {
                 createTx: (p: UpdateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
                 sendTx: (p: UpdateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
-            deactive: {
-                createTx: (p: InactiveValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
-                sendTx: (p: InactiveValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            deactivate: {
+                createTx: (p: DeactiveValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendTx: (p: DeactiveValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             };
             reactivate: {
                 createTx: (p: ReactivateValidatorTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
@@ -1917,4 +1917,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { Account, AccountType$1 as AccountType, Address$1 as Address, AppliedBlockLog, BasicAccount, BatchIndex, Block$1 as Block, BlockLog, BlockNumber, BlockSubscription, BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin$1 as Coin, ConsensusClient, ContextRequest, CreateStakerLog, CreateValidatorLog, CurrentTime$1 as CurrentTime, DeleteValidatorLog, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, FailedTransactionLog, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactivateValidatorLog, InactiveValidatorTxParams, Inherent, InherentLog, Log, LogType, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkInherentLog, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutInherentLog, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorLog, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, RevertContractInherentLog, RevertedBlockLog, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashInherentLog, SlashedSlot, Slot, StakeLog, StakeTxParams, Staker, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionLog, TransactionParams, TransferLog, UnparkValidatorLog, UnparkValidatorTxParams, UnstakeLog, UnstakeTxParams, UpdateStakerLog, UpdateStakerTxParams, UpdateValidatorLog, UpdateValidatorTxParams, Validator, ValidatorClient, VestingAccount, VestingTxParams, WalletAccount, WalletClient, ZKPState, ZkpComponentClient };
+export { Account, AccountType$1 as AccountType, Address$1 as Address, AppliedBlockLog, BasicAccount, BatchIndex, Block$1 as Block, BlockLog, BlockNumber, BlockSubscription, BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin$1 as Coin, ConsensusClient, ContextRequest, CreateStakerLog, CreateValidatorLog, CurrentTime$1 as CurrentTime, DeactiveValidatorTxParams, DeleteValidatorLog, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, FailedTransactionLog, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactivateValidatorLog, Inherent, InherentLog, Log, LogType, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkInherentLog, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutInherentLog, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorLog, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, RevertContractInherentLog, RevertedBlockLog, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashInherentLog, SlashedSlot, Slot, StakeLog, StakeTxParams, Staker, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionLog, TransactionParams, TransferLog, UnparkValidatorLog, UnparkValidatorTxParams, UnstakeLog, UnstakeTxParams, UpdateStakerLog, UpdateStakerTxParams, UpdateValidatorLog, UpdateValidatorTxParams, Validator, ValidatorClient, VestingAccount, VestingTxParams, WalletAccount, WalletClient, ZKPState, ZkpComponentClient };

@@ -1534,7 +1534,7 @@ var Client2 = class {
           createTx: consensus.createUpdateValidatorTransaction.bind(consensus),
           sendTx: consensus.sendUpdateValidatorTransaction.bind(consensus)
         },
-        deactive: {
+        deactivate: {
           createTx: consensus.createDeactivateValidatorTransaction.bind(consensus),
           sendTx: consensus.sendDeactivateValidatorTransaction.bind(consensus)
         },

@@ -18,7 +18,7 @@ export type UpdateStakerTxParams = { senderWallet: Address, staker: Address, new
 export type UnstakeTxParams = { staker: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
 export type NewValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight;
 export type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin } & ValidityStartHeight;
-export type InactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
+export type DeactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type RetireValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin } & ValidityStartHeight;
@@ -332,7 +332,7 @@ export class ConsensusClient extends Client {
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    public async createDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
+    public async createDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
         return this.call("createDeactivateValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ], options);
@@ -342,7 +342,7 @@ export class ConsensusClient extends Client {
      * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    public async sendDeactivateValidatorTransaction(p: InactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
+    public async sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("sendDeactivateValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ], options);

@@ -1,7 +1,9 @@
+import { LogType } from "types/enums";
 import { Client } from "../client/client";
+import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION } from "../client/http";
 import { Address, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from "../types/common";
-import { MaybeCallResponse } from "../types/rpc-messages";
-import { DEFAULT_OPTIONS as defaults, DEFAULT_OPTIONS } from "../client/http";
+import { CallOptions, ContextRequest, MaybeCallResponse, SendTxCallOptions, TxLog } from "../types/rpc-messages";
+import { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from "./blockchain";
 
 export type RawTransactionInfoParams = { rawTransaction: string };
 export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string, } & ValidityStartHeight;
@@ -25,12 +27,45 @@ export type RetireValidatorTxParams = { senderWallet: Address, validator: Addres
 export type DeleteValidatorTxParams = { validator: Address, recipient: Address, fee: Coin, value: Coin } & ValidityStartHeight;
 
 export class ConsensusClient extends Client {
-    constructor(url: URL) {
+    private blockchainClient: BlockchainClient;
+
+    constructor(url: URL, blockchainClient: BlockchainClient) {
         super(url);
+        this.blockchainClient = blockchainClient;
     }
 
     private getValidityStartHeight(p: ValidityStartHeight): string {
         return 'relativeValidityStartHeight' in p ? `+${p.relativeValidityStartHeight}` : `${p.absoluteValidityStartHeight}`;
+    }
+
+    private async waitForConfirmation(hash: string, params: SubscribeForLogsByAddressesAndTypesParams, waitForConfirmationTimeout: number = DEFAULT_TIMEOUT_CONFIRMATION, context: ContextRequest): Promise<MaybeCallResponse<TxLog>> {
+        const { next, close } = await this.blockchainClient.subscribeForLogsByAddressesAndTypes(params);
+    
+        return new Promise((resolve) => {
+            const timeoutFn = setTimeout(async () => {
+                close();
+                const tx = await this.blockchainClient.getTransactionBy({ hash });
+                if (tx.error) {
+                    resolve({ context, error: { code: -32300, message: `Timeout waiting for confirmation of transaction ${hash}` }, data: undefined });
+                } else {
+                    resolve({ context, error: undefined, data: { log: undefined, hash, tx: tx.data! } as TxLog});
+                }
+            }, waitForConfirmationTimeout);
+    
+            next(async (log) => {
+                if (log.error) return;
+                if (log.data.transactions.some(tx => tx.hash === hash)) {
+                    clearTimeout(timeoutFn);
+                    close();
+                    const tx = await this.blockchainClient.getTransactionBy({ hash });
+                    if (tx.error) {
+                        resolve({ context, error: { code: -32300, message: `Error getting transaction ${hash}` }, data: undefined });
+                    } else {
+                        resolve({ context, error: undefined, data: { log: undefined, hash, tx: tx.data! } as TxLog});
+                    }
+                }
+            })
+        });
     }
 
     /**
@@ -62,12 +97,18 @@ export class ConsensusClient extends Client {
      * Sends a transaction
      */
     public async sendTransaction(p: TransactionParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
-        const h = this.getValidityStartHeight(p);
-        if (p.data) {
-            return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
-        } else {
-            return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
-        }
+        return p.data
+            ? this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options)
+            : this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
+    }
+
+    /**
+     * Sends a transaction and waits for confirmation
+     */
+    public async sendSyncTransaction(p: TransactionParams, options: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet, p.recipient], types: [LogType.Transfer] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -87,6 +128,15 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a transaction creating a new vesting contract to the network and waits for confirmation
+     */
+    public async sendSyncNewVestingTransaction(p: VestingTxParams, options: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendNewVestingTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized transaction redeeming a vesting contract
      */
     public async createRedeemVestingTransaction(p: RedeemVestingTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
@@ -103,6 +153,15 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a transaction redeeming a vesting contract and waits for confirmation
+     */
+    public async sendSyncRedeemVestingTransaction(p: RedeemVestingTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendRedeemVestingTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized transaction creating a new HTLC contract
      */
     public async createNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
@@ -112,12 +171,20 @@ export class ConsensusClient extends Client {
     
     /**
      * Sends a transaction creating a new HTLC contract
-     */
+     */    
     public async sendNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("sendNewHtlcTransaction", [
             p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee,  this.getValidityStartHeight(p)], options);
     }
-        
+
+    /**
+     * Sends a transaction creating a new HTLC contract and waits for confirmation
+     */
+    public async sendSyncNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendNewHtlcTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+    }
 
     /**
      * Returns a serialized transaction redeeming an HTLC contract
@@ -135,6 +202,15 @@ export class ConsensusClient extends Client {
         return this.call("sendRedeemRegularHtlcTransaction", [
             p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+    /**
+     * Sends a transaction redeeming a new HTLC contract and waits for confirmation
+     */
+    public async sendSyncRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendRedeemRegularHtlcTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -159,6 +235,16 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
+     * method to network and waits for confirmation
+     */
+    public async sendSyncRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendRedeemTimeoutHtlcTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
      */
@@ -179,6 +265,16 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
+     * method and waits for confirmation
+     */
+    public async sendSyncRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendRedeemEarlyHtlcTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
      * the `EarlyResolve` method.
      */
@@ -192,7 +288,7 @@ export class ConsensusClient extends Client {
      * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    public async createNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
+    public async createNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("createNewStakerTransaction", [
             p.senderWallet, p.staker, p.delegation, p.value, p.fee,  this.getValidityStartHeight(p)
         ], options);
@@ -209,10 +305,20 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a `new_staker` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+     */
+    public async sendSyncNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendNewStakerTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.CreateStaker] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    public async createStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<RawTransaction>> {
+    public async createStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
         return this.call("createStakeTransaction", [
             p.senderWallet, p.staker, p.value, p.fee,  this.getValidityStartHeight(p)
         ], options);
@@ -229,6 +335,16 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a `stake` transaction. The funds to be staked and the transaction fee will
+     * be paid from the `sender_wallet` and waits for confirmation.
+     */
+    public async sendSyncStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendStakeTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.Stake] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
      * providing a sender wallet).
@@ -238,7 +354,7 @@ export class ConsensusClient extends Client {
             p.senderWallet, p.staker, p.newDelegation, p.fee,  this.getValidityStartHeight(p)
         ], options);
     }
-    
+
     /**
      * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
@@ -248,6 +364,17 @@ export class ConsensusClient extends Client {
         return this.call("sendUpdateStakerTransaction", [
             p.senderWallet, p.staker, p.newDelegation, p.fee,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+    /**
+     * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
+     * account (by providing the sender wallet) or from the staker account's balance (by not
+     * providing a sender wallet) and waits for confirmation.
+     */
+    public async sendSyncUpdateStakerTransaction(p: UpdateStakerTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendUpdateStakerTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.UpdateStaker] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -268,6 +395,16 @@ export class ConsensusClient extends Client {
         return this.call("sendUnstakeTransaction", [
             p.staker, p.recipient, p.value, p.fee,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+    /**
+     * Sends a `unstake` transaction. The transaction fee will be paid from the funds
+     * being unstaked and waits for confirmation.
+     */
+    public async sendSyncUnstakeTransaction(p: UnstakeTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendUnstakeTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.recipient], types: [LogType.Unstake] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -296,6 +433,21 @@ export class ConsensusClient extends Client {
         return this.call("sendNewValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+    /**
+     * Sends a `new_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee and the validator deposit
+     * and waits for confirmation.
+     * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+     * have a double Option. So we use the following work-around for the signal data:
+     * "" = Set the signal data field to None.
+     * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
+     */
+    public async sendSyncNewValidatorTransaction(p: NewValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendNewValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.CreateValidator] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -329,6 +481,21 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a `update_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+     * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+     * have a double Option. So we use the following work-around for the signal data:
+     * null = No change in the signal data field.
+     * "" = Change the signal data field to None.
+     * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
+     */
+    public async sendSyncUpdateValidatorTransaction(p: UpdateValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendUpdateValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: [LogType.UpdateValidator] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
@@ -346,6 +513,17 @@ export class ConsensusClient extends Client {
         return this.call("sendDeactivateValidatorTransaction", [
             p.senderWallet, p.validator, p.signingSecretKey, p.fee,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+    /**
+     * Sends a `inactivate_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    public async sendSyncDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendDeactivateValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: [LogType.InactivateValidator] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -369,6 +547,17 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a `reactivate_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    public async sendSyncReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendReactivateValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: [LogType.ReactivateValidator] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
@@ -389,6 +578,17 @@ export class ConsensusClient extends Client {
     }
 
     /**
+     * Sends a `unpark_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    public async sendSyncUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendUnparkValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: [LogType.UnparkValidator] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
@@ -406,6 +606,17 @@ export class ConsensusClient extends Client {
         return this.call("sendRetireValidatorTransaction", [
             p.senderWallet, p.validator, p.fee,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+    /**
+     * Sends a `retire_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    public async sendSyncRetireValidatorTransaction(p: RetireValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendRetireValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: [LogType.RetireValidator] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**
@@ -430,5 +641,17 @@ export class ConsensusClient extends Client {
         return this.call("sendDeleteValidatorTransaction", [
             p.validator, p.recipient, p.fee, p.value,  this.getValidityStartHeight(p)
         ], options);
+    }
+
+     /**
+     * Sends a `delete_validator` transaction and waits for confirmation.
+     * The transaction fee will be paid from the validator deposit that is being returned.
+     * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
+     * Failed delete validator transactions can diminish the validator deposit
+     */
+    public async sendSyncDeleteValidatorTransaction(p: DeleteValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX): Promise<MaybeCallResponse<TxLog>> {
+        const hash = await this.sendDeleteValidatorTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: [LogType.DeleteValidator] }, options.waitForConfirmationTimeout, hash.context);
     }
 }

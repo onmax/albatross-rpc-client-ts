@@ -1,8 +1,6 @@
 import fetch from 'node-fetch';
-import { Interaction } from '../types/modules';
-import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodResponse, MethodResponseContent, MethodResponseError, RpcRequest } from "../types/rpc-messages";
+import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodResponse, MethodResponseContent, MethodResponseError, RpcRequest, SendTxCallOptions } from "../types/rpc-messages";
 
-type Data<T extends { data: any }> = T extends number ? T : T["data"]
 type SuccessCallReturn<T extends MethodName, WithMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
     ? MethodResponseContent<T, false>
     : WithMetadata extends true
@@ -21,6 +19,12 @@ type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
 
 export const DEFAULT_OPTIONS: CallOptions = {
     timeout: 10_000
+}
+
+export const DEFAULT_TIMEOUT_CONFIRMATION: number = 10_000
+
+export const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions = {
+    timeout: DEFAULT_TIMEOUT_CONFIRMATION,
 }
 
 export class HttpClient {

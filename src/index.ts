@@ -28,7 +28,7 @@ class Client {
 
     constructor(url: URL) {
         const blockchain = new BlockchainClient(url);
-        const consensus = new ConsensusClient(url);
+        const consensus = new ConsensusClient(url, blockchain);
         const mempool = new MempoolClient(url);
         const network = new NetworkClient(url);
         const policy = new PolicyClient(url);
@@ -101,16 +101,19 @@ class Client {
             minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
             create: consensus.createTransaction.bind(consensus),
             send: consensus.sendTransaction.bind(consensus),
+            sendSync: consensus.sendSyncTransaction.bind(consensus),
         }
 
         this.vesting = {
             new: {
                 createTx: consensus.createNewVestingTransaction.bind(consensus),
                 sendTx: consensus.sendNewVestingTransaction.bind(consensus),
+                sendSyncTx: consensus.sendSyncNewVestingTransaction.bind(consensus),
             },
             redeem: {
                 createTx: consensus.createRedeemVestingTransaction.bind(consensus),
                 sendTx: consensus.sendRedeemVestingTransaction.bind(consensus),
+                sendSyncTx: consensus.sendSyncRedeemVestingTransaction.bind(consensus),
             }
         }
 
@@ -118,19 +121,23 @@ class Client {
             new: {
                 createTx: consensus.createNewHtlcTransaction.bind(consensus),
                 sendTx: consensus.sendNewHtlcTransaction.bind(consensus),
+                sendSyncTx: consensus.sendSyncNewHtlcTransaction.bind(consensus),
             },
             redeem: {
                 regular: {
                     createTx: consensus.createRedeemRegularHtlcTransaction.bind(consensus),
                     sendTx: consensus.sendRedeemRegularHtlcTransaction.bind(consensus),
+                    sendSyncTx: consensus.sendSyncRedeemRegularHtlcTransaction.bind(consensus),
                 },
                 timeoutTx: {
                     createTx: consensus.createRedeemTimeoutHtlcTransaction.bind(consensus),
                     sendTx: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus),
+                    sendSyncTx: consensus.sendSyncRedeemTimeoutHtlcTransaction.bind(consensus),
                 },
                 earlyTx: {
                     createTx: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
                     sendTx: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus),
+                    sendSyncTx: consensus.sendSyncRedeemEarlyHtlcTransaction.bind(consensus),
                 }
             }
         }
@@ -139,6 +146,7 @@ class Client {
             new: {
                 createTx: consensus.createStakeTransaction.bind(consensus),
                 sendTx: consensus.sendStakeTransaction.bind(consensus),
+                sendSyncTx: consensus.sendSyncStakeTransaction.bind(consensus),
             }
         }
 
@@ -148,10 +156,12 @@ class Client {
             new: {
                 createTx: consensus.createNewStakerTransaction.bind(consensus),
                 sendTx: consensus.sendNewStakerTransaction.bind(consensus),
+                sendSyncTx: consensus.sendSyncNewStakerTransaction.bind(consensus),
             },
             update: {
                 createTx: consensus.createUpdateStakerTransaction.bind(consensus),
                 sendTx: consensus.sendUpdateStakerTransaction.bind(consensus),
+                sendSyncTx: consensus.sendSyncUpdateStakerTransaction.bind(consensus),
             }
         }
 

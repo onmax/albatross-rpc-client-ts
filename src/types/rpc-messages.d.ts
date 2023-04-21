@@ -1,3 +1,4 @@
+import { Transaction } from "./common";
 import { PolicyMethods, BlockchainMethods, ConsensusMethods, MempoolMethods, NetworkMethods, ValidatorMethods, StreamOpened, WalletMethods, ZkpComponentMethods, BlockchainStreams } from "./modules";
 
 // export type Methods = PolicyMethods & BlockchainMethods & ConsensusMethods & MempoolMethods & NetworkMethods & ValidatorMethods & WalletMethods & ZkpComponentMethods & StreamOpened
@@ -82,8 +83,12 @@ export type MaybeCallResponse<T> = {
 }
 
 export type CallOptions = {
-    timeout: number
+    timeout?: number // in ms
 }
+
+export type SendTxCallOptions = CallOptions & ({
+    waitForConfirmationTimeout?: number, // in ms
+})
 
 export type ErrorStreamReturn = {
     code: number,
@@ -121,3 +126,5 @@ export type StreamOptions<T extends StreamName = any> = {
         ? { withMetadata: boolean }
         : {}
 );
+
+export type TxLog = { tx: Transaction, log?: BlockLog, hash: Hash }

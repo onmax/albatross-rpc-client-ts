@@ -3,6 +3,10 @@ import fetch from "node-fetch";
 var DEFAULT_OPTIONS = {
   timeout: 1e4
 };
+var DEFAULT_TIMEOUT_CONFIRMATION = 1e4;
+var DEFAULT_OPTIONS_SEND_TX = {
+  timeout: DEFAULT_TIMEOUT_CONFIRMATION
+};
 var _HttpClient = class {
   constructor(url) {
     this.url = url;
@@ -384,13 +388,85 @@ var BlockchainClient = class extends Client {
   }
 };
 
+// src/types/enums.ts
+var BlockType = /* @__PURE__ */ ((BlockType2) => {
+  BlockType2["MICRO"] = "micro";
+  BlockType2["MACRO"] = "macro";
+  return BlockType2;
+})(BlockType || {});
+var LogType = /* @__PURE__ */ ((LogType2) => {
+  LogType2["PayoutInherent"] = "payout-inherent";
+  LogType2["ParkInherent"] = "park-inherent";
+  LogType2["SlashInherent"] = "slash-inherent";
+  LogType2["RevertContractInherent"] = "revert-contract-inherent";
+  LogType2["PayFee"] = "pay-fee";
+  LogType2["Transfer"] = "transfer";
+  LogType2["HtlcCreate"] = "htlc-create";
+  LogType2["HtlcTimeoutResolve"] = "htlc-timeout-resolve";
+  LogType2["HtlcRegularTransfer"] = "htlc-regular-transfer";
+  LogType2["HtlcEarlyResolve"] = "htlc-early-resolve";
+  LogType2["VestingCreate"] = "vesting-create";
+  LogType2["CreateValidator"] = "create-validator";
+  LogType2["UpdateValidator"] = "update-validator";
+  LogType2["InactivateValidator"] = "inactivate-validator";
+  LogType2["ReactivateValidator"] = "reactivate-validator";
+  LogType2["UnparkValidator"] = "unpark-validator";
+  LogType2["CreateStaker"] = "create-staker";
+  LogType2["Stake"] = "stake";
+  LogType2["UpdateStaker"] = "update-staker";
+  LogType2["RetireValidator"] = "retire-validator";
+  LogType2["DeleteValidator"] = "delete-validator";
+  LogType2["Unstake"] = "unstake";
+  LogType2["PayoutReward"] = "payout-reward";
+  LogType2["Park"] = "park";
+  LogType2["Slash"] = "slash";
+  LogType2["RevertContract"] = "revert-contract";
+  LogType2["FailedTransaction"] = "failed-transaction";
+  return LogType2;
+})(LogType || {});
+var AccountType = /* @__PURE__ */ ((AccountType2) => {
+  AccountType2["BASIC"] = "basic";
+  AccountType2["VESTING"] = "vesting";
+  AccountType2["HTLC"] = "htlc";
+  return AccountType2;
+})(AccountType || {});
+
 // src/modules/consensus.ts
 var ConsensusClient = class extends Client {
-  constructor(url) {
+  constructor(url, blockchainClient) {
     super(url);
+    this.blockchainClient = blockchainClient;
   }
   getValidityStartHeight(p) {
     return "relativeValidityStartHeight" in p ? `+${p.relativeValidityStartHeight}` : `${p.absoluteValidityStartHeight}`;
+  }
+  async waitForConfirmation(hash, params, waitForConfirmationTimeout = DEFAULT_TIMEOUT_CONFIRMATION, context) {
+    const { next, close } = await this.blockchainClient.subscribeForLogsByAddressesAndTypes(params);
+    return new Promise((resolve) => {
+      const timeoutFn = setTimeout(async () => {
+        close();
+        const tx = await this.blockchainClient.getTransactionBy({ hash });
+        if (tx.error) {
+          resolve({ context, error: { code: -32300, message: `Timeout waiting for confirmation of transaction ${hash}` }, data: void 0 });
+        } else {
+          resolve({ context, error: void 0, data: { log: void 0, hash, tx: tx.data } });
+        }
+      }, waitForConfirmationTimeout);
+      next(async (log) => {
+        if (log.error)
+          return;
+        if (log.data.transactions.some((tx) => tx.hash === hash)) {
+          clearTimeout(timeoutFn);
+          close();
+          const tx = await this.blockchainClient.getTransactionBy({ hash });
+          if (tx.error) {
+            resolve({ context, error: { code: -32300, message: `Error getting transaction ${hash}` }, data: void 0 });
+          } else {
+            resolve({ context, error: void 0, data: { log: void 0, hash, tx: tx.data } });
+          }
+        }
+      });
+    });
   }
   /**
    * Returns a boolean specifying if we have established consensus with the network
@@ -418,12 +494,16 @@ var ConsensusClient = class extends Client {
    * Sends a transaction
    */
   async sendTransaction(p, options = DEFAULT_OPTIONS) {
-    const h = this.getValidityStartHeight(p);
-    if (p.data) {
-      return this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options);
-    } else {
-      return this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
-    }
+    return p.data ? this.call("sendBasicTransactionWithData", [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)], options) : this.call("sendBasicTransaction", [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)], options);
+  }
+  /**
+   * Sends a transaction and waits for confirmation
+   */
+  async sendSyncTransaction(p, options) {
+    const hash = await this.sendTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet, p.recipient], types: ["transfer" /* Transfer */] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized transaction creating a new vesting contract
@@ -456,6 +536,15 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a transaction creating a new vesting contract to the network and waits for confirmation
+   */
+  async sendSyncNewVestingTransaction(p, options) {
+    const hash = await this.sendNewVestingTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized transaction redeeming a vesting contract
    */
   async createRedeemVestingTransaction(p, options = DEFAULT_OPTIONS) {
@@ -480,6 +569,15 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a transaction redeeming a vesting contract and waits for confirmation
+   */
+  async sendSyncRedeemVestingTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRedeemVestingTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized transaction creating a new HTLC contract
@@ -516,6 +614,15 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a transaction creating a new HTLC contract and waits for confirmation
+   */
+  async sendSyncNewHtlcTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendNewHtlcTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized transaction redeeming an HTLC contract
    */
   async createRedeemRegularHtlcTransaction(p, options = DEFAULT_OPTIONS) {
@@ -550,6 +657,15 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a transaction redeeming a new HTLC contract and waits for confirmation
+   */
+  async sendSyncRedeemRegularHtlcTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRedeemRegularHtlcTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized transaction redeeming a HTLC contract using the `TimeoutResolve`
    * method 
    */
@@ -576,6 +692,16 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
+   * method to network and waits for confirmation
+   */
+  async sendSyncRedeemTimeoutHtlcTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRedeemTimeoutHtlcTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
@@ -608,6 +734,16 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
+   * method and waits for confirmation
+   */
+  async sendSyncRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRedeemEarlyHtlcTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
@@ -652,6 +788,16 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a `new_staker` transaction. You need to provide the address of a basic
+   * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+   */
+  async sendSyncNewStakerTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendNewStakerTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: ["create-staker" /* CreateStaker */] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
    * be paid from the `sender_wallet`.
    */
@@ -676,6 +822,16 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a `stake` transaction. The funds to be staked and the transaction fee will
+   * be paid from the `sender_wallet` and waits for confirmation.
+   */
+  async sendSyncStakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendStakeTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: ["stake" /* Stake */] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized `update_staker` transaction. You can pay the transaction fee from a basic
@@ -706,6 +862,17 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
+   * account (by providing the sender wallet) or from the staker account's balance (by not
+   * providing a sender wallet) and waits for confirmation.
+   */
+  async sendSyncUpdateStakerTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendUpdateStakerTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: ["update-staker" /* UpdateStaker */] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
    * being unstaked.
    */
@@ -730,6 +897,16 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a `unstake` transaction. The transaction fee will be paid from the funds
+   * being unstaked and waits for confirmation.
+   */
+  async sendSyncUnstakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendUnstakeTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.recipient], types: ["unstake" /* Unstake */] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
@@ -770,6 +947,21 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a `new_validator` transaction. You need to provide the address of a basic
+   * account (the sender wallet) to pay the transaction fee and the validator deposit
+   * and waits for confirmation.
+   * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+   * have a double Option. So we use the following work-around for the signal data:
+   * "" = Set the signal data field to None.
+   * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
+   */
+  async sendSyncNewValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendNewValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: ["create-validator" /* CreateValidator */] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized `update_validator` transaction. You need to provide the address of a basic
@@ -814,6 +1006,21 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a `update_validator` transaction. You need to provide the address of a basic
+   * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+   * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+   * have a double Option. So we use the following work-around for the signal data:
+   * null = No change in the signal data field.
+   * "" = Change the signal data field to None.
+   * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
+   */
+  async sendSyncUpdateValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendUpdateValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: ["update-validator" /* UpdateValidator */] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
@@ -838,6 +1045,17 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a `inactivate_validator` transaction and waits for confirmation.
+   * You need to provide the address of a basic account (the sender wallet)
+   * to pay the transaction fee.
+   */
+  async sendSyncDeactivateValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendDeactivateValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: ["inactivate-validator" /* InactivateValidator */] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
@@ -866,6 +1084,17 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a `reactivate_validator` transaction and waits for confirmation.
+   * You need to provide the address of a basic account (the sender wallet)
+   * to pay the transaction fee.
+   */
+  async sendSyncReactivateValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendReactivateValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: ["reactivate-validator" /* ReactivateValidator */] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
@@ -892,6 +1121,17 @@ var ConsensusClient = class extends Client {
     ], options);
   }
   /**
+   * Sends a `unpark_validator` transaction and waits for confirmation.
+   * You need to provide the address of a basic account (the sender wallet)
+   * to pay the transaction fee.
+   */
+  async sendSyncUnparkValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendUnparkValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: ["unpark-validator" /* UnparkValidator */] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
    * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
    * account (the sender wallet) to pay the transaction fee.
    */
@@ -914,6 +1154,17 @@ var ConsensusClient = class extends Client {
       p.fee,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+   * Sends a `retire_validator` transaction and waits for confirmation.
+   * You need to provide the address of a basic account (the sender wallet)
+   * to pay the transaction fee.
+   */
+  async sendSyncRetireValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRetireValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: ["retire-validator" /* RetireValidator */] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized `delete_validator` transaction. The transaction fee will be paid from the
@@ -944,6 +1195,18 @@ var ConsensusClient = class extends Client {
       p.value,
       this.getValidityStartHeight(p)
     ], options);
+  }
+  /**
+  * Sends a `delete_validator` transaction and waits for confirmation.
+  * The transaction fee will be paid from the validator deposit that is being returned.
+  * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
+  * Failed delete validator transactions can diminish the validator deposit
+  */
+  async sendSyncDeleteValidatorTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendDeleteValidatorTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.validator], types: ["delete-validator" /* DeleteValidator */] }, options.waitForConfirmationTimeout, hash.context);
   }
 };
 
@@ -1290,54 +1553,11 @@ var ZkpComponentClient = class extends Client {
   }
 };
 
-// src/types/enums.ts
-var BlockType = /* @__PURE__ */ ((BlockType2) => {
-  BlockType2["MICRO"] = "micro";
-  BlockType2["MACRO"] = "macro";
-  return BlockType2;
-})(BlockType || {});
-var LogType = /* @__PURE__ */ ((LogType2) => {
-  LogType2["PayoutInherent"] = "payout-inherent";
-  LogType2["ParkInherent"] = "park-inherent";
-  LogType2["SlashInherent"] = "slash-inherent";
-  LogType2["RevertContractInherent"] = "revert-contract-inherent";
-  LogType2["PayFee"] = "pay-fee";
-  LogType2["Transfer"] = "transfer";
-  LogType2["HtlcCreate"] = "htlc-create";
-  LogType2["HtlcTimeoutResolve"] = "htlc-timeout-resolve";
-  LogType2["HtlcRegularTransfer"] = "htlc-regular-transfer";
-  LogType2["HtlcEarlyResolve"] = "htlc-early-resolve";
-  LogType2["VestingCreate"] = "vesting-create";
-  LogType2["CreateValidator"] = "create-validator";
-  LogType2["UpdateValidator"] = "update-validator";
-  LogType2["InactivateValidator"] = "inactivate-validator";
-  LogType2["ReactivateValidator"] = "reactivate-validator";
-  LogType2["UnparkValidator"] = "unpark-validator";
-  LogType2["CreateStaker"] = "create-staker";
-  LogType2["Stake"] = "stake";
-  LogType2["UpdateStaker"] = "update-staker";
-  LogType2["RetireValidator"] = "retire-validator";
-  LogType2["DeleteValidator"] = "delete-validator";
-  LogType2["Unstake"] = "unstake";
-  LogType2["PayoutReward"] = "payout-reward";
-  LogType2["Park"] = "park";
-  LogType2["Slash"] = "slash";
-  LogType2["RevertContract"] = "revert-contract";
-  LogType2["FailedTransaction"] = "failed-transaction";
-  return LogType2;
-})(LogType || {});
-var AccountType = /* @__PURE__ */ ((AccountType2) => {
-  AccountType2["BASIC"] = "basic";
-  AccountType2["VESTING"] = "vesting";
-  AccountType2["HTLC"] = "htlc";
-  return AccountType2;
-})(AccountType || {});
-
 // src/index.ts
 var Client2 = class {
   constructor(url) {
     const blockchain = new BlockchainClient(url);
-    const consensus = new ConsensusClient(url);
+    const consensus = new ConsensusClient(url, blockchain);
     const mempool = new MempoolClient(url);
     const network = new NetworkClient(url);
     const policy = new PolicyClient(url);
@@ -1402,42 +1622,50 @@ var Client2 = class {
       push: mempool.pushTransaction.bind(mempool),
       minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
       create: consensus.createTransaction.bind(consensus),
-      send: consensus.sendTransaction.bind(consensus)
+      send: consensus.sendTransaction.bind(consensus),
+      sendSync: consensus.sendSyncTransaction.bind(consensus)
     };
     this.vesting = {
       new: {
         createTx: consensus.createNewVestingTransaction.bind(consensus),
-        sendTx: consensus.sendNewVestingTransaction.bind(consensus)
+        sendTx: consensus.sendNewVestingTransaction.bind(consensus),
+        sendSyncTx: consensus.sendSyncNewVestingTransaction.bind(consensus)
       },
       redeem: {
         createTx: consensus.createRedeemVestingTransaction.bind(consensus),
-        sendTx: consensus.sendRedeemVestingTransaction.bind(consensus)
+        sendTx: consensus.sendRedeemVestingTransaction.bind(consensus),
+        sendSyncTx: consensus.sendSyncRedeemVestingTransaction.bind(consensus)
       }
     };
     this.htlc = {
       new: {
         createTx: consensus.createNewHtlcTransaction.bind(consensus),
-        sendTx: consensus.sendNewHtlcTransaction.bind(consensus)
+        sendTx: consensus.sendNewHtlcTransaction.bind(consensus),
+        sendSyncTx: consensus.sendSyncNewHtlcTransaction.bind(consensus)
       },
       redeem: {
         regular: {
           createTx: consensus.createRedeemRegularHtlcTransaction.bind(consensus),
-          sendTx: consensus.sendRedeemRegularHtlcTransaction.bind(consensus)
+          sendTx: consensus.sendRedeemRegularHtlcTransaction.bind(consensus),
+          sendSyncTx: consensus.sendSyncRedeemRegularHtlcTransaction.bind(consensus)
         },
         timeoutTx: {
           createTx: consensus.createRedeemTimeoutHtlcTransaction.bind(consensus),
-          sendTx: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus)
+          sendTx: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus),
+          sendSyncTx: consensus.sendSyncRedeemTimeoutHtlcTransaction.bind(consensus)
         },
         earlyTx: {
           createTx: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
-          sendTx: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus)
+          sendTx: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus),
+          sendSyncTx: consensus.sendSyncRedeemEarlyHtlcTransaction.bind(consensus)
         }
       }
     };
     this.stakes = {
       new: {
         createTx: consensus.createStakeTransaction.bind(consensus),
-        sendTx: consensus.sendStakeTransaction.bind(consensus)
+        sendTx: consensus.sendStakeTransaction.bind(consensus),
+        sendSyncTx: consensus.sendSyncStakeTransaction.bind(consensus)
       }
     };
     this.staker = {
@@ -1445,11 +1673,13 @@ var Client2 = class {
       getBy: blockchain.getStakerByAddress.bind(blockchain),
       new: {
         createTx: consensus.createNewStakerTransaction.bind(consensus),
-        sendTx: consensus.sendNewStakerTransaction.bind(consensus)
+        sendTx: consensus.sendNewStakerTransaction.bind(consensus),
+        sendSyncTx: consensus.sendSyncNewStakerTransaction.bind(consensus)
       },
       update: {
         createTx: consensus.createUpdateStakerTransaction.bind(consensus),
-        sendTx: consensus.sendUpdateStakerTransaction.bind(consensus)
+        sendTx: consensus.sendUpdateStakerTransaction.bind(consensus),
+        sendSyncTx: consensus.sendSyncUpdateStakerTransaction.bind(consensus)
       }
     };
     this.inherent = {
@@ -1534,11 +1764,13 @@ export {
   BlockchainClient,
   Client2 as Client,
   ConsensusClient,
+  HttpClient,
   LogType,
   MempoolClient,
   NetworkClient,
   PolicyClient,
   ValidatorClient,
   WalletClient,
+  WebSocketClient,
   ZkpComponentClient
 };

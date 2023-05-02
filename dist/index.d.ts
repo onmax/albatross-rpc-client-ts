@@ -49,7 +49,7 @@ type BatchIndex = number /* u32 */
 type GenesisSupply$1 = number /* u64 */
 type GenesisTime$1 = number /* u64 */
 type CurrentTime$1 = number /* u64 */
-type Hash = string
+type Hash$1 = string
 
 type PolicyConstants = {
     stakingContractAddress: Address$1,
@@ -250,7 +250,7 @@ type Inherent = {
     target: Address$1;
     value: Coin$1;
     data: string; // Might be u8[] or number[] in TS
-    hash: Hash;
+    hash: Hash$1;
 }
 
 type MempoolInfo = {
@@ -284,39 +284,10 @@ type Signature = {
 }
 
 type ZKPState = {
-    latestHeaderHash: Hash
+    latestHeaderHash: Hash$1
     latestBlockNumber: BlockNumber
     latestProof?: string
 }
-
-// TODO Update Log with all types!
-
-type PayoutInherentLog = {
-    type: LogType.PayoutInherent;
-    to: Address;
-    value: Coin;
-}
-
-type ParkInherentLog = {
-    type: LogType.ParkInherent;
-    validatorAddress: Address;
-    eventBlock: number;
-}
-
-type SlashInherentLog = {
-    type: LogType.SlashInherent;
-    validatorAddress: Address;
-    eventBlock: number;
-    slot: number;
-    newlyDisabled: boolean;
-}
-
-type RevertContractInherentLog = {
-    type: LogType.RevertContractInherent;
-    contractAddress: Address;
-}
-
-type InherentLog = PayoutInherentLog | ParkInherentLog | SlashInherentLog | RevertContractInherentLog
 
 type PayFeeLog = {
     type: LogType.PayFee;
@@ -331,81 +302,154 @@ type TransferLog = {
     amount: Coin;
 }
 
+type HtlcCreateLog = {
+    contractAddress: Address,
+    sender: Address,
+    recipient: Address,
+    hashAlgorithm: HashAlgorithm,
+    hashRoot: AnyHash,
+    hashCount: number,
+    timeout: number,
+    totalAmount: Coin
+}
+
+type HTLCTimeoutResolve = {
+    contractAddress: Address,
+}
+
+type HTLCRegularTransfer = {
+    contractAddress: Address,
+    preImage: AnyHash,
+    hashDepth: number,
+}
+
+type HTLCEarlyResolve = {
+    contractAddress: Address,
+}
+
+type VestingCreateLog = {
+    type: LogType.VestingCreate;
+    contractAddress: Address;
+    owner: Address;
+    startTime: number;
+    timeStep: number;
+    stepAmount: Coin;
+    totalAmount: Coin;
+};
+
 type CreateValidatorLog = {
     type: LogType.CreateValidator;
     validatorAddress: Address;
     rewardAddress: Address;
-}
+};
 
 type UpdateValidatorLog = {
     type: LogType.UpdateValidator;
     validatorAddress: Address;
     oldRewardAddress: Address;
     newRewardAddress: Address | null;
-}
+};
 
-type InactivateValidatorLog = {
-    type: LogType.InactivateValidator;    
+type ValidatorFeeDeductionLog = {
+    type: LogType.ValidatorFeeDeduction;
     validatorAddress: Address;
-}
+    fee: Coin;
+};
+
+type DeactivateValidatorLog = {
+    type: LogType.DeactivateValidator;
+    validatorAddress: Address;
+};
 
 type ReactivateValidatorLog = {
     type: LogType.ReactivateValidator;
     validatorAddress: Address;
-}
+};
 
 type UnparkValidatorLog = {
     type: LogType.UnparkValidator;
     validatorAddress: Address;
-}
-
-type RetireValidatorLog = {
-    type: LogType.RetireValidator;
-    validatorAddress: Address;
-}
-
-type DeleteValidatorLog = {
-    type: LogType.DeleteValidator;
-    validatorAddress: Address;
-    rewardAddress: Address;
-}
+};
 
 type CreateStakerLog = {
     type: LogType.CreateStaker;
     stakerAddress: Address;
     validatorAddress: Address | null;
     value: Coin;
-}
+};
 
 type StakeLog = {
     type: LogType.Stake;
     stakerAddress: Address;
     validatorAddress: Address | null;
     value: Coin;
-}
+};
+
+type StakerFeeDeductionLog = {
+    type: LogType.StakerFeeDeduction;
+    stakerAddress: Address;
+    fee: Coin;
+};
 
 type UpdateStakerLog = {
     type: LogType.UpdateStaker;
     stakerAddress: Address;
     oldValidatorAddress: Address | null;
     newValidatorAddress: Address | null;
-}
+};
+
+type RetireValidatorLog = {
+    type: LogType.RetireValidator;
+    validatorAddress: Address;
+};
+
+type DeleteValidatorLog = {
+    type: LogType.DeleteValidator;
+    validatorAddress: Address;
+    rewardAddress: Address;
+};
 
 type UnstakeLog = {
     type: LogType.Unstake;
     stakerAddress: Address;
     validatorAddress: Address | null;
     value: Coin;
-}
+};
+
+type PayoutRewardLog = {
+    type: LogType.PayoutReward;
+    to: Address;
+    value: Coin;
+};
+
+type ParkLog = {
+    type: LogType.Park;
+    validatorAddress: Address;
+    eventBlock: number;
+};
+
+type SlashLog = {
+    type: LogType.Slash;
+    validatorAddress: Address;
+    eventBlock: number;
+    slot: number;
+    newlyDisabled: boolean;
+};
+
+type RevertContractLog = {
+    type: LogType.RevertContract;
+    contractAddress: Address;
+};
 
 type FailedTransactionLog = {
     type: LogType.FailedTransaction;
     from: Address;
     to: Address;
     failureReason: string;
-}
+};
 
-type Log = PayFeeLog | TransferLog | CreateValidatorLog | UpdateValidatorLog | InactivateValidatorLog | ReactivateValidatorLog | UnparkValidatorLog | RetireValidatorLog | DeleteValidatorLog | CreateStakerLog | StakeLog | UpdateStakerLog | UnstakeLog | FailedTransactionLog
+type Log = PayFeeLog | TransferLog | HtlcCreateLog | HTLCTimeoutResolve | HTLCRegularTransfer | VestingCreateLog | CreateValidatorLog | UpdateValidatorLog | ValidatorFeeDeductionLog | DeactivateValidatorLog | ReactivateValidatorLog | UnparkValidatorLog | CreateStakerLog | StakeLog | StakerFeeDeductionLog | UpdateStakerLog | Retire
+
 
 type TransactionLog = {
     hash: string;
@@ -413,26 +457,26 @@ type TransactionLog = {
     failed: boolean;
 }
 
-type BlockLog = {
+type BlockLog$1 = {
     inherents: InherentLog[];
     blockHash: string;
     blockNumber: number;
     transactions: TransactionLog[];
 }
 
-type AppliedBlockLog = BlockLog & {
+type AppliedBlockLog = BlockLog$1 & {
     type: 'applied-block';
     timestamp: number;
 }
 
-type RevertedBlockLog = BlockLog & {
+type RevertedBlockLog = BlockLog$1 & {
     type: 'reverted-block';
 }
 
 // Metadatas
 type BlockchainState = { 
     blockNumber: BlockNumber;
-    blockHash: Hash;
+    blockHash: Hash$1;
 }
 
 type Interaction$1<Params extends any[], Result, Metadata = null> = {
@@ -450,16 +494,16 @@ type BlockchainMethods = {
     'getBlockNumber': Interaction$1<[], BlockNumber>,
     'getBatchNumber': Interaction$1<[], BatchIndex>,
     'getEpochNumber': Interaction$1<[], EpochIndex>,
-    'getBlockByHash': Interaction$1<[Hash, /* include_transactions */Maybe<Boolean>], Block$1>,
+    'getBlockByHash': Interaction$1<[Hash$1, /* include_transactions */Maybe<Boolean>], Block$1>,
     'getBlockByNumber': Interaction$1<[BlockNumber, /* include_transactions */Maybe<Boolean>], Block$1>,
     'getLatestBlock': Interaction$1<[/* include_transactions */Maybe<Boolean>], Block$1>,
     'getSlotAt': Interaction$1<[BlockNumber, /* offset_opt u32 */Maybe<number>], Slot, BlockchainState>,
-    'getTransactionByHash': Interaction$1<[Hash], Transaction>,
+    'getTransactionByHash': Interaction$1<[Hash$1], Transaction>,
     'getTransactionsByBlockNumber': Interaction$1<[BlockNumber], Transaction[]>,
     'getInherentsByBlockNumber': Interaction$1<[BlockNumber], Inherent[]>,
     'getTransactionsByBatchNumber': Interaction$1<[BatchIndex], Transaction[]>,
     'getInherentsByBatchNumber': Interaction$1<[BatchIndex], Inherent[]>,
-    'getTransactionHashesByAddress': Interaction$1<[Address$1, /* max u16 */Maybe<number>], Hash[]>,
+    'getTransactionHashesByAddress': Interaction$1<[Address$1, /* max u16 */Maybe<number>], Hash$1[]>,
     'getTransactionsByAddress': Interaction$1<[Address$1, /* max u16 */Maybe<number>], Transaction[]>,
     'getAccountByAddress': Interaction$1<[Address$1], Account, BlockchainState>,
     'getActiveValidators': Interaction$1<[], Validator[], BlockchainState>,
@@ -478,60 +522,60 @@ type StreamOpened = {
 
 type BlockchainStreams = {
     'subscribeForHeadBlock': Interaction$1<[/* include_transactions */Maybe<Boolean>], Block$1 | PartialBlock$1>,
-    'subscribeForHeadBlockHash': Interaction$1<[], Hash>,
+    'subscribeForHeadBlockHash': Interaction$1<[], Hash$1>,
     'subscribeForValidatorElectionByAddress': Interaction$1<[Address$1], Validator, BlockchainState>,
-    'subscribeForLogsByAddressesAndTypes': Interaction$1<[Address$1[], /*Check out logs-types.ts*/LogType[]], BlockLog, BlockchainState>,
+    'subscribeForLogsByAddressesAndTypes': Interaction$1<[Address$1[], /*Check out logs-types.ts*/LogType[]], BlockLog$1, BlockchainState>,
 }
 
 type ConsensusMethods = {
     'isConsensusEstablished': Interaction$1<[], Boolean>,
     'getRawTransactionInfo': Interaction$1<[RawTransaction], Transaction>,
-    'sendRawTransaction': Interaction$1<[RawTransaction], Hash>,
+    'sendRawTransaction': Interaction$1<[RawTransaction], Hash$1>,
     'createBasicTransaction': Interaction$1<[/* wallet */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendBasicTransaction': Interaction$1<[/* wallet */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendBasicTransaction': Interaction$1<[/* wallet */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createBasicTransactionWithData': Interaction$1<[/* wallet */Address$1, /* recipient */Address$1, /*data*/string, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendBasicTransactionWithData': Interaction$1<[/* wallet */Address$1, /* recipient */Address$1, /*data*/string, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendBasicTransactionWithData': Interaction$1<[/* wallet */Address$1, /* recipient */Address$1, /*data*/string, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createNewVestingTransaction': Interaction$1<[/* wallet */Address$1, /* owner */Address$1, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendNewVestingTransaction': Interaction$1<[/* wallet */Address$1, /* owner */Address$1, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendNewVestingTransaction': Interaction$1<[/* wallet */Address$1, /* owner */Address$1, /* start_time */number, /* time_step */number, /* num_steps */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createRedeemVestingTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-   'sendRedeemVestingTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'createNewHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_sender */Address$1, /* htlc_recipient */Address$1, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'sendNewHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_sender */Address$1, /* htlc_recipient */Address$1, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'createRedeemRegularHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1,  /* recipient */Address$1, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'sendRedeemRegularHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1,  /* recipient */Address$1, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'createRedeemTimeoutHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'sendRedeemTimeoutHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'createRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
-    'sendRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+   'sendRedeemVestingTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'createNewHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_sender */Address$1, /* htlc_recipient */Address$1, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'sendNewHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_sender */Address$1, /* htlc_recipient */Address$1, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* timeout */number, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'createRedeemRegularHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1,  /* recipient */Address$1, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'sendRedeemRegularHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* contract_address */Address$1,  /* recipient */Address$1, /* pre_image */AnyHash, /* hash_root */AnyHash, /* hash_count */number, /* hash_algorithm */HashAlgorithm, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'createRedeemTimeoutHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'sendRedeemTimeoutHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'createRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
+    'sendRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* htlc_sender_signature */String, /* htlc_recipient_signature */String, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'signRedeemEarlyHtlcTransaction': Interaction$1<[/* wallet */Address$1, /* htlc_address */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], String>,
     'createNewStakerTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* delegation */Maybe<Address$1>, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendNewStakerTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* delegation */Maybe<Address$1>, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendNewStakerTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* delegation */Maybe<Address$1>, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createStakeTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendStakeTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendStakeTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createUpdateStakerTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* new_delegation */Address$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendUpdateStakerTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* new_delegation */Address$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendUpdateStakerTransaction': Interaction$1<[/* sender_wallet */Address$1, /* staker */Address$1, /* new_delegation */Address$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createUnstakeTransaction': Interaction$1<[/* sender_wallet */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendUnstakeTransaction': Interaction$1<[/* sender_wallet */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendUnstakeTransaction': Interaction$1<[/* sender_wallet */Address$1, /* recipient */Address$1, /* value */Coin$1, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createNewValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address$1, /* signal_data */String, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendNewValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address$1, /* signal_data */String, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendNewValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* voting_secret_key */String, /* reward_address */Address$1, /* signal_data */String, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createUpdateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address$1, /* new_signal_data */String, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendUpdateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address$1, /* new_signal_data */String, /* fee */Coin$1, /* validity_start_height */string], Hash>,
+    'sendUpdateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* new_signing_secret_key */String, /* new_voting_secret_key */String, /* new_reward_address */Address$1, /* new_signal_data */String, /* fee */Coin$1, /* validity_start_height */string], Hash$1>,
     'createDeactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */string], RawTransaction>,
-    'sendDeactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendDeactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash$1>,
     'createReactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendReactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendReactivateValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash$1>,
     'createUnparkValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendUnparkValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator_wallet */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendUnparkValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator_wallet */Address$1, /* signing_secret_key */String, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash$1>,
     'createRetireValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator_wallet */Address$1, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendRetireValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator_wallet */Address$1, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendRetireValidatorTransaction': Interaction$1<[/* sender_wallet */Address$1, /* validator_wallet */Address$1, /* fee */Coin$1, /* validity_start_height */ValidityStartHeight], Hash$1>,
     'createDeleteValidatorTransaction': Interaction$1<[/* validator_wallet */Address$1, /* recipient */Address$1, /* fee */Coin$1, /* value */Coin$1, /* validity_start_height */ValidityStartHeight], RawTransaction>,
-    'sendDeleteValidatorTransaction': Interaction$1<[/* validator_wallet */Address$1, /* recipient */Address$1, /* fee */Coin$1, /* value */Coin$1, /* validity_start_height */ValidityStartHeight], Hash>,
+    'sendDeleteValidatorTransaction': Interaction$1<[/* validator_wallet */Address$1, /* recipient */Address$1, /* fee */Coin$1, /* value */Coin$1, /* validity_start_height */ValidityStartHeight], Hash$1>,
 }
 
 type MempoolMethods = {
-    'pushTransaction': Interaction$1<[/* transaction */RawTransaction], Hash>,
-    'pushHighPriorityTransaction': Interaction$1<[/* transaction */RawTransaction], Hash>,
-    'mempoolContent': Interaction$1<[/* include_transactions */Boolean], (Hash | Transaction)[]>,
+    'pushTransaction': Interaction$1<[/* transaction */RawTransaction], Hash$1>,
+    'pushHighPriorityTransaction': Interaction$1<[/* transaction */RawTransaction], Hash$1>,
+    'mempoolContent': Interaction$1<[/* include_transactions */Boolean], (Hash$1 | Transaction)[]>,
     'mempool': Interaction$1<[], MempoolInfo>,
     'getMinFeePerByte': Interaction$1<[], /* f64 */number>,
 }
@@ -585,7 +629,7 @@ type WalletMethods = {
 }
 
 type ZKPStateKebab = {
-    'latest-header-number': Hash
+    'latest-header-number': Hash$1
     'latest-block-number': BlockNumber
     'latest-proof'?: string
 }
@@ -676,8 +720,12 @@ type MaybeCallResponse<T> = {
 }
 
 type CallOptions = {
-    timeout: number
+    timeout?: number // in ms
 }
+
+type SendTxCallOptions = CallOptions & ({
+    waitForConfirmationTimeout?: number, // in ms
+})
 
 type ErrorStreamReturn = {
     code: number,
@@ -716,6 +764,8 @@ type StreamOptions<T extends StreamName = any> = {
         : {}
 );
 
+type TxLog = { tx: Transaction, log?: BlockLog, hash: Hash }
+
 declare class Client$1 {
     private httpClient;
     private webSocketClient;
@@ -740,9 +790,17 @@ type Subscription<CallbackItem> = {
     getSubscriptionId: () => number;
 };
 type MaybeSubscription<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> = Subscription<MaybeStreamResponse<CallbackParam<T, ShowMetadata, IncludeBody>>>;
+declare class WebSocketClient {
+    private url;
+    private id;
+    private textDecoder;
+    constructor(url: URL);
+    subscribe<T extends StreamName, ShowMetadata extends boolean, IncludeBody extends boolean>(event: T, params: RpcRequest<T>["params"], userOptions: StreamOptions<T>): Promise<unknown>;
+    private parsePayload;
+}
 
 type GetBlockByParams = ({
-    hash: Hash;
+    hash: Hash$1;
 } | {
     blockNumber: BlockNumber;
 }) & {
@@ -762,7 +820,7 @@ type GetTransactionsByAddressParams = {
     justHashes?: boolean;
 };
 type GetTransactionByParams = {
-    hash: Hash;
+    hash: Hash$1;
 } | {
     blockNumber: BlockNumber;
 } | {
@@ -806,9 +864,9 @@ type WithMetadata<T> = {
 };
 type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends {
     justHashes: true;
-} ? Hash[] : Transaction[];
+} ? Hash$1[] : Transaction[];
 type ResultGetTransactionsBy<T> = T extends {
-    hash: Hash;
+    hash: Hash$1;
 } ? Transaction : T extends {
     address: Address$1;
 } ? ResultGetTransactionsByAddress<T> : Transaction[];
@@ -1095,8 +1153,10 @@ type DeleteValidatorTxParams = {
     value: Coin$1;
 } & ValidityStartHeight$1;
 declare class ConsensusClient extends Client$1 {
-    constructor(url: URL);
+    private blockchainClient;
+    constructor(url: URL, blockchainClient: BlockchainClient);
     private getValidityStartHeight;
+    private waitForConfirmation;
     /**
      * Returns a boolean specifying if we have established consensus with the network
      */
@@ -1112,7 +1172,11 @@ declare class ConsensusClient extends Client$1 {
     /**
      * Sends a transaction
      */
-    sendTransaction(p: TransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendTransaction(p: TransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction and waits for confirmation
+     */
+    sendSyncTransaction(p: TransactionParams, options: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized transaction creating a new vesting contract
      */
@@ -1120,7 +1184,11 @@ declare class ConsensusClient extends Client$1 {
     /**
      * Sends a transaction creating a new vesting contract to the network
      */
-    sendNewVestingTransaction(p: VestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendNewVestingTransaction(p: VestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction creating a new vesting contract to the network and waits for confirmation
+     */
+    sendSyncNewVestingTransaction(p: VestingTxParams, options: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized transaction redeeming a vesting contract
      */
@@ -1128,7 +1196,11 @@ declare class ConsensusClient extends Client$1 {
     /**
      * Sends a transaction redeeming a vesting contract
      */
-    sendRedeemVestingTransaction(p: RedeemVestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendRedeemVestingTransaction(p: RedeemVestingTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction redeeming a vesting contract and waits for confirmation
+     */
+    sendSyncRedeemVestingTransaction(p: RedeemVestingTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized transaction creating a new HTLC contract
      */
@@ -1136,7 +1208,11 @@ declare class ConsensusClient extends Client$1 {
     /**
      * Sends a transaction creating a new HTLC contract
      */
-    sendNewHtlcTransaction(p: HtlcTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendNewHtlcTransaction(p: HtlcTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction creating a new HTLC contract and waits for confirmation
+     */
+    sendSyncNewHtlcTransaction(p: HtlcTransactionParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized transaction redeeming an HTLC contract
      */
@@ -1144,7 +1220,11 @@ declare class ConsensusClient extends Client$1 {
     /**
      * Sends a transaction redeeming an HTLC contract
      */
-    sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction redeeming a new HTLC contract and waits for confirmation
+     */
+    sendSyncRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method
@@ -1154,7 +1234,12 @@ declare class ConsensusClient extends Client$1 {
      * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method to network
      */
-    sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
+     * method to network and waits for confirmation
+     */
+    sendSyncRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
@@ -1164,7 +1249,12 @@ declare class ConsensusClient extends Client$1 {
      * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
      */
-    sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
+     * method and waits for confirmation
+     */
+    sendSyncRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
      * the `EarlyResolve` method.
@@ -1174,22 +1264,32 @@ declare class ConsensusClient extends Client$1 {
      * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createNewStakerTransaction(p: StakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
+    createNewStakerTransaction(p: StakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
     /**
      * Sends a `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendNewStakerTransaction(p: StakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendNewStakerTransaction(p: StakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `new_staker` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+     */
+    sendSyncNewStakerTransaction(p: StakerTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    createStakeTransaction(p: StakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<RawTransaction>>;
+    createStakeTransaction(p: StakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
     /**
      * Sends a `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    sendStakeTransaction(p: StakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendStakeTransaction(p: StakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `stake` transaction. The funds to be staked and the transaction fee will
+     * be paid from the `sender_wallet` and waits for confirmation.
+     */
+    sendSyncStakeTransaction(p: StakeTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
@@ -1201,7 +1301,13 @@ declare class ConsensusClient extends Client$1 {
      * account (by providing the sender wallet) or from the staker account's balance (by not
      * providing a sender wallet).
      */
-    sendUpdateStakerTransaction(p: UpdateStakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendUpdateStakerTransaction(p: UpdateStakerTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
+     * account (by providing the sender wallet) or from the staker account's balance (by not
+     * providing a sender wallet) and waits for confirmation.
+     */
+    sendSyncUpdateStakerTransaction(p: UpdateStakerTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
@@ -1211,7 +1317,12 @@ declare class ConsensusClient extends Client$1 {
      * Sends a `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
      */
-    sendUnstakeTransaction(p: UnstakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendUnstakeTransaction(p: UnstakeTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `unstake` transaction. The transaction fee will be paid from the funds
+     * being unstaked and waits for confirmation.
+     */
+    sendSyncUnstakeTransaction(p: UnstakeTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and the validator deposit.
@@ -1229,7 +1340,17 @@ declare class ConsensusClient extends Client$1 {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    sendNewValidatorTransaction(p: NewValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendNewValidatorTransaction(p: NewValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `new_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee and the validator deposit
+     * and waits for confirmation.
+     * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+     * have a double Option. So we use the following work-around for the signal data:
+     * "" = Set the signal data field to None.
+     * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
+     */
+    sendSyncNewValidatorTransaction(p: NewValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `update_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1249,7 +1370,17 @@ declare class ConsensusClient extends Client$1 {
      * "" = Change the signal data field to None.
      * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
      */
-    sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `update_validator` transaction. You need to provide the address of a basic
+     * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+     * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+     * have a double Option. So we use the following work-around for the signal data:
+     * null = No change in the signal data field.
+     * "" = Change the signal data field to None.
+     * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
+     */
+    sendSyncUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1259,7 +1390,13 @@ declare class ConsensusClient extends Client$1 {
      * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `inactivate_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    sendSyncDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1269,7 +1406,13 @@ declare class ConsensusClient extends Client$1 {
      * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `reactivate_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    sendSyncReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1279,7 +1422,13 @@ declare class ConsensusClient extends Client$1 {
      * Sends a `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `unpark_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    sendSyncUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1289,7 +1438,13 @@ declare class ConsensusClient extends Client$1 {
      * Sends a `retire_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendRetireValidatorTransaction(p: RetireValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendRetireValidatorTransaction(p: RetireValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+     * Sends a `retire_validator` transaction and waits for confirmation.
+     * You need to provide the address of a basic account (the sender wallet)
+     * to pay the transaction fee.
+     */
+    sendSyncRetireValidatorTransaction(p: RetireValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
     /**
      * Returns a serialized `delete_validator` transaction. The transaction fee will be paid from the
      * validator deposit that is being returned.
@@ -1303,7 +1458,14 @@ declare class ConsensusClient extends Client$1 {
      * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
      * Failed delete validator transactions can diminish the validator deposit
      */
-    sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
+    /**
+    * Sends a `delete_validator` transaction and waits for confirmation.
+    * The transaction fee will be paid from the validator deposit that is being returned.
+    * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
+    * Failed delete validator transactions can diminish the validator deposit
+    */
+    sendSyncDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: SendTxCallOptions): Promise<MaybeCallResponse<TxLog>>;
 }
 
 type PushTransactionParams = {
@@ -1321,14 +1483,14 @@ declare class MempoolClient extends Client$1 {
      * @param transaction Serialized transaction
      * @returns Transaction hash
      */
-    pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash>>;
+    pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options?: CallOptions): Promise<MaybeCallResponse<Hash$1>>;
     /**
      * Content of the mempool
      *
      * @param includeTransactions
      * @returns
      */
-    mempoolContent({ includeTransactions }?: MempoolContentParams, options?: CallOptions): Promise<MaybeCallResponse<(Hash | Transaction)[]>>;
+    mempoolContent({ includeTransactions }?: MempoolContentParams, options?: CallOptions): Promise<MaybeCallResponse<(Hash$1 | Transaction)[]>>;
     /**
      * @returns
      */
@@ -1589,6 +1751,25 @@ declare class ZkpComponentClient extends Client$1 {
     getZkpState(options?: CallOptions): Promise<MaybeCallResponse<ZKPState>>;
 }
 
+type SuccessCallReturn<T extends MethodName, WithMetadata extends boolean> = MethodResponse<T>["result"] extends {
+    metadata: null;
+} ? MethodResponseContent<T, false> : WithMetadata extends true ? MethodResponse<T>["result"] : MethodResponseContent<T, WithMetadata>;
+type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
+    error: ErrorCallReturn;
+    data: undefined;
+    context: ContextRequest;
+} | {
+    error: undefined;
+    data: SuccessCallReturn<T, ShowMetadata>;
+    context: ContextRequest;
+};
+declare class HttpClient {
+    private url;
+    private static id;
+    constructor(url: URL);
+    call<T extends MethodName, ShowMetadata extends boolean>(method: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata, options: CallOptions): Promise<MaybeResponse<T, ShowMetadata>>;
+}
+
 declare class Client {
     block: {
         current: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
@@ -1678,6 +1859,7 @@ declare class Client {
         minFeePerByte: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         create: (p: TransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
         send: (p: TransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+        sendSync: (p: TransactionParams, options: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
     };
     inherent: {
         getBy: <T extends GetInherentsByParams>(p: T, options?: CallOptions) => Promise<MaybeCallResponse<Inherent[]>>;
@@ -1828,6 +2010,7 @@ declare class Client {
         new: {
             createTx: (p: StakeTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             sendTx: (p: StakeTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendSyncTx: (p: StakeTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
         };
     };
     staker: {
@@ -1846,10 +2029,12 @@ declare class Client {
         new: {
             createTx: (p: StakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             sendTx: (p: StakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendSyncTx: (p: StakerTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
         };
         update: {
             createTx: (p: UpdateStakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             sendTx: (p: UpdateStakerTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendSyncTx: (p: UpdateStakerTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
         };
     };
     peers: {
@@ -1870,19 +2055,23 @@ declare class Client {
         new: {
             createTx: (p: HtlcTransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             sendTx: (p: HtlcTransactionParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendSyncTx: (p: HtlcTransactionParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
         };
         redeem: {
             regular: {
                 createTx: (p: RedeemRegularHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
                 sendTx: (p: RedeemRegularHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendSyncTx: (p: RedeemRegularHtlcTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
             };
             timeoutTx: {
                 createTx: (p: RedeemTimeoutHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
                 sendTx: (p: RedeemTimeoutHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendSyncTx: (p: RedeemTimeoutHtlcTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
             };
             earlyTx: {
                 createTx: (p: RedeemEarlyHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
                 sendTx: (p: RedeemEarlyHtlcTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+                sendSyncTx: (p: RedeemEarlyHtlcTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
             };
         };
     };
@@ -1890,10 +2079,12 @@ declare class Client {
         new: {
             createTx: (p: VestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             sendTx: (p: VestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendSyncTx: (p: VestingTxParams, options: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
         };
         redeem: {
             createTx: (p: RedeemVestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
             sendTx: (p: RedeemVestingTxParams, options?: CallOptions) => Promise<MaybeCallResponse<string>>;
+            sendSyncTx: (p: RedeemVestingTxParams, options?: SendTxCallOptions) => Promise<MaybeCallResponse<TxLog>>;
         };
     };
     zeroKnowledgeProof: {
@@ -1917,4 +2108,4 @@ declare class Client {
     constructor(url: URL);
 }
 
-export { Account, AccountType$1 as AccountType, Address$1 as Address, AppliedBlockLog, BasicAccount, BatchIndex, Block$1 as Block, BlockLog, BlockNumber, BlockSubscription, BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin$1 as Coin, ConsensusClient, ContextRequest, CreateStakerLog, CreateValidatorLog, CurrentTime$1 as CurrentTime, DeactiveValidatorTxParams, DeleteValidatorLog, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, FailedTransactionLog, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, Hash, HtlcAccount, HtlcTransactionParams, InactivateValidatorLog, Inherent, InherentLog, Log, LogType, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkInherentLog, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutInherentLog, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorLog, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, RevertContractInherentLog, RevertedBlockLog, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashInherentLog, SlashedSlot, Slot, StakeLog, StakeTxParams, Staker, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionLog, TransactionParams, TransferLog, UnparkValidatorLog, UnparkValidatorTxParams, UnstakeLog, UnstakeTxParams, UpdateStakerLog, UpdateStakerTxParams, UpdateValidatorLog, UpdateValidatorTxParams, Validator, ValidatorClient, VestingAccount, VestingTxParams, WalletAccount, WalletClient, ZKPState, ZkpComponentClient };
+export { Account, AccountType$1 as AccountType, Address$1 as Address, AppliedBlockLog, BasicAccount, BatchIndex, Block$1 as Block, BlockLog$1 as BlockLog, BlockNumber, BlockSubscription, BlockType, BlockchainClient, CallOptions, CallbackParam, Client, Coin$1 as Coin, ConsensusClient, ContextRequest, CreateStakerLog, CreateValidatorLog, CurrentTime$1 as CurrentTime, DeactivateValidatorLog, DeactiveValidatorTxParams, DeleteValidatorLog, DeleteValidatorTxParams, ElectionMacroBlock, EpochIndex, ErrorCallReturn, ErrorStreamReturn, FailedTransactionLog, GenesisSupply$1 as GenesisSupply, GenesisTime$1 as GenesisTime, GetAccountByAddressParams, GetBlockByParams, GetInherentsByParams, GetLatestBlockParams, GetSlotAtParams, GetStakerByAddressParams, GetTransactionByParams, GetTransactionsByAddressParams, GetValidatorByAddressParams, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, Hash$1 as Hash, HtlcAccount, HtlcCreateLog, HtlcTransactionParams, HttpClient, Inherent, Log, LogType, MacroBlock, MaybeCallResponse, MaybeStreamResponse, MempoolClient, MempoolInfo, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, MicroBlock, NetworkClient, NewValidatorTxParams, ParkLog, ParkedSet, PartialBlock$1 as PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutRewardLog, PolicyClient, PolicyConstants, RawTransaction, RawTransactionInfoParams, ReactivateValidatorLog, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorLog, RetireValidatorTxParams, RevertContractLog, RevertedBlockLog, RpcRequest, SignRedeemEarlyHtlcParams, Signature, SlashLog, SlashedSlot, Slot, StakeLog, StakeTxParams, Staker, StakerFeeDeductionLog, StakerTxParams, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams, SubscribeForHeadBlockParams, SubscribeForLogsByAddressesAndTypesParams, SubscribeForValidatorElectionByAddressParams, Transaction, TransactionLog, TransactionParams, TransferLog, UnparkValidatorLog, UnparkValidatorTxParams, UnstakeLog, UnstakeTxParams, UpdateStakerLog, UpdateStakerTxParams, UpdateValidatorLog, UpdateValidatorTxParams, Validator, ValidatorClient, ValidatorFeeDeductionLog, VestingAccount, VestingCreateLog, VestingTxParams, WalletAccount, WalletClient, WebSocketClient, ZKPState, ZkpComponentClient };

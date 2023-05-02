@@ -3,9 +3,10 @@ import type { BlockSubscription, GetAccountByAddressParams, GetBlockByParams, Ge
 import type { DeleteValidatorTxParams, HtlcTransactionParams, DeactiveValidatorTxParams, NewValidatorTxParams, RawTransactionInfoParams, ReactivateValidatorTxParams, RedeemEarlyHtlcTxParams, RedeemRegularHtlcTxParams, RedeemTimeoutHtlcTxParams, RedeemVestingTxParams, RetireValidatorTxParams, SignRedeemEarlyHtlcParams, StakeTxParams, StakerTxParams, TransactionParams, UnparkValidatorTxParams, UnstakeTxParams, UpdateStakerTxParams, UpdateValidatorTxParams, VestingTxParams } from "./modules/consensus";
 import type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState } from './types/common';
 import { AccountType, BlockType, LogType } from "./types/enums";
-import type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeleteValidatorLog, FailedTransactionLog, InactivateValidatorLog, InherentLog, Log, ParkInherentLog, PayFeeLog, PayoutInherentLog, ReactivateValidatorLog, RevertContractInherentLog, RevertedBlockLog, SlashInherentLog, StakeLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog } from './types/logs';
+import type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeleteValidatorLog, FailedTransactionLog, Log, DeactivateValidatorLog, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, HtlcCreateLog, ParkLog, PayoutRewardLog, RetireValidatorLog, RevertContractLog, SlashLog, StakerFeeDeductionLog, ValidatorFeeDeductionLog, VestingCreateLog, PayFeeLog, ReactivateValidatorLog, RevertedBlockLog, StakeLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog } from './types/logs';
 import type { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, ErrorStreamReturn, MaybeCallResponse, MaybeStreamResponse, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, RpcRequest, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams } from './types/rpc-messages';
-
+import { HttpClient } from "client/http";
+import { WebSocketClient } from "client/web-socket";
 class Client {
     public block;
     public batch;
@@ -69,7 +70,7 @@ class Client {
             isMicro: policy.getIsMicroBlockAt.bind(policy),
             subscribe: blockchain.subscribeForBlocks.bind(blockchain),
         };
-        
+
         this.logs = {
             subscribe: blockchain.subscribeForLogsByAddressesAndTypes.bind(blockchain),
         }
@@ -79,7 +80,7 @@ class Client {
             at: policy.getBatchAt.bind(policy),
             firstBlock: policy.getFirstBlockOf.bind(policy),
         }
-        
+
         this.epoch = {
             current: blockchain.getEpochNumber.bind(blockchain),
             at: policy.getEpochAt.bind(policy),
@@ -94,7 +95,7 @@ class Client {
                 previous: blockchain.getPreviousSlashedSlots.bind(blockchain),
             }
         }
-        
+
         this.transaction = {
             getBy: blockchain.getTransactionBy.bind(blockchain),
             push: mempool.pushTransaction.bind(mempool),
@@ -231,7 +232,7 @@ class Client {
 
         this.peers = {
             id: network.getPeerId.bind(network),
-            count: network.getPeerCount.bind(network),            
+            count: network.getPeerCount.bind(network),
             peers: network.getPeerList.bind(network),
             consensusEstablished: consensus.isConsensusEstablished.bind(network),
         }
@@ -254,5 +255,5 @@ export type { DeleteValidatorTxParams, HtlcTransactionParams, DeactiveValidatorT
 export type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, VestingAccount, WalletAccount, ZKPState };
 export type { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, ErrorStreamReturn, MaybeCallResponse, MaybeStreamResponse, MethodName, MethodResponse, MethodResponseError, MethodResponsePayload, Methods, RpcRequest, StreamName, StreamOptions, StreamResponse, StreamResponsePayload, Streams };
 export { AccountType, BlockType, LogType };
-export type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeleteValidatorLog, FailedTransactionLog, InactivateValidatorLog, InherentLog, Log, ParkInherentLog, PayFeeLog, PayoutInherentLog, ReactivateValidatorLog, RevertContractInherentLog, RevertedBlockLog, SlashInherentLog, StakeLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog };
-
+export type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeleteValidatorLog, FailedTransactionLog, Log, DeactivateValidatorLog, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, HtlcCreateLog, ParkLog, PayoutRewardLog, RetireValidatorLog, RevertContractLog, SlashLog, StakerFeeDeductionLog, ValidatorFeeDeductionLog, VestingCreateLog, PayFeeLog, ReactivateValidatorLog, RevertedBlockLog, StakeLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog };
+export { HttpClient, WebSocketClient };

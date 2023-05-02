@@ -8,6 +8,8 @@ import type { CallOptions, CallbackParam, ContextRequest, ErrorCallReturn, Error
 import { HttpClient } from "client/http";
 import { WebSocketClient } from "client/web-socket";
 class Client {
+    public url: URL;
+
     public block;
     public batch;
     public epoch;
@@ -28,6 +30,7 @@ class Client {
     public _modules;
 
     constructor(url: URL) {
+        this.url = url;
         const blockchain = new BlockchainClient(url);
         const consensus = new ConsensusClient(url, blockchain);
         const mempool = new MempoolClient(url);

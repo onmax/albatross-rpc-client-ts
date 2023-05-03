@@ -23,12 +23,12 @@ export type MethodResponsePayload<M extends Methods> = {
     metadata: M['metadata'];
 } & {}
 
-export type MethodResponseContent<M extends MethodName, WithMetadata extends boolean> = 
+export type MethodResponseContent<M extends MethodName, WithMetadata extends boolean> =
     M extends 'streamOpened'
-        ? number :
-        WithMetadata extends true
-            ? MethodResponsePayload<Methods[M]>
-            : MethodResponsePayload<Methods[M]>["data"]
+    ? number :
+    WithMetadata extends true
+    ? MethodResponsePayload<Methods[M]>
+    : MethodResponsePayload<Methods[M]>["data"]
 
 export type MethodResponse<M extends MethodName> = {
     jsonrpc: string,
@@ -66,9 +66,12 @@ export type ErrorCallReturn = {
 }
 
 export type ContextRequest = {
-    method: string,
-    params: RpcRequest<T>['params'],
-    id: number,
+    request: {
+        method: string,
+        params: RpcRequest<T>['params'],
+        id: number,
+    },
+    url: string,
     timestamp: number
 }
 
@@ -106,12 +109,12 @@ export type MaybeStreamResponse<T extends CallbackParam> = {
 
 export type CallbackParam<T extends StreamName, ShowMetadata extends boolean | undefined = false, IncludeBody extends boolean = false> =
     T extends 'subscribeForHeadBlock'
-        ? IncludeBody extends true
-            ? Block
-            : PartialBlock
-        : ShowMetadata extends true
-            ? StreamResponse<T>['params']['result']
-            : StreamResponse<T>['params']['result']['data']
+    ? IncludeBody extends true
+    ? Block
+    : PartialBlock
+    : ShowMetadata extends true
+    ? StreamResponse<T>['params']['result']
+    : StreamResponse<T>['params']['result']['data']
 
 export type FilterStreamFn<T extends StreamName> = (data: Streams[T]["result"]) => boolean;
 
@@ -122,9 +125,9 @@ export type StreamOptions<T extends StreamName = any> = {
     filter?: FilterStreamFn<T>,
     // timeout: number, TODO
 } & (
-    T extends 'subscribeForValidatorElectionByAddress' | 'subscribeForLogsByAddressesAndTypes'
+        T extends 'subscribeForValidatorElectionByAddress' | 'subscribeForLogsByAddressesAndTypes'
         ? { withMetadata: boolean }
         : {}
-);
+    );
 
 export type TxLog = { tx: Transaction, log?: BlockLog, hash: Hash }

@@ -4,8 +4,8 @@ import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodRespons
 type SuccessCallReturn<T extends MethodName, WithMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
     ? MethodResponseContent<T, false>
     : WithMetadata extends true
-        ? MethodResponse<T>["result"]
-        : MethodResponseContent<T, WithMetadata>
+    ? MethodResponse<T>["result"]
+    : MethodResponseContent<T, WithMetadata>
 
 type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
     error: ErrorCallReturn
@@ -45,9 +45,12 @@ export class HttpClient {
         params = params.map((param: any) => param === undefined ? null : param) as RpcRequest<T>['params']
 
         const context: ContextRequest = {
-            method,
-            params,
-            id: HttpClient.id,
+            request: {
+                method,
+                params,
+                id: HttpClient.id,
+            },
+            url: this.url.href,
             timestamp: Date.now()
         }
 

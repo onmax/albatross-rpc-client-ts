@@ -1771,6 +1771,7 @@ declare class HttpClient {
 }
 
 declare class Client {
+    url: URL;
     block: {
         current: (options?: CallOptions) => Promise<MaybeCallResponse<number>>;
         getBy: <T extends GetBlockByParams>(p?: T, options?: CallOptions) => Promise<T extends {

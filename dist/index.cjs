@@ -1605,6 +1605,7 @@ var ZkpComponentClient = class extends Client {
 // src/index.ts
 var Client2 = class {
   constructor(url) {
+    this.url = url;
     const blockchain = new BlockchainClient(url);
     const consensus = new ConsensusClient(url, blockchain);
     const mempool = new MempoolClient(url);

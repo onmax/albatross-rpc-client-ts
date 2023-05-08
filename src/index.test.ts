@@ -70,7 +70,7 @@ describe('Test for subscriptions', async () => {
         close()
     })
     it('subscribe to logs metadata', async () => {
-        const { next, close } = await client.logs.subscribe({ addresses: [] }, { withMetadata: true })
+        const { next, close } = await client.logs.subscribe({ addresses: [], withMetadata: true })
         next(data => expect(data).toHaveProperty('metadata'))
         close()
     })
@@ -152,9 +152,9 @@ describe('Test for validator module', async () => {
     it('.active ok', async () => expect(validatorAddresses).toBeInstanceOf(Array));
     const validatorInfo = validatorAddresses[0];
     it('.byAddress ok', async () => expect((await validator.byAddress({ address: validatorInfo.address })).data).toHaveProperty('address'));
-    it('.active metadata ok', async () => expect((await validator.activeList({ withMetadata: true })).data?.data).toBeInstanceOf(Array));
+    it('.active metadata ok', async () => expect((await validator.activeList({ withMetadata: true })).metadata).not.toBeUndefined());
     it('.parked ok', async () => expect((await validator.parked()).data!.validators).toBeInstanceOf(Array));
-    it('.parked metadata ok', async () => expect((await validator.parked({ withMetadata: true })).data!.data.validators).toBeInstanceOf(Array));
+    it('.parked metadata ok', async () => expect((await validator.parked({ withMetadata: true })).metadata).not.toBeUndefined());
     // TODO Figure out how validator.selfNode works
     // it.only('.selfNode.address ok', async () => expect(await validator.selfNode.address()).toHaveProperty('address'));
     // TODO validator.action
@@ -164,13 +164,13 @@ describe('Test for validator module', async () => {
 describe('Test for slots module', async () => {
     const { slots, block } = getClient();
     const currentBlock = (await block.current()).data!;
-    it('.current ok', async () => expect(await (await slots.at({ blockNumber: currentBlock - 10 })).data).haveOwnProperty('slotNumber'));
+    it('.current ok', async () => expect((await slots.at({ blockNumber: currentBlock - 10 })).data).haveOwnProperty('slotNumber'));
     it('.current ok offset', async () => expect((await slots.at({ blockNumber: currentBlock - 10, offsetOpt: 10 })).data).haveOwnProperty('slotNumber'));
-    it('.current ok offset metadata', async () => expect(((await slots.at({ blockNumber: currentBlock - 10, offsetOpt: 10, withMetadata: true }))).data!.data).haveOwnProperty('slotNumber'));
+    it('.current ok offset metadata', async () => expect(((await slots.at({ blockNumber: currentBlock - 10, offsetOpt: 10, withMetadata: true }))).metadata).not.toBeUndefined());
     it('.slashed.current ok', async () => expect((await slots.slashed.current()).data).haveOwnProperty('blockNumber'));
-    it('.slashed.current metadata ok', async () => expect((await slots.slashed.current({ withMetadata: true })).data!.data).haveOwnProperty('blockNumber'));
+    it('.slashed.current metadata ok', async () => expect((await slots.slashed.current({ withMetadata: true })).metadata).not.toBeUndefined());
     it('.slashed.previous ok', async () => expect((await slots.slashed.previous()).data).haveOwnProperty('blockNumber'));
-    it('.slashed.previous metadata ok', async () => expect((await slots.slashed.previous({ withMetadata: true })).data!.data).haveOwnProperty('blockNumber'));
+    it('.slashed.previous metadata ok', async () => expect((await slots.slashed.previous({ withMetadata: true })).metadata).not.toBeUndefined());
 });
 
 describe.skip('Test for mempool module', async () => {

@@ -251,3 +251,8 @@ export type ZKPState = {
     latestBlockNumber: BlockNumber
     latestProof?: string
 }
+
+export type BlockchainState = {
+    blockNumber: BlockNumber;
+    blockHash: Hash;
+}

@@ -1,39 +1,38 @@
-import { Client } from "../client/client";
-import { DEFAULT_OPTIONS } from "../client/http";
-import { MaybeCallResponse } from "../types/rpc-messages";
+import { Address } from "types/common";
+import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
 
 type SetAutomaticReactivationParams = { automaticReactivation: boolean };
 
-export class ValidatorClient extends Client {
-    constructor(url: URL) {
-        super(url);
-    }
-
+export class ValidatorClient extends HttpClient {
     /**
      * Returns our validator address.
      */
-    public async getAddress(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<String>> {
-        return this.call("getAddress", [], options);
+    public async getAddress(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getAddress', params: [] }
+        return super.call<Address, typeof req>(req, options)
     }
 
     /**
      * Returns our validator signing key
      */
-    public async getSigningKey(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<String>> {
-        return this.call("getSigningKey", [], options);
+    public async getSigningKey(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getSigningKey', params: [] }
+        return super.call<String, typeof req>(req, options)
     }
 
     /**
      * Returns our validator voting key
-     */
-    public async getVotingKey(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<String>> {
-        return this.call("getVotingKey", [], options);
+    */
+    public async getVotingKey(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getVotingKey', params: [] }
+        return super.call<String, typeof req>(req, options)
     }
 
     /**
      * Updates the configuration setting to automatically reactivate our validator
-     */
-    public async setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<null>> {
-        return this.call("setAutomaticReactivation", [automaticReactivation], options);
+    */
+    public async setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams, options = DEFAULT_OPTIONS) {
+        const req = { method: 'setAutomaticReactivation', params: [automaticReactivation] }
+        return super.call<null, typeof req>(req, options)
     }
 }

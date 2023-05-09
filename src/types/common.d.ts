@@ -1,4 +1,4 @@
-import { BlockType } from "./enums"
+import { AccountType, BlockType } from "./enums"
 
 export type Address = `NQ${number} ${string}`
 export type Coin = number

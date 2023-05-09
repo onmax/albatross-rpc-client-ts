@@ -1,6 +1,6 @@
 import * as Modules from "./modules";
 
-class Client {
+export default class Client {
     public url: URL;
 
     public block;
@@ -246,9 +246,10 @@ class Client {
     }
 }
 
-export * from "./modules";
-export type * from "./types/common.d.ts";
-export * from "./types/enums";
-export type * from "./types/logs.d.ts";
-export { Client };
+export { BlockchainClient, BlockchainStream, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
+export type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, BlockchainState, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, ValidityStartHeight, VestingAccount, WalletAccount, ZKPState } from "./types/common";
+export { AccountType, BlockType, LogType } from "src/types/enums";
+export type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeactivateValidatorLog, DeleteValidatorLog, FailedTransactionLog, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, HtlcCreateLog, Log, ParkLog, PayFeeLog, PayoutRewardLog, ReactivateValidatorLog, RetireValidatorLog, RevertContractLog, RevertedBlockLog, SlashLog, StakeLog, StakerFeeDeductionLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog, ValidatorFeeDeductionLog, VestingCreateLog } from "./types/logs";
+export { HttpClient, type CallResult, Context, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, HttpOptions, SendTxCallOptions } from "./client/http"
+export { WebSocketClient, ErrorStreamReturn, FilterStreamFn, MaybeStreamResponse, StreamOptions, Subscription, WS_DEFAULT_OPTIONS } from "./client/web-socket"
 

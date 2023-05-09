@@ -1,4 +1,4 @@
-import { Address } from "types/common";
+import { Address } from "../types/common";
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
 
 type SetAutomaticReactivationParams = { automaticReactivation: boolean };

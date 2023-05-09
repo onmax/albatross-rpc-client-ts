@@ -1,7 +1,7 @@
-import { BlockLog } from "types/logs";
 import { FilterStreamFn, StreamOptions, Subscription, WS_DEFAULT_OPTIONS, WebSocketClient } from "../client/web-socket";
 import { Address, Block, Hash, MacroBlock, MicroBlock, PartialBlock, Validator } from "../types/common";
 import { LogType } from "../types/enums";
+import { BlockLog } from "../types/logs";
 
 export type SubscribeForHeadBlockParams = { retrieve: 'FULL' | 'PARTIAL', blockType?: 'MACRO' | 'MICRO' | 'ELECTION' };
 export type SubscribeForHeadHashParams = { retrieve: 'HASH' };

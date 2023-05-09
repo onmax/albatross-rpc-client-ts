@@ -1,5 +1,5 @@
 import { Blob } from 'buffer';
-import { BlockchainState } from 'types/common';
+import { BlockchainState } from '../types/common';
 import WebSocket from 'ws';
 
 export type ErrorStreamReturn = {
@@ -89,10 +89,10 @@ export class WebSocketClient {
 
         const args: Subscription<Data, Request["params"]> = {
             next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
-                ws.onerror = (error) => {
+                ws.onerror = (error: WebSocket.ErrorEvent) => {
                     callback({ data: undefined, metadata: undefined, error: { code: 1000, message: error.message } });
                 }
-                ws.onmessage = async (event) => {
+                ws.onmessage = async (event: WebSocket.MessageEvent) => {
                     let payloadStr: string;
                     if (event.data instanceof Blob) {
                         payloadStr = this.textDecoder.decode(await event.data.arrayBuffer());

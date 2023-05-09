@@ -1,6 +1,5 @@
-import { Hash } from "crypto";
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { BlockNumber, ZKPState } from "../types/common";
+import { BlockNumber, Hash } from "../types/common";
 
 type ZKPStateKebab = {
     'latest-header-number': Hash

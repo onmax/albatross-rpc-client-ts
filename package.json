@@ -2,7 +2,7 @@
   "name": "nimiq-rpc-client-ts",
   "version": "0.0.31",
   "description": "A Nimiq RPC client for TypeScript",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.js",
   "types": "dist/index.d.ts",
   "exports": {
@@ -21,7 +21,7 @@
   "scripts": {
     "dev": "vitest",
     "test": "vitest run",
-    "build": "tsup src/index.ts --format cjs,esm --dts",
+    "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --target node14",
     "lint": "tsc",
     "ci": "pnpm lint && pnpm build",
     "release": "pnpm lint && pnpm build && changeset publish"
@@ -32,7 +32,8 @@
     "@types/node": "^18.15.3",
     "@types/ws": "^8.5.4",
     "add": "^2.0.6",
-    "tsup": "^6.6.3",
+    "tslib": "^2.5.0",
+    "tsup": "^6.7.0",
     "typescript": "^4.9.5",
     "vite": "^4.2.1",
     "vitest": "^0.29.2"

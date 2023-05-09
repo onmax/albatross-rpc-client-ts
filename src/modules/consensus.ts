@@ -1,9 +1,9 @@
-import { LogType } from "../types/enums";
 import { Context, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, HttpClient, SendTxCallOptions } from "../client/http";
 import { Address, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from "../types/common";
+import { LogType } from "../types/enums";
+import { BlockLog, TransactionLog } from "../types/logs";
 import { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from "./blockchain";
 import { BlockchainStream } from "./blockchain-streams";
-import { BlockLog } from "types/logs";
 
 export type RawTransactionInfoParams = { rawTransaction: string };
 export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string, } & ValidityStartHeight;
@@ -58,7 +58,7 @@ export class ConsensusClient extends HttpClient {
 
             next(async (log) => {
                 if (log.error) return;
-                if (log.data.transactions.some(tx => tx.hash === hash)) {
+                if (log.data.transactions.some((tx: TransactionLog) => tx.hash === hash)) {
                     clearTimeout(timeoutFn);
                     close();
                     const tx = await this.blockchainClient.getTransactionBy({ hash });
@@ -511,7 +511,7 @@ export class ConsensusClient extends HttpClient {
     public async sendSyncDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX) {
         const hash = await this.sendDeactivateValidatorTransaction(p, options);
         if (hash.error) return hash;
-        return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.InactivateValidator] }, options.waitForConfirmationTimeout, hash.context);
+        return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.DeactivateValidator] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**

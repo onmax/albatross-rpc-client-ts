@@ -1,3 +1,4 @@
+import { Address, Coin } from "./common";
 import { LogType } from "./enums";
 
 export type PayFeeLog = {
@@ -17,8 +18,8 @@ export type HtlcCreateLog = {
     contractAddress: Address,
     sender: Address,
     recipient: Address,
-    hashAlgorithm: HashAlgorithm,
-    hashRoot: AnyHash,
+    hashAlgorithm: string,
+    hashRoot: string,
     hashCount: number,
     timeout: number,
     totalAmount: Coin
@@ -30,7 +31,7 @@ export type HTLCTimeoutResolve = {
 
 export type HTLCRegularTransfer = {
     contractAddress: Address,
-    preImage: AnyHash,
+    preImage: string,
     hashDepth: number,
 }
 
@@ -159,7 +160,7 @@ export type FailedTransactionLog = {
     failureReason: string;
 };
 
-export type Log = PayFeeLog | TransferLog | HtlcCreateLog | HTLCTimeoutResolve | HTLCRegularTransfer | VestingCreateLog | CreateValidatorLog | UpdateValidatorLog | ValidatorFeeDeductionLog | DeactivateValidatorLog | ReactivateValidatorLog | UnparkValidatorLog | CreateStakerLog | StakeLog | StakerFeeDeductionLog | UpdateStakerLog | Retire
+export type Log = PayFeeLog | TransferLog | HtlcCreateLog | HTLCTimeoutResolve | HTLCRegularTransfer | VestingCreateLog | CreateValidatorLog | UpdateValidatorLog | ValidatorFeeDeductionLog | DeactivateValidatorLog | ReactivateValidatorLog | UnparkValidatorLog | CreateStakerLog | StakeLog | StakerFeeDeductionLog | UpdateStakerLog | RetireValidatorLog | DeleteValidatorLog | UnstakeLog | PayoutRewardLog | ParkLog | SlashLog | RevertContractLog | FailedTransactionLog;
 
 
 export type TransactionLog = {
@@ -169,7 +170,7 @@ export type TransactionLog = {
 }
 
 export type BlockLog = {
-    inherents: InherentLog[];
+    inherents: Log[];
     blockHash: string;
     blockNumber: number;
     transactions: TransactionLog[];

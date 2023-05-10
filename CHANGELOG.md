@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.1.1
+
+### Patch Changes
+
+- 97a280a: version
+
 ## 0.1.0
 
 ### Minor Changes

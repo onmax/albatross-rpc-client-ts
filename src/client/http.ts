@@ -2,7 +2,7 @@ import fetch from 'node-fetch';
 import { Auth } from 'src/types/common';
 
 export type HttpOptions = {
-    timeout?: number // in ms
+    timeout?: number | false // in ms
 }
 
 export type SendTxCallOptions = HttpOptions & ({
@@ -70,9 +70,14 @@ export class HttpClient {
         const { method, params: requestParams, withMetadata } = request;
         const { timeout } = options;
 
+        let controller: AbortController | undefined;
+        let timeoutId: NodeJS.Timeout | undefined;
 
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), timeout);
+        if (timeout !== false) {
+            controller = new AbortController();
+            timeoutId = setTimeout(() => controller!.abort(), timeout);
+        }
+
 
         const useAuth = this.auth && this.auth.username && this.auth.password;
         const params = requestParams?.map((item) => item === undefined ? null : item) || [];
@@ -96,7 +101,7 @@ export class HttpClient {
             method: "POST",
             headers: context.headers,
             body: JSON.stringify(context.body),
-            signal: controller.signal,
+            signal: controller?.signal,
         }).catch((error) => {
             if (error.name === 'AbortError') {
                 return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` } as Response

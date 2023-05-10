@@ -1,4 +1,5 @@
 import fetch from 'node-fetch';
+import { Auth } from 'src/types/common';
 
 export type HttpOptions = {
     timeout?: number // in ms
@@ -49,9 +50,11 @@ export type CallResult<Params extends any[], Data, Metadata = undefined> = {
 export class HttpClient {
     private url: URL;
     private static id: number = 0;
+    private auth: Auth | undefined;
 
-    constructor(url: URL) {
+    constructor(url: URL, auth?: Auth) {
         this.url = url;
+        this.auth = auth;
     }
 
     async call<
@@ -80,11 +83,18 @@ export class HttpClient {
             timestamp: Date.now(),
         };
 
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
+        }
+
+        if (this.auth) {
+            headers["Authorization"] = `${this.auth.username}:${this.auth.password}`;
+        }
+
+
         const response = await fetch(this.url.href, {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-            },
+            headers,
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 method,

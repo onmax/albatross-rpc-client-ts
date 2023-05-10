@@ -1,4 +1,5 @@
 import * as Modules from "./modules";
+import { Auth } from "./types/common";
 
 export default class Client {
     public url: URL;
@@ -22,17 +23,17 @@ export default class Client {
     public logs;
     public _modules;
 
-    constructor(url: URL) {
+    constructor(url: URL, auth?: Auth) {
         this.url = url;
-        const blockchain = new Modules.BlockchainClient.BlockchainClient(url);
-        const blockchainStreams = new Modules.BlockchainStream.BlockchainStream(url);
-        const consensus = new Modules.ConsensusClient.ConsensusClient(url, blockchain, blockchainStreams);
-        const mempool = new Modules.MempoolClient.MempoolClient(url);
-        const network = new Modules.NetworkClient.NetworkClient(url);
-        const policy = new Modules.PolicyClient.PolicyClient(url);
-        const validator_ = new Modules.ValidatorClient.ValidatorClient(url);
-        const wallet = new Modules.WalletClient.WalletClient(url);
-        const zkpComponent = new Modules.ZkpComponentClient.ZkpComponentClient(url);
+        const blockchain = new Modules.BlockchainClient.BlockchainClient(url, auth);
+        const blockchainStreams = new Modules.BlockchainStream.BlockchainStream(url, auth);
+        const consensus = new Modules.ConsensusClient.ConsensusClient(url, blockchain, blockchainStreams, auth);
+        const mempool = new Modules.MempoolClient.MempoolClient(url, auth);
+        const network = new Modules.NetworkClient.NetworkClient(url, auth);
+        const policy = new Modules.PolicyClient.PolicyClient(url, auth);
+        const validator_ = new Modules.ValidatorClient.ValidatorClient(url, auth);
+        const wallet = new Modules.WalletClient.WalletClient(url, auth);
+        const zkpComponent = new Modules.ZkpComponentClient.ZkpComponentClient(url, auth);
 
         this._modules = {
             blockchain,

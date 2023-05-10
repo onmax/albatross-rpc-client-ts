@@ -1,12 +1,12 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
+import { Auth, Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
 
 type PushTransactionParams = { transaction: RawTransaction, withHighPriority?: boolean };
 type MempoolContentParams = { includeTransactions: boolean };
 
 export class MempoolClient extends HttpClient {
-    constructor(url: URL) {
-        super(url);
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
     }
 
     /**

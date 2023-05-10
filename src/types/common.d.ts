@@ -256,3 +256,8 @@ export type BlockchainState = {
     blockNumber: BlockNumber;
     blockHash: Hash;
 }
+
+export type Auth = {
+    username: string;
+    password: string;
+}

@@ -1,5 +1,5 @@
 import { Blob } from 'buffer';
-import { BlockchainState } from '../types/common';
+import { Auth, BlockchainState } from '../types/common';
 import WebSocket from 'ws';
 
 export type ErrorStreamReturn = {
@@ -54,12 +54,14 @@ export class WebSocketClient {
     private url: URL;
     private id: number = 0;
     private textDecoder: TextDecoder;
+    private auth: Auth | undefined;
 
-    constructor(url: URL) {
+    constructor(url: URL, auth?: Auth) {
         const wsUrl = new URL(url.href.replace(/^http/, 'ws'));
         wsUrl.pathname = '/ws';
         this.url = wsUrl;
         this.textDecoder = new TextDecoder()
+        this.auth = auth;
     }
 
     async subscribe<
@@ -69,7 +71,8 @@ export class WebSocketClient {
         request: Request,
         userOptions: StreamOptions<Data>
     ): Promise<Subscription<Data, Request["params"]>> {
-        const ws = new WebSocket(this.url.href);
+        const wsOptions = this.auth ? { headers: { "Authorization": `${this.auth.username}:${this.auth.password}` } } : undefined;
+        const ws = new WebSocket(this.url.href, wsOptions);
         let subscriptionId: number;
 
         const requestBody = {

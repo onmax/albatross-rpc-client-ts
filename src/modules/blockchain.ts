@@ -1,5 +1,5 @@
 import { CallResult, DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Account, Address, BatchIndex, Block, BlockNumber, BlockchainState, EpochIndex, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { Account, Address, Auth, BatchIndex, Block, BlockNumber, BlockchainState, EpochIndex, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 
 export type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber }) & { includeTransactions?: boolean };
@@ -22,10 +22,6 @@ type TransactionBy<T extends GetTransactionByParams> = CallResult<Hash[] | Block
 
 
 export class BlockchainClient extends HttpClient {
-    constructor(url: URL) {
-        super(url);
-    }
-
     /**
      * Returns the block number for the current head.
      */

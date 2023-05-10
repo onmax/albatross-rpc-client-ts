@@ -1,5 +1,5 @@
 import { FilterStreamFn, StreamOptions, Subscription, WS_DEFAULT_OPTIONS, WebSocketClient } from "../client/web-socket";
-import { Address, Block, Hash, MacroBlock, MicroBlock, PartialBlock, Validator } from "../types/common";
+import { Address, Auth, Block, Hash, MacroBlock, MicroBlock, PartialBlock, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockLog } from "../types/logs";
 
@@ -10,10 +10,6 @@ export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[],
 
 
 export class BlockchainStream extends WebSocketClient {
-    constructor(url: URL) {
-        super(url);
-    }
-
     /**
      * Subscribes to new block events.
      */

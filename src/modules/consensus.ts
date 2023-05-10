@@ -1,5 +1,5 @@
 import { Context, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, HttpClient, SendTxCallOptions } from "../client/http";
-import { Address, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from "../types/common";
+import { Address, Auth, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockLog, TransactionLog } from "../types/logs";
 import { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from "./blockchain";
@@ -32,8 +32,8 @@ export class ConsensusClient extends HttpClient {
     private blockchainClient: BlockchainClient;
     private blockchainStream: BlockchainStream;
 
-    constructor(url: URL, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream) {
-        super(url);
+    constructor(url: URL, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream, auth?: Auth) {
+        super(url, auth);
         this.blockchainClient = blockchainClient;
         this.blockchainStream = blockchainStream;
     }

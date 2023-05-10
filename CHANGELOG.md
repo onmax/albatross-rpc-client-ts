@@ -1,5 +1,16 @@
 # nimiq-rpc-client-ts
 
+## 0.1.0
+
+### Minor Changes
+
+- dcdd8a1: added auth
+
+### Patch Changes
+
+- 0b03a2e: grammar
+- 33ce931: types
+
 ## 0.0.31
 
 ### Patch Changes

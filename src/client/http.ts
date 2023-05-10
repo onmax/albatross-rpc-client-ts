@@ -1,23 +1,15 @@
 import fetch from 'node-fetch';
-import { CallOptions, ContextRequest, ErrorCallReturn, MethodName, MethodResponse, MethodResponseContent, MethodResponseError, RpcRequest, SendTxCallOptions } from "../types/rpc-messages";
+import { Auth } from 'src/types/common';
 
-type SuccessCallReturn<T extends MethodName, WithMetadata extends boolean> = MethodResponse<T>["result"] extends { metadata: null }
-    ? MethodResponseContent<T, false>
-    : WithMetadata extends true
-    ? MethodResponse<T>["result"]
-    : MethodResponseContent<T, WithMetadata>
-
-type MaybeResponse<T extends MethodName, ShowMetadata extends boolean> = {
-    error: ErrorCallReturn
-    data: undefined
-    context: ContextRequest
-} | {
-    error: undefined
-    data: SuccessCallReturn<T, ShowMetadata>
-    context: ContextRequest
+export type HttpOptions = {
+    timeout?: number // in ms
 }
 
-export const DEFAULT_OPTIONS: CallOptions = {
+export type SendTxCallOptions = HttpOptions & ({
+    waitForConfirmationTimeout?: number, // in ms
+})
+
+export const DEFAULT_OPTIONS: HttpOptions = {
     timeout: 10_000
 }
 
@@ -27,45 +19,89 @@ export const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions = {
     timeout: DEFAULT_TIMEOUT_CONFIRMATION,
 }
 
+export type Context<Params extends any[] = any> = {
+    request: {
+        method: string;
+        params: Params;
+        id: number;
+    },
+    timestamp: number;
+    url: string;
+}
+
+export type CallResult<Params extends any[], Data, Metadata = undefined> = {
+    context: Context<Params>
+} & (
+        | {
+            data: Data;
+            metadata: Metadata;
+            error: undefined;
+        }
+        | {
+            data: undefined;
+            metadata: undefined;
+            error: {
+                code: number;
+                message: string;
+            };
+        }
+    );
+
 export class HttpClient {
     private url: URL;
     private static id: number = 0;
+    private auth: Auth | undefined;
 
-    constructor(url: URL) {
+    constructor(url: URL, auth?: Auth) {
         this.url = url;
+        this.auth = auth;
     }
 
-    async call<T extends MethodName, ShowMetadata extends boolean>(method: T, params: RpcRequest<T>["params"], withMetadata: ShowMetadata, options: CallOptions): Promise<MaybeResponse<T, ShowMetadata>> {
-        const { timeout } = options
+    async call<
+        Data,
+        Request extends { method: string; params: any[], withMetadata?: boolean },
+        Metadata = undefined,
+    >(
+        request: Request,
+        options: HttpOptions
+    ): Promise<CallResult<Request["params"], Data, Metadata>> {
+        const { method, params: requestParams, withMetadata } = request;
+        const { timeout } = options;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        // replace undefined with null
-        params = params.map((param: any) => param === undefined ? null : param) as RpcRequest<T>['params']
+        const params = (requestParams as any[]).map((param: any) => (param === undefined ? null : param)) as Context<Request["params"]>['request']['params'];
 
-        const context: ContextRequest = {
+        const context: Context<Request["params"]> = {
             request: {
                 method,
                 params,
                 id: HttpClient.id,
             },
             url: this.url.href,
-            timestamp: Date.now()
+            timestamp: Date.now(),
+        };
+
+        const headers: HeadersInit = {
+            "Content-Type": "application/json",
         }
 
+        if (this.auth) {
+            headers["Authorization"] = `${this.auth.username}:${this.auth.password}`;
+        }
+
+
         const response = await fetch(this.url.href, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
+            method: "POST",
+            headers,
             body: JSON.stringify({
-                jsonrpc: '2.0',
+                jsonrpc: "2.0",
                 method,
                 params,
                 id: HttpClient.id++,
             }),
-            signal: controller.signal
+            signal: controller.signal,
         }).catch((error) => {
             if (error.name === 'AbortError') {
                 return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` } as Response
@@ -74,54 +110,55 @@ export class HttpClient {
             } else {
                 return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message}` } as Response
             }
-        })
+        });
 
         clearTimeout(timeoutId);
 
         if (!response.ok) {
             return {
+                context,
+                data: undefined,
+                metadata: undefined,
                 error: {
                     code: response.status,
                     message: response.status === 401
-                        ? 'Server requires authorization.'
-                        : `Response status code not OK: ${response.status} ${response.statusText}`
+                        ? "Server requires authorization."
+                        : `Response status code not OK: ${response.status} ${response.statusText}`,
                 },
-                data: undefined,
-                context,
             }
         }
 
-        const json = await response.json()
+        const json = await response.json() as any;
 
-        const typedData = json as MethodResponse<T> | MethodResponseError
-        if ('result' in typedData) {
-            const data: SuccessCallReturn<T, ShowMetadata> = (!withMetadata || !typedData.result.metadata)
-                ? typedData.result.data
-                : typedData.result
+        if ("result" in json) {
             return {
+                context,
+                data: json.result.data,
+                metadata: withMetadata ? json.result.metadata : undefined,
                 error: undefined,
-                data,
-                context,
             }
         }
-        if ('error' in typedData) {
+
+        if ("error" in json) {
             return {
-                error: {
-                    code: typedData.error.code,
-                    message: `${typedData.error.message}: ${typedData.error.data}`,
-                },
-                data: undefined,
                 context,
+                data: undefined,
+                metadata: undefined,
+                error: {
+                    code: json.error.code,
+                    message: `${json.error.message}: ${json.error.data}`,
+                },
             }
         }
 
         return {
+            context,
+            data: undefined,
+            metadata: undefined,
             error: {
                 code: -1,
                 message: `Unexpected format of data ${JSON.stringify(json)}`,
             },
-            data: undefined,
-            context,
         }
     }
 }

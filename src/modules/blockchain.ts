@@ -1,10 +1,6 @@
-import { Client } from "../client/client";
-import { DEFAULT_OPTIONS } from "../client/http";
-import { MaybeSubscription, Subscription, WS_DEFAULT_OPTIONS } from "../client/web-socket";
-import { Account, Address, BatchIndex, Block, BlockNumber, Hash, Inherent, MacroBlock, MicroBlock, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { CallResult, DEFAULT_OPTIONS, HttpClient } from "../client/http";
+import { Account, Address, Auth, BatchIndex, Block, BlockNumber, BlockchainState, EpochIndex, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
-import { BlockchainState } from "../types/modules";
-import { FilterStreamFn, MaybeCallResponse, MaybeStreamResponse, StreamOptions } from "../types/rpc-messages";
 
 export type GetBlockByParams = ({ hash: Hash } | { blockNumber: BlockNumber }) & { includeTransactions?: boolean };
 export type GetLatestBlockParams = { includeTransactions?: boolean };
@@ -16,70 +12,59 @@ export type GetAccountByAddressParams = { address: Address, withMetadata?: boole
 export type GetValidatorByAddressParams = { address: Address };
 export type GetStakersByAddressParams = { address: Address };
 export type GetStakerByAddressParams = { address: Address };
-export type SubscribeForHeadBlockParams = { retrieve: 'FULL' | 'PARTIAL', blockType?: 'MACRO' | 'MICRO' | 'ELECTION' };
 export type SubscribeForHeadHashParams = { retrieve: 'HASH' };
 export type SubscribeForValidatorElectionByAddressParams = { address: Address };
 export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[] };
 
-type WithMetadata<T> = { data: T, metadata: BlockchainState };
-type ResultGetTransactionsByAddress<T extends GetTransactionsByAddressParams> = T extends { justHashes: true } ? Hash[] : Transaction[];
-type ResultGetTransactionsBy<T> = T extends { hash: Hash }
-    ? Transaction : T extends { address: Address }
-    ? ResultGetTransactionsByAddress<T> : Transaction[]
+type TransactionBy<T extends GetTransactionByParams> = CallResult<Hash[] | BlockNumber[] | (BlockNumber | number)[], T extends { hash: Hash } ? Transaction :
+    T extends GetTransactionsByAddressParams ? T["justHashes"] extends true ? Hash[] : Transaction[] :
+    Transaction[]>;
 
-export type SpecificBlock<T extends SubscribeForHeadBlockParams> =
-    T["blockType"] extends 'MICRO'
-        ? (T["retrieve"] extends 'FULL' ? MicroBlock : PartialMicroBlock)
-        : (T["retrieve"] extends 'FULL' ? MacroBlock : PartialMacroBlock)
 
-export type BlockSubscription<T extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams> = Subscription<MaybeStreamResponse<
-    T extends SubscribeForHeadBlockParams ? SpecificBlock<T> : string
->>;
-
-export class BlockchainClient extends Client {
-    constructor(url: URL) {
-        super(url);
-    }
-
+export class BlockchainClient extends HttpClient {
     /**
      * Returns the block number for the current head.
      */
-    public async getBlockNumber(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<BlockNumber>> {
-        return this.call("getBlockNumber", [], options);
+    public async getBlockNumber(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getBlockNumber', params: [] }
+        return super.call<BlockNumber, typeof req>(req, options)
     }
 
     /**
      * Returns the batch number for the current head.
      */
-    public async getBatchNumber(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<BatchIndex>> {
-        return this.call("getBatchNumber", [], options);
+    public async getBatchNumber(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getBatchNumber', params: [] }
+        return super.call<BatchIndex, typeof req>(req, options)
     }
 
     /**
      * Returns the epoch number for the current head.
      */
-    public async getEpochNumber(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<BatchIndex>> {
-        return this.call("getEpochNumber", [], options);
+    public async getEpochNumber(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getEpochNumber', params: [] }
+        return super.call<EpochIndex, typeof req>(req, options)
     }
 
     /**
      * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
      */
-    public async getBlockBy<T extends GetBlockByParams>(p = { includeTransactions: false } as T, options = DEFAULT_OPTIONS):
-        Promise<T extends { includeTransactions: true } ? MaybeCallResponse<Block> : MaybeCallResponse<PartialBlock>> {
+    public async getBlockBy<T extends GetBlockByParams>(p: T, options = DEFAULT_OPTIONS) {
         if ('hash' in p) {
-            return this.call("getBlockByHash", [p.hash, p.includeTransactions], options);
+            const req = { method: 'getBlockByHash', params: [p.hash, p.includeTransactions] }
+            return super.call<T["includeTransactions"] extends true ? Block : PartialBlock, typeof req>(req, options)
         }
-        return this.call("getBlockByNumber", [p.blockNumber, p.includeTransactions], options);
+        const req = { method: 'getBlockByNumber', params: [p.blockNumber, p.includeTransactions] }
+        return super.call<T["includeTransactions"] extends true ? Block : PartialBlock, typeof req>(req, options)
     }
 
     /**
      * Returns the block at the head of the main chain. It has an option to include the
      * transactions in the block, which defaults to false.
      */
-    public async getLatestBlock<T extends GetLatestBlockParams>(p = { includeTransactions: false } as T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { includeTransactions: true } ? Block : PartialBlock>> {
-        return this.call("getLatestBlock", [p.includeTransactions], options);
+    public async getLatestBlock<T extends GetLatestBlockParams>(p = { includeTransactions: false } as T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getLatestBlock', params: [p.includeTransactions] }
+        return super.call<T["includeTransactions"] extends true ? Block : PartialBlock, typeof req>(req, options)
     }
 
     /**
@@ -87,9 +72,9 @@ export class BlockchainClient extends Client {
      * offset is optional, it will default to getting the offset for the existing block
      * at the given height.
      */
-    public async getSlotAt<T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<Slot> : Slot>> {
-        return this.call("getSlotAt", [blockNumber, offsetOpt], options, withMetadata);
+    public async getSlotAt<T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getSlotAt', params: [blockNumber, offsetOpt], withMetadata }
+        return super.call<Slot, typeof req>(req, options)
     }
 
     /**
@@ -100,18 +85,23 @@ export class BlockchainClient extends Client {
      * transactions are also returned. It has an option to specify the maximum number of transactions
      * to fetch, it defaults to 500.
      */
-    public async getTransactionBy<T extends GetTransactionByParams>(p: T, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<ResultGetTransactionsBy<T>>> {
+    public async getTransactionBy<T extends GetTransactionByParams>(p: T, options = DEFAULT_OPTIONS) {
         if ('hash' in p) {
-            return this.call("getTransactionByHash", [p.hash], options);
+            const req = { method: 'getTransactionByHash', params: [p.hash] }
+            return super.call(req, options) as Promise<TransactionBy<T>>
         } else if ('blockNumber' in p) {
-            return this.call("getTransactionsByBlockNumber", [p.blockNumber], options);
+            const req = { method: 'getTransactionsByBlockNumber', params: [p.blockNumber] }
+            return super.call<Transaction[], typeof req>(req, options) as Promise<TransactionBy<T>>
         } else if ('batchNumber' in p) {
-            return this.call("getTransactionsByBatchNumber", [p.batchNumber], options);
+            const req = { method: 'getTransactionsByBatchNumber', params: [p.batchNumber] }
+            return super.call<Transaction[], typeof req>(req, options) as Promise<TransactionBy<T>>
         } else if ('address' in p) {
             if (p.justHashes === true) {
-                return this.call("getTransactionHashesByAddress", [p.address, p.max], options);
+                const req = { method: 'getTransactionHashesByAddress', params: [p.address, p.max] }
+                return super.call<Hash[], typeof req>(req, options) as Promise<TransactionBy<T>>
             } else {
-                return this.call("getTransactionsByAddress", [p.address, p.max], options);
+                const req = { method: 'getTransactionsByAddress', params: [p.address, p.max] }
+                return super.call<Transaction[], typeof req>(req, options)
             }
         }
         throw new Error("Invalid parameters");
@@ -121,11 +111,13 @@ export class BlockchainClient extends Client {
      * Returns all the inherents (including reward inherents) for the parameter. Note
      * that this only considers blocks in the main chain.
      */
-    public async getInherentsBy<T extends GetInherentsByParams>(p: T, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Inherent[]>> {
+    public async getInherentsBy<T extends GetInherentsByParams>(p: T, options = DEFAULT_OPTIONS) {
         if ('blockNumber' in p) {
-            return this.call("getInherentsByBlockNumber", [p.blockNumber], options);
+            const req = { method: 'getInherentsByBlockNumber', params: [p.blockNumber] }
+            return super.call<Inherent[], typeof req>(req, options)
         } else if ('batchNumber' in p) {
-            return this.call("getInherentsByBatchNumber", [p.batchNumber], options);
+            const req = { method: 'getInherentsByBatchNumber', params: [p.batchNumber] }
+            return super.call<Inherent[], typeof req>(req, options)
         }
         throw new Error("Invalid parameters");
     }
@@ -133,54 +125,52 @@ export class BlockchainClient extends Client {
     /**
      * Tries to fetch the account at the given address.
      */
-    public async getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<Account> : Account>> {
-        return this.call("getAccountByAddress", [address], options, withMetadata);
+    public async getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getAccountByAddress', params: [address], withMetadata }
+        return super.call<Account, typeof req, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
     * Returns a collection of the currently active validator's addresses and balances.
     */
-    public async getActiveValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<Validator[]> : Validator[]>> {
-        return this.call("getActiveValidators", [], options, withMetadata);
+    public async getActiveValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getActiveValidators', params: [], withMetadata }
+        return super.call<Validator[], typeof req, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
      * Returns information about the currently slashed slots. This includes slots that lost rewards
      * and that were disabled.
      */
-    public async getCurrentSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]>> {
-        return this.call("getCurrentSlashedSlots", [], options, withMetadata);
+    public async getCurrentSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getCurrentSlashedSlots', params: [], withMetadata }
+        return super.call<SlashedSlot[], typeof req>(req, options)
     }
 
     /**
      * Returns information about the slashed slots of the previous batch. This includes slots that
      * lost rewards and that were disabled.
      */
-    public async getPreviousSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<SlashedSlot[]> : SlashedSlot[]>> {
-        return this.call("getPreviousSlashedSlots", [], options, withMetadata);
+    public async getPreviousSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getPreviousSlashedSlots', params: [], withMetadata }
+        return super.call<SlashedSlot[], typeof req, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
      * Returns information about the currently parked validators.
      */
-    public async getParkedValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<{ blockNumber: BlockNumber, validators: Validator[] }> : { blockNumber: BlockNumber, validators: Validator[] }>> {
-        return this.call("getParkedValidators", [], options, withMetadata);
+    public async getParkedValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getParkedValidators', params: [], withMetadata }
+        return super.call<{ blockNumber: BlockNumber, validators: Validator[] }, typeof req, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    public async getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true }
-            ? WithMetadata<PartialValidator>
-            : PartialValidator>> {
-        return this.call("getValidatorByAddress", [address], options);
+    public async getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getValidatorByAddress', params: [address] }
+        return super.call<PartialValidator, typeof req>(req, options)
     }
 
     /**
@@ -189,81 +179,17 @@ export class BlockchainClient extends Client {
      * and thus is extremely computationally expensive.
      * This function requires the read lock acquisition prior to its execution.
      */
-    public async getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<Staker> : Staker>> {
-        return this.call("getStakerByAddress", [address], options);
+    public async getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getStakersByAddress', params: [address] }
+        return super.call<Staker[], typeof req>(req, options)
+
     }
 
     /**
      * Tries to fetch a staker information given its address.
      */
-    public async getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options = DEFAULT_OPTIONS):
-        Promise<MaybeCallResponse<T extends { withMetadata: true } ? WithMetadata<Staker> : Staker>> {
-        return this.call("getStakerByAddress", [address], options);
-    }
-
-    /**
-     * Subscribes to new block events.
-     */
-    public async subscribeForBlocks<
-        T extends (SubscribeForHeadBlockParams | SubscribeForHeadHashParams),
-        N extends T["retrieve"] extends 'HASH' ? "subscribeForHeadBlockHash" : "subscribeForHeadBlock",
-        O extends StreamOptions<N>
-    >(params: T, userOptions?: Partial<O>): Promise<BlockSubscription<T>> {
-        if (params.retrieve === 'HASH') {
-            const options: StreamOptions<"subscribeForHeadBlockHash"> = { ...WS_DEFAULT_OPTIONS, ...userOptions }
-            return this.subscribe("subscribeForHeadBlockHash", [], options) as Promise<BlockSubscription<T>>
-        }
-
-        let filter: FilterStreamFn<'subscribeForHeadBlock'> | undefined = undefined;
-        if (!userOptions || !userOptions.filter) {
-            switch (params.blockType) {
-                case 'ELECTION':
-                    filter = (block) => (block as MacroBlock).isElectionBlock;
-                    break;
-                case 'MACRO':
-                    filter = (block) => 'isElectionBlock' in block;
-                    break;
-                case 'MICRO':
-                    filter = (block) => !('isElectionBlock' in block);
-                    break;
-            }
-        }
-
-        const options: StreamOptions<"subscribeForHeadBlock"> = { ...WS_DEFAULT_OPTIONS, filter, ...userOptions }
-
-        switch (params.retrieve) {
-            case 'FULL':
-                return this.subscribe("subscribeForHeadBlock", [/*includeTransactions*/true], options) as Promise<BlockSubscription<T>>
-            case 'PARTIAL':
-                return this.subscribe("subscribeForHeadBlock", [/*includeTransactions*/false], options) as Promise<BlockSubscription<T>>
-        }
-    }
-
-    /**
-     * Subscribes to pre epoch validators events.
-     */
-    public async subscribeForValidatorElectionByAddress<
-        T extends SubscribeForValidatorElectionByAddressParams,
-        O extends StreamOptions<"subscribeForValidatorElectionByAddress">
-    >(p: T, userOptions?: Partial<O>):
-        Promise<MaybeSubscription<"subscribeForValidatorElectionByAddress", O extends { withMetadata: true } ? true : false>> {
-        const options: StreamOptions<"subscribeForValidatorElectionByAddress"> = { ...WS_DEFAULT_OPTIONS, withMetadata: false, ...userOptions }
-        return this.subscribe("subscribeForValidatorElectionByAddress", [p?.address], options) as
-            Promise<MaybeSubscription<"subscribeForValidatorElectionByAddress", O extends { withMetadata: true } ? true : false>>;
-    }
-
-    /**
-     * Subscribes to log events related to a given list of addresses and of any of the log types provided.
-     * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
-     * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
-     */
-    public async subscribeForLogsByAddressesAndTypes<
-        T extends SubscribeForLogsByAddressesAndTypesParams,
-        O extends StreamOptions<"subscribeForLogsByAddressesAndTypes">
-    >(p?: T, userOptions?: Partial<O>):
-        Promise<MaybeSubscription<"subscribeForLogsByAddressesAndTypes", O extends { withMetadata: true } ? true : false>> {
-        const options: StreamOptions<"subscribeForLogsByAddressesAndTypes"> = { ...WS_DEFAULT_OPTIONS, withMetadata: false, ...userOptions }
-        return this.subscribe("subscribeForLogsByAddressesAndTypes", [p?.addresses || [], p?.types || []], options) as  Promise<MaybeSubscription<"subscribeForLogsByAddressesAndTypes", O extends { withMetadata: true } ? true : false>>;
+    public async getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
+        const req = { method: 'getStakerByAddress', params: [address] }
+        return super.call<Staker, typeof req>(req, options)
     }
 }

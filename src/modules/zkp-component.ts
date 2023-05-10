@@ -1,26 +1,28 @@
-import { ZKPState } from "../types/common";
-import { Client } from "../client/client";
-import { ContextRequest, MaybeCallResponse } from "../types/rpc-messages";
-import { DEFAULT_OPTIONS } from "../client/http";
+import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
+import { BlockNumber, Hash } from "../types/common";
 
-export class ZkpComponentClient extends Client {
-    constructor(url: URL) {
-        super(url);
-    }
+type ZKPStateKebab = {
+    'latest-header-number': Hash
+    'latest-block-number': BlockNumber
+    'latest-proof'?: string
+}
 
-    public async getZkpState(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<ZKPState>> {
-        const { data, error, context } = await this.call("getZkpState", [], options);
+export class ZkpComponentClient extends HttpClient {
+    public async getZkpState(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getZkpState', params: [] }
+        const { data, error, context, metadata } = await super.call<ZKPStateKebab, typeof req>(req, options)
         if (error) {
             return { error, data, context };
         } else {
-            return { 
+            return {
                 error,
                 data: {
-                    latestHeaderHash: data['latest-header-number'],
-                    latestBlockNumber: data['latest-block-number'],
-                    latestProof: data['latest-proof'],
-                } as ZKPState,
-                context
+                    latestHeaderHash: data!['latest-header-number'],
+                    latestBlockNumber: data!['latest-block-number'],
+                    latestProof: data!['latest-proof'],
+                },
+                context,
+                metadata,
             };
         }
     }

@@ -1,14 +1,12 @@
-import { Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
-import { Client } from "../client/client";
-import { MaybeCallResponse } from "../types/rpc-messages";
-import { DEFAULT_OPTIONS } from "../client/http";
+import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
+import { Auth, Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
 
 type PushTransactionParams = { transaction: RawTransaction, withHighPriority?: boolean };
 type MempoolContentParams = { includeTransactions: boolean };
 
-export class MempoolClient extends Client {
-    constructor(url: URL) {
-        super(url);
+export class MempoolClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
     }
 
     /**
@@ -17,11 +15,13 @@ export class MempoolClient extends Client {
      * @param transaction Serialized transaction
      * @returns Transaction hash
      */
-    public pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<Hash>> {
+    public pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options = DEFAULT_OPTIONS) {
         if (withHighPriority) {
-            return super.call("pushHighPriorityTransaction", [transaction], options);
+            const req = { method: 'pushHighPriorityTransaction', params: [transaction] }
+            return super.call<Hash, typeof req>(req, options)
         } else {
-            return super.call("pushTransaction", [transaction], options);
+            const req = { method: 'pushTransaction', params: [transaction] }
+            return super.call<Hash, typeof req>(req, options)
         }
     }
 
@@ -31,22 +31,25 @@ export class MempoolClient extends Client {
      * @param includeTransactions
      * @returns 
      */
-    public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false}, options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<(Hash | Transaction)[]>> {
-        return super.call("mempoolContent", [includeTransactions], options);
+    public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
+        const req = { method: 'mempoolContent', params: [includeTransactions] }
+        return super.call<(Hash | Transaction)[], typeof req>(req, options)
     }
 
     /**
      * @returns 
      */
-    public mempool(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<MempoolInfo>> {
-        return super.call("mempool", [], options);
+    public mempool(options = DEFAULT_OPTIONS) {
+        const req = { method: 'mempool', params: [] }
+        return super.call<MempoolInfo, typeof req>(req, options)
     }
 
     /**
      * 
      * @returns
      */
-    public getMinFeePerByte(options = DEFAULT_OPTIONS): Promise<MaybeCallResponse<number>> {
-        return super.call("getMinFeePerByte", [], options);
+    public getMinFeePerByte(options = DEFAULT_OPTIONS) {
+        const req = { method: 'getMinFeePerByte', params: [] }
+        return super.call</* f64 */number, typeof req>(req, options)
     }
 }

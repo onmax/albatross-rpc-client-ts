@@ -17,11 +17,12 @@ export enum LogType {
     VestingCreate = "vesting-create",
     CreateValidator = "create-validator",
     UpdateValidator = "update-validator",
-    InactivateValidator = "inactivate-validator",
+    DeactivateValidator = "deactivate-validator",
     ReactivateValidator = "reactivate-validator",
     UnparkValidator = "unpark-validator",
     CreateStaker = "create-staker",
     Stake = "stake",
+    StakerFeeDeduction = "staker-fee-deduction",
     UpdateStaker = "update-staker",
     RetireValidator = "retire-validator",
     DeleteValidator = "delete-validator",
@@ -31,6 +32,7 @@ export enum LogType {
     Slash = "slash",
     RevertContract = "revert-contract",
     FailedTransaction = "failed-transaction",
+    ValidatorFeeDeduction = "validator-fee-deduction",
 }
 
 export enum AccountType {

@@ -1,10 +1,11 @@
-import { BlockchainClient } from "./blockchain";
-import { ConsensusClient } from "./consensus";
-import { MempoolClient } from "./mempool";
-import { NetworkClient } from "./network";
-import { PolicyClient } from "./policy";
-import { ValidatorClient } from "./validator";
-import { WalletClient } from "./wallet";
-import { ZkpComponentClient } from "./zkp-component";
+import * as BlockchainClient from "./blockchain";
+import * as BlockchainStream from "./blockchain-streams";
+import * as ConsensusClient from "./consensus";
+import * as MempoolClient from "./mempool";
+import * as NetworkClient from "./network";
+import * as PolicyClient from "./policy";
+import * as ValidatorClient from "./validator";
+import * as WalletClient from "./wallet";
+import * as ZkpComponentClient from "./zkp-component";
 
-export { ConsensusClient, MempoolClient, NetworkClient, ValidatorClient, WalletClient, ZkpComponentClient, BlockchainClient, PolicyClient };
+export { ConsensusClient, MempoolClient, NetworkClient, ValidatorClient, WalletClient, ZkpComponentClient, BlockchainClient, BlockchainStream, PolicyClient };

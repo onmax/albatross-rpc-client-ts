@@ -1,4 +1,4 @@
-import { BlockType } from "./enums"
+import { AccountType, BlockType } from "./enums"
 
 export type Address = `NQ${number} ${string}`
 export type Coin = number
@@ -250,4 +250,14 @@ export type ZKPState = {
     latestHeaderHash: Hash
     latestBlockNumber: BlockNumber
     latestProof?: string
+}
+
+export type BlockchainState = {
+    blockNumber: BlockNumber;
+    blockHash: Hash;
+}
+
+export type Auth = {
+    username: string;
+    password: string;
 }

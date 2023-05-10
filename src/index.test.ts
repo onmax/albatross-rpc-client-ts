@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { Client, Transaction } from '.';
+import Client, { Transaction } from '.';
 
 function getClient() {
     const secret = process.env.NIMIQ_SECRET || '';

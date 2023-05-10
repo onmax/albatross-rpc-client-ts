@@ -10,6 +10,10 @@ export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[],
 
 
 export class BlockchainStream extends WebSocketClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     /**
      * Subscribes to new block events.
      */

@@ -1,56 +1,8 @@
-"use strict";
-var __create = Object.create;
 var __defProp = Object.defineProperty;
-var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-var __getOwnPropNames = Object.getOwnPropertyNames;
-var __getProtoOf = Object.getPrototypeOf;
-var __hasOwnProp = Object.prototype.hasOwnProperty;
 var __export = (target, all) => {
   for (var name in all)
     __defProp(target, name, { get: all[name], enumerable: true });
 };
-var __copyProps = (to, from, except, desc) => {
-  if (from && typeof from === "object" || typeof from === "function") {
-    for (let key of __getOwnPropNames(from))
-      if (!__hasOwnProp.call(to, key) && key !== except)
-        __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-  }
-  return to;
-};
-var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
-  // If the importer is in node compatibility mode or this is not an ESM
-  // file that has been converted to a CommonJS file using a Babel-
-  // compatible transform (i.e. "__esModule" has not been set), then set
-  // "default" to the CommonJS "module.exports" for node compatibility.
-  isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
-  mod
-));
-var __toCommonJS = (mod) => __copyProps(__defProp({}, "__esModule", { value: true }), mod);
-
-// src/index.ts
-var src_exports = {};
-__export(src_exports, {
-  AccountType: () => AccountType,
-  BlockType: () => BlockType,
-  BlockchainClient: () => blockchain_exports,
-  BlockchainStream: () => blockchain_streams_exports,
-  ConsensusClient: () => consensus_exports,
-  DEFAULT_OPTIONS: () => DEFAULT_OPTIONS,
-  DEFAULT_OPTIONS_SEND_TX: () => DEFAULT_OPTIONS_SEND_TX,
-  DEFAULT_TIMEOUT_CONFIRMATION: () => DEFAULT_TIMEOUT_CONFIRMATION,
-  HttpClient: () => HttpClient,
-  LogType: () => LogType,
-  MempoolClient: () => mempool_exports,
-  NetworkClient: () => network_exports,
-  PolicyClient: () => policy_exports,
-  ValidatorClient: () => validator_exports,
-  WS_DEFAULT_OPTIONS: () => WS_DEFAULT_OPTIONS,
-  WalletClient: () => wallet_exports,
-  WebSocketClient: () => WebSocketClient,
-  ZkpComponentClient: () => zkp_component_exports,
-  default: () => Client
-});
-module.exports = __toCommonJS(src_exports);
 
 // src/modules/blockchain.ts
 var blockchain_exports = {};
@@ -59,7 +11,7 @@ __export(blockchain_exports, {
 });
 
 // src/client/http.ts
-var import_node_fetch = __toESM(require("node-fetch"));
+import fetch from "node-fetch";
 var DEFAULT_OPTIONS = {
   timeout: 1e4
 };
@@ -91,7 +43,7 @@ var _HttpClient = class {
       url: this.url.href,
       timestamp: Date.now()
     };
-    const response = await (0, import_node_fetch.default)(this.url.href, {
+    const response = await fetch(this.url.href, {
       method: "POST",
       headers: context.headers,
       body: JSON.stringify({
@@ -324,8 +276,8 @@ __export(blockchain_streams_exports, {
 });
 
 // src/client/web-socket.ts
-var import_buffer = require("buffer");
-var import_ws = __toESM(require("ws"));
+import { Blob } from "buffer";
+import WebSocket from "ws";
 var WS_DEFAULT_OPTIONS = {
   once: false,
   filter: () => true
@@ -343,7 +295,7 @@ var WebSocketClient = class {
     const headers = {
       "Authorization": this.auth ? Buffer.from(`Basic ${this.auth.username}:${this.auth.password}`).toString("base64") : ""
     };
-    const ws = new import_ws.default(this.url.href, { headers });
+    const ws = new WebSocket(this.url.href, { headers });
     let subscriptionId;
     const requestBody = {
       method: request.method,
@@ -364,7 +316,7 @@ var WebSocketClient = class {
         };
         ws.onmessage = async (event) => {
           let payloadStr;
-          if (event.data instanceof import_buffer.Blob) {
+          if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer());
           } else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
             payloadStr = this.textDecoder.decode(event.data);
@@ -1694,24 +1646,24 @@ var Client = class {
     };
   }
 };
-// Annotate the CommonJS export names for ESM import in node:
-0 && (module.exports = {
+export {
   AccountType,
   BlockType,
-  BlockchainClient,
-  BlockchainStream,
-  ConsensusClient,
+  blockchain_exports as BlockchainClient,
+  blockchain_streams_exports as BlockchainStream,
+  consensus_exports as ConsensusClient,
   DEFAULT_OPTIONS,
   DEFAULT_OPTIONS_SEND_TX,
   DEFAULT_TIMEOUT_CONFIRMATION,
   HttpClient,
   LogType,
-  MempoolClient,
-  NetworkClient,
-  PolicyClient,
-  ValidatorClient,
+  mempool_exports as MempoolClient,
+  network_exports as NetworkClient,
+  policy_exports as PolicyClient,
+  validator_exports as ValidatorClient,
   WS_DEFAULT_OPTIONS,
-  WalletClient,
+  wallet_exports as WalletClient,
   WebSocketClient,
-  ZkpComponentClient
-});
+  zkp_component_exports as ZkpComponentClient,
+  Client as default
+};

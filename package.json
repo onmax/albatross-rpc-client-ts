@@ -17,7 +17,7 @@
   "license": "MIT",
   "author": "onmax",
   "private": false,
-  "type": "module",
+  "type": "commonjs",
   "scripts": {
     "dev": "vitest",
     "test": "vitest run",

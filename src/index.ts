@@ -2,8 +2,6 @@ import * as Modules from "./modules";
 import { Auth } from "./types/common";
 
 export default class Client {
-    public url: URL;
-
     public block;
     public batch;
     public epoch;
@@ -24,7 +22,6 @@ export default class Client {
     public _modules;
 
     constructor(url: URL, auth?: Auth) {
-        this.url = url;
         const blockchain = new Modules.BlockchainClient.BlockchainClient(url, auth);
         const blockchainStreams = new Modules.BlockchainStream.BlockchainStream(url, auth);
         const consensus = new Modules.ConsensusClient.ConsensusClient(url, blockchain, blockchainStreams, auth);

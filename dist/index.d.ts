@@ -1,3 +1,5 @@
+import WebSocket from 'ws';
+
 declare enum BlockType {
     MICRO = "micro",
     MACRO = "macro"
@@ -296,6 +298,11 @@ type BlockchainState = {
     blockHash: Hash;
 }
 
+type Auth = {
+    username: string;
+    password: string;
+}
+
 type PayFeeLog = {
     type: LogType.PayFee;
     from: string;
@@ -488,7 +495,8 @@ type Subscription<Data, Params extends any[]> = {
     next: (callback: (data: MaybeStreamResponse<Data>) => void) => void;
     close: () => void;
     context: {
-        request: {
+        headers: WebSocket.ClientOptions["headers"];
+        body: {
             method: string;
             params: Params;
             id: number;
@@ -517,7 +525,8 @@ declare class WebSocketClient {
     private url;
     private id;
     private textDecoder;
-    constructor(url: URL);
+    private auth;
+    constructor(url: URL, auth?: Auth);
     subscribe<Data, Request extends {
         method: string;
         params: any[];
@@ -535,7 +544,8 @@ declare const DEFAULT_OPTIONS: HttpOptions;
 declare const DEFAULT_TIMEOUT_CONFIRMATION: number;
 declare const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions;
 type Context<Params extends any[] = any> = {
-    request: {
+    headers: HeadersInit;
+    body: {
         method: string;
         params: Params;
         id: number;
@@ -560,7 +570,8 @@ type CallResult<Params extends any[], Data, Metadata = undefined> = {
 declare class HttpClient {
     private url;
     private static id;
-    constructor(url: URL);
+    private auth;
+    constructor(url: URL, auth?: Auth);
     call<Data, Request extends {
         method: string;
         params: any[];
@@ -627,7 +638,7 @@ type TransactionBy<T extends GetTransactionByParams> = CallResult<Hash[] | Block
     hash: Hash;
 } ? Transaction : T extends GetTransactionsByAddressParams ? T["justHashes"] extends true ? Hash[] : Transaction[] : Transaction[]>;
 declare class BlockchainClient extends HttpClient {
-    constructor(url: URL);
+    constructor(url: URL, auth?: Auth);
     /**
      * Returns the block number for the current head.
      */
@@ -768,7 +779,7 @@ type SubscribeForLogsByAddressesAndTypesParams = {
     withMetadata?: boolean;
 };
 declare class BlockchainStream extends WebSocketClient {
-    constructor(url: URL);
+    constructor(url: URL, auth?: Auth);
     /**
      * Subscribes to new block events.
      */
@@ -952,7 +963,7 @@ type TxLog = {
 declare class ConsensusClient extends HttpClient {
     private blockchainClient;
     private blockchainStream;
-    constructor(url: URL, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream);
+    constructor(url: URL, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream, auth?: Auth);
     private getValidityStartHeight;
     private waitForConfirmation;
     /**
@@ -1324,7 +1335,7 @@ type MempoolContentParams = {
     includeTransactions: boolean;
 };
 declare class MempoolClient extends HttpClient {
-    constructor(url: URL);
+    constructor(url: URL, auth?: Auth);
     /**
      * Pushes the given serialized transaction to the local mempool
      *
@@ -1359,6 +1370,7 @@ declare namespace mempool {
 }
 
 declare class NetworkClient extends HttpClient {
+    constructor(url: URL, auth?: Auth);
     /**
      * The peer ID for our local peer.
      */
@@ -1400,6 +1412,7 @@ type SupplyAtParams = {
     currentTime: number;
 };
 declare class PolicyClient extends HttpClient {
+    constructor(url: URL, auth?: Auth);
     /**
      * Gets a bundle of policy constants
      */
@@ -1551,6 +1564,7 @@ type SetAutomaticReactivationParams = {
     automaticReactivation: boolean;
 };
 declare class ValidatorClient extends HttpClient {
+    constructor(url: URL, auth?: Auth);
     /**
      * Returns our validator address.
      */
@@ -1611,6 +1625,7 @@ type VerifySignatureParams = {
     isHex: boolean;
 };
 declare class WalletClient extends HttpClient {
+    constructor(url: URL, auth?: Auth);
     importRawKey({ keyData, passphrase }: ImportKeyParams, options?: HttpOptions): Promise<CallResult<(string | undefined)[], `NQ${number} ${string}`, undefined>>;
     isAccountImported({ address }: IsAccountImportedParams, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], Boolean, undefined>>;
     listAccounts(options?: HttpOptions): Promise<CallResult<never[], Boolean, undefined>>;
@@ -1631,6 +1646,7 @@ declare namespace wallet {
 }
 
 declare class ZkpComponentClient extends HttpClient {
+    constructor(url: URL, auth?: Auth);
     getZkpState(options?: HttpOptions): Promise<{
         error: {
             code: number;
@@ -1660,7 +1676,6 @@ declare namespace zkpComponent {
 }
 
 declare class Client {
-    url: URL;
     block: {
         current: (options?: HttpOptions) => Promise<CallResult<never[], number, undefined>>;
         getBy: <T extends GetBlockByParams>(p: T, options?: HttpOptions) => Promise<CallResult<(string | boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined> | CallResult<(number | boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
@@ -1966,7 +1981,7 @@ declare class Client {
         wallet: WalletClient;
         zkpComponent: ZkpComponentClient;
     };
-    constructor(url: URL);
+    constructor(url: URL, auth?: Auth);
 }
 
 export { Account, AccountType, Address, AppliedBlockLog, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType, blockchain as BlockchainClient, BlockchainState, blockchainStreams as BlockchainStream, CallResult, Coin, consensus as ConsensusClient, Context, CreateStakerLog, CreateValidatorLog, CurrentTime, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, DeactivateValidatorLog, DeleteValidatorLog, ElectionMacroBlock, EpochIndex, ErrorStreamReturn, FailedTransactionLog, FilterStreamFn, GenesisSupply, GenesisTime, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, Hash, HtlcAccount, HtlcCreateLog, HttpClient, HttpOptions, Inherent, Log, LogType, MacroBlock, MaybeStreamResponse, mempool as MempoolClient, MempoolInfo, MicroBlock, network as NetworkClient, ParkLog, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutRewardLog, policy as PolicyClient, PolicyConstants, RawTransaction, ReactivateValidatorLog, RetireValidatorLog, RevertContractLog, RevertedBlockLog, SendTxCallOptions, Signature, SlashLog, SlashedSlot, Slot, StakeLog, Staker, StakerFeeDeductionLog, StreamOptions, Subscription, Transaction, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog, Validator, validator as ValidatorClient, ValidatorFeeDeductionLog, ValidityStartHeight, VestingAccount, VestingCreateLog, WS_DEFAULT_OPTIONS, WalletAccount, wallet as WalletClient, WebSocketClient, ZKPState, zkpComponent as ZkpComponentClient, Client as default };

@@ -3,15 +3,15 @@ import Client, { Transaction } from '.';
 
 function getClient() {
     const secret = process.env.NIMIQ_SECRET || '';
-    // const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
-    const url = new URL(`http://localhost:10200`);
-    url.searchParams.append('secret', secret);
-    return new Client(url)
+    const url = new URL(`http://91.107.212.189:8648`);
+    // const url = new URL(`http://localhost:10200`);
+    return new Client(url, { username: "onmax", password: "vts!" })
 }
 
 describe('Test for block module', async () => {
     const { block } = getClient();
     const current = (await block.current());
+    console.log(current);
     if (current.error) throw new Error('current block is undefined');
     const blockData = (await block.getBy({ blockNumber: current.data })).data!;
     it('.current ok', async () => expect(current.data).toBeGreaterThanOrEqual(0));

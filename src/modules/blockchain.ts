@@ -22,6 +22,10 @@ type TransactionBy<T extends GetTransactionByParams> = CallResult<Hash[] | Block
 
 
 export class BlockchainClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     /**
      * Returns the block number for the current head.
      */

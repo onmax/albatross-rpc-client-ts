@@ -1,5 +1,5 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { BlockNumber, Hash } from "../types/common";
+import { Auth, BlockNumber, Hash } from "../types/common";
 
 type ZKPStateKebab = {
     'latest-header-number': Hash
@@ -8,6 +8,10 @@ type ZKPStateKebab = {
 }
 
 export class ZkpComponentClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     public async getZkpState(options = DEFAULT_OPTIONS) {
         const req = { method: 'getZkpState', params: [] }
         const { data, error, context, metadata } = await super.call<ZKPStateKebab, typeof req>(req, options)

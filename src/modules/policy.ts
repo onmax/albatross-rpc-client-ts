@@ -1,5 +1,5 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { BatchIndex, BlockNumber, EpochIndex, PolicyConstants } from "../types/common";
+import { Auth, BatchIndex, BlockNumber, EpochIndex, PolicyConstants } from "../types/common";
 
 type JustBlockNumber = { blockNumber: BlockNumber };
 type JustEpochIndex = { epochIndex: EpochIndex };
@@ -8,6 +8,10 @@ type BlockNumberWithIndex = { blockNumber: BlockNumber, justIndex?: boolean };
 type SupplyAtParams = { genesisSupply: number, genesisTime: number, currentTime: number };
 
 export class PolicyClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     /**
      * Gets a bundle of policy constants
      */

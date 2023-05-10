@@ -1,5 +1,5 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Address, Signature, WalletAccount } from "../types/common";
+import { Address, Auth, Signature, WalletAccount } from "../types/common";
 
 type ImportKeyParams = { keyData: string; passphrase?: string };
 type IsAccountImportedParams = { address: Address };
@@ -11,6 +11,10 @@ type SignParams = { message: string, address: Address, passphrase: string, isHex
 type VerifySignatureParams = { message: string, publicKey: string, signature: Signature, isHex: boolean };
 
 export class WalletClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     public async importRawKey({ keyData, passphrase }: ImportKeyParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'importRawKey', params: [keyData, passphrase] }
         return super.call<Address, typeof req>(req, options)

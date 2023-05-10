@@ -1,9 +1,13 @@
-import { Address } from "../types/common";
+import { Address, Auth } from "../types/common";
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
 
 type SetAutomaticReactivationParams = { automaticReactivation: boolean };
 
 export class ValidatorClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     /**
      * Returns our validator address.
      */

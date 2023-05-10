@@ -1,6 +1,11 @@
+import { Auth } from "src/types/common";
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
 
 export class NetworkClient extends HttpClient {
+    constructor(url: URL, auth?: Auth) {
+        super(url, auth)
+    }
+
     /**
      * The peer ID for our local peer.
      */

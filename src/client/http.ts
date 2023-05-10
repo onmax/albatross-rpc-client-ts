@@ -20,11 +20,12 @@ export const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions = {
 }
 
 export type Context<Params extends any[] = any> = {
-    request: {
+    headers: HeadersInit,
+    body: {
         method: string;
         params: Params;
         id: number;
-    },
+    }
     timestamp: number;
     url: string;
 }
@@ -71,30 +72,25 @@ export class HttpClient {
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        const params = (requestParams as any[]).map((param: any) => (param === undefined ? null : param)) as Context<Request["params"]>['request']['params'];
+        const params = (requestParams as any[]).map((param: any) => (param === undefined ? null : param)) as Context<Request["params"]>['body']['params'];
 
         const context: Context<Request["params"]> = {
-            request: {
+            body: {
                 method,
                 params,
                 id: HttpClient.id,
+            },
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": this.auth ? `Basic ${Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64')}` : '',
             },
             url: this.url.href,
             timestamp: Date.now(),
         };
 
-        const headers: HeadersInit = {
-            "Content-Type": "application/json",
-        }
-
-        if (this.auth) {
-            headers["Authorization"] = `${this.auth.username}:${this.auth.password}`;
-        }
-
-
         const response = await fetch(this.url.href, {
             method: "POST",
-            headers,
+            headers: context.headers,
             body: JSON.stringify({
                 jsonrpc: "2.0",
                 method,
@@ -106,9 +102,9 @@ export class HttpClient {
             if (error.name === 'AbortError') {
                 return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` } as Response
             } else if (error.name === 'FetchError') {
-                return { ok: false, status: 503, statusText: `FetchError: Service Unavailable: ${error.message}` } as Response
+                return { ok: false, status: 503, statusText: `FetchError: Service Unavailable: ${error.message} ` } as Response
             } else {
-                return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message}` } as Response
+                return { ok: false, status: 503, statusText: `Service Unavailable: ${error.message} ` } as Response
             }
         });
 
@@ -123,7 +119,7 @@ export class HttpClient {
                     code: response.status,
                     message: response.status === 401
                         ? "Server requires authorization."
-                        : `Response status code not OK: ${response.status} ${response.statusText}`,
+                        : `Response status code not OK: ${response.status} ${response.statusText} `,
                 },
             }
         }
@@ -146,7 +142,7 @@ export class HttpClient {
                 metadata: undefined,
                 error: {
                     code: json.error.code,
-                    message: `${json.error.message}: ${json.error.data}`,
+                    message: `${json.error.message}: ${json.error.data} `,
                 },
             }
         }
@@ -157,7 +153,7 @@ export class HttpClient {
             metadata: undefined,
             error: {
                 code: -1,
-                message: `Unexpected format of data ${JSON.stringify(json)}`,
+                message: `Unexpected format of data ${JSON.stringify(json)} `,
             },
         }
     }

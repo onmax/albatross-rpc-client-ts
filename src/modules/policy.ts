@@ -1,21 +1,23 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Auth, BatchIndex, Block, BlockNumber, EpochIndex, PolicyConstants } from "../types/common";
+import { BatchIndex, BlockNumber, EpochIndex, PolicyConstants } from "../types/common";
 
 type JustIndexOption = { justIndex?: boolean };
 type EpochIndexOption = { epochIndex?: EpochIndex };
 type BatchIndexOption = { batchIndex?: BatchIndex };
 type SupplyAtParams = { genesisSupply: number, genesisTime: number, currentTime: number };
 
-export class PolicyClient extends HttpClient {
-    constructor(url: URL, auth?: Auth) {
-        super(url, auth)
+export class PolicyClient {
+    private client: HttpClient;
+
+    constructor(http: HttpClient) {
+        this.client = http;
     }
 
     /**
      * Gets a bundle of policy constants
      */
     public async getPolicyConstants(options = DEFAULT_OPTIONS) {
-        return super.call<PolicyConstants>({ method: 'getPolicyConstants' }, options)
+        return this.client.call<PolicyConstants>({ method: 'getPolicyConstants' }, options)
     }
 
     /**
@@ -27,7 +29,7 @@ export class PolicyClient extends HttpClient {
      * @returns The epoch number at the given block number (height) or index
      */
     public async getEpochAt(blockNumber: BlockNumber, p?: JustIndexOption, options = DEFAULT_OPTIONS) {
-        return super.call<EpochIndex>({ method: p?.justIndex ? 'getEpochIndexAt' : 'getEpochAt', params: [blockNumber] }, options)
+        return this.client.call<EpochIndex>({ method: p?.justIndex ? 'getEpochIndexAt' : 'getEpochAt', params: [blockNumber] }, options)
     }
 
     /**
@@ -39,7 +41,7 @@ export class PolicyClient extends HttpClient {
      * @returns The epoch number at the given block number (height).
      */
     public async getBatchAt(batchIndex: BatchIndex, p?: JustIndexOption, options = DEFAULT_OPTIONS) {
-        return super.call<BatchIndex>({ method: p?.justIndex ? 'getBatchIndexAt' : 'getBatchAt', params: [batchIndex] }, options)
+        return this.client.call<BatchIndex>({ method: p?.justIndex ? 'getBatchIndexAt' : 'getBatchAt', params: [batchIndex] }, options)
     }
 
     /**
@@ -49,7 +51,7 @@ export class PolicyClient extends HttpClient {
      * @returns The number (height) of the next election macro block after a given block number (height).
      */
     public async getElectionBlockAfter(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getElectionBlockAfter', params: [blockNumber] }, options)
+        return this.client.call<BlockNumber>({ method: 'getElectionBlockAfter', params: [blockNumber] }, options)
     }
 
     /**
@@ -60,7 +62,7 @@ export class PolicyClient extends HttpClient {
      * @returns The block number (height) of the preceding election macro block before a given block number (height).
      */
     public async getElectionBlockBefore(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getElectionBlockBefore', params: [blockNumber] }, options)
+        return this.client.call<BlockNumber>({ method: 'getElectionBlockBefore', params: [blockNumber] }, options)
     }
 
     /**
@@ -71,7 +73,7 @@ export class PolicyClient extends HttpClient {
      * @returns 
      */
     public async getLastElectionBlock(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getLastElectionBlock', params: [blockNumber] }, options)
+        return this.client.call<BlockNumber>({ method: 'getLastElectionBlock', params: [blockNumber] }, options)
     }
 
     /**
@@ -81,7 +83,7 @@ export class PolicyClient extends HttpClient {
      * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
      */
     public async getIsElectionBlockAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<Boolean>({ method: 'getIsElectionBlockAt', params: [blockNumber] }, options)
+        return this.client.call<Boolean>({ method: 'getIsElectionBlockAt', params: [blockNumber] }, options)
     }
 
     /**
@@ -91,7 +93,7 @@ export class PolicyClient extends HttpClient {
      * @returns The block number (height) of the next macro block after a given block number (height).
      */
     public async getMacroBlockAfter(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getMacroBlockAfter', params: [blockNumber] }, options)
+        return this.client.call<BlockNumber>({ method: 'getMacroBlockAfter', params: [blockNumber] }, options)
     }
 
     /**
@@ -101,7 +103,7 @@ export class PolicyClient extends HttpClient {
      * @returns The block number (height) of the preceding macro block before a given block number (height).
      */
     public async getMacroBlockBefore(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getMacroBlockBefore', params: [blockNumber] }, options)
+        return this.client.call<BlockNumber>({ method: 'getMacroBlockBefore', params: [blockNumber] }, options)
     }
 
     /**
@@ -112,7 +114,7 @@ export class PolicyClient extends HttpClient {
      * @returns The block number (height) of the last macro block at a given block number (height).
      */
     public async getLastMacroBlock(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getLastMacroBlock', params: [blockNumber] }, options)
+        return this.client.call<BlockNumber>({ method: 'getLastMacroBlock', params: [blockNumber] }, options)
     }
 
 
@@ -124,7 +126,7 @@ export class PolicyClient extends HttpClient {
      * @returns A boolean expressing if the block at a given block number (height) is a macro block.
      */
     public async getIsMacroBlockAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<Boolean>({ method: 'getIsMacroBlockAt', params: [blockNumber] }, options)
+        return this.client.call<Boolean>({ method: 'getIsMacroBlockAt', params: [blockNumber] }, options)
     }
 
     /**
@@ -135,7 +137,7 @@ export class PolicyClient extends HttpClient {
      */
     public async getIsMicroBlockAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
         const req = { method: 'getIsMicroBlockAt', params: [blockNumber] }
-        return super.call<Boolean>(req, options)
+        return this.client.call<Boolean>(req, options)
     }
 
     /**
@@ -146,7 +148,7 @@ export class PolicyClient extends HttpClient {
      */
     public async getFirstBlockOf({ epochIndex }: EpochIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getFirstBlockOf', params: [epochIndex] }
-        return super.call<BlockNumber>(req, options)
+        return this.client.call<BlockNumber>(req, options)
     }
 
     /**
@@ -157,7 +159,7 @@ export class PolicyClient extends HttpClient {
      */
     public async getFirstBlockOfBatch({ batchIndex }: BatchIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getFirstBlockOfBatch', params: [batchIndex] }
-        return super.call<BlockNumber>(req, options)
+        return this.client.call<BlockNumber>(req, options)
     }
 
     /**
@@ -168,7 +170,7 @@ export class PolicyClient extends HttpClient {
      */
     public async getElectionBlockOf({ epochIndex }: EpochIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getElectionBlockOf', params: [epochIndex] }
-        return super.call<BlockNumber>(req, options)
+        return this.client.call<BlockNumber>(req, options)
     }
 
     /**
@@ -179,7 +181,7 @@ export class PolicyClient extends HttpClient {
      */
     public async getMacroBlockOf({ batchIndex }: BatchIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getMacroBlockOf', params: [batchIndex] }
-        return super.call<BlockNumber>(req, options)
+        return this.client.call<BlockNumber>(req, options)
     }
 
     /**
@@ -191,7 +193,7 @@ export class PolicyClient extends HttpClient {
      */
     public async getFirstBatchOfEpoch(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
         const req = { method: 'getFirstBatchOfEpoch', params: [blockNumber] }
-        return super.call<BlockNumber>(req, options)
+        return this.client.call<BlockNumber>(req, options)
     }
 
     /**
@@ -208,6 +210,6 @@ export class PolicyClient extends HttpClient {
      */
     public async getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'getSupplyAt', params: [genesisSupply, genesisTime, currentTime] }
-        return super.call<number>(req, options)
+        return this.client.call<number>(req, options)
     }
 }

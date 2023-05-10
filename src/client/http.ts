@@ -25,6 +25,7 @@ export type Context = {
         method: string;
         params: any[];
         id: number;
+        jsonrpc: string;
     }
     timestamp: number;
     url: string;
@@ -54,6 +55,7 @@ export class HttpClient {
     private auth: Auth | undefined;
 
     constructor(url: URL, auth?: Auth) {
+        if (!url) throw new Error("URL is required");
         this.url = url;
         this.auth = auth;
     }
@@ -63,37 +65,37 @@ export class HttpClient {
         Metadata = undefined,
     >(
         request: { method: string; params?: any[], withMetadata?: boolean },
-        options: HttpOptions
+        options: HttpOptions = DEFAULT_OPTIONS
     ): Promise<CallResult<Data, Metadata>> {
-        const { method, params, withMetadata } = request;
+        const { method, params: requestParams, withMetadata } = request;
         const { timeout } = options;
+
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
+        const useAuth = this.auth && this.auth.username && this.auth.password;
+        const params = requestParams?.map((item) => item === undefined ? null : item) || [];
+
         const context: Context = {
             body: {
                 method,
-                params: params?.map((item) => item === undefined ? null : item) || [],
-                id: HttpClient.id,
+                params,
+                jsonrpc: "2.0",
+                id: HttpClient.id++,
             },
             headers: {
                 "Content-Type": "application/json",
-                "Authorization": this.auth ? `Basic ${Buffer.from(`${this.auth.username}:${this.auth.password}`).toString('base64')}` : '',
+                "Authorization": useAuth ? `Basic ${Buffer.from(`${this.auth!.username}:${this.auth!.password}`).toString('base64')}` : '',
             },
             url: this.url.href,
             timestamp: Date.now(),
         };
 
-        const response = await fetch(this.url.href, {
+        const response = await fetch(context.url, {
             method: "POST",
             headers: context.headers,
-            body: JSON.stringify({
-                jsonrpc: "2.0",
-                method,
-                params,
-                id: HttpClient.id++,
-            }),
+            body: JSON.stringify(context.body),
             signal: controller.signal,
         }).catch((error) => {
             if (error.name === 'AbortError') {

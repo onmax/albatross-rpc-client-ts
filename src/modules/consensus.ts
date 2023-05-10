@@ -1,5 +1,5 @@
 import { Context, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, HttpClient, SendTxCallOptions } from "../client/http";
-import { Address, Auth, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from "../types/common";
+import { Address, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from "../types/common";
 import { LogType } from "../types/enums";
 import { BlockLog, TransactionLog } from "../types/logs";
 import { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from "./blockchain";
@@ -28,12 +28,13 @@ export type DeleteValidatorTxParams = { validator: Address, recipient: Address, 
 
 export type TxLog = { tx: Transaction, log?: BlockLog, hash: Hash }
 
-export class ConsensusClient extends HttpClient {
+export class ConsensusClient {
+    private client: HttpClient;
     private blockchainClient: BlockchainClient;
     private blockchainStream: BlockchainStream;
 
-    constructor(url: URL, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream, auth?: Auth) {
-        super(url, auth);
+    constructor(client: HttpClient, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream) {
+        this.client = client;
         this.blockchainClient = blockchainClient;
         this.blockchainStream = blockchainStream;
     }
@@ -77,14 +78,14 @@ export class ConsensusClient extends HttpClient {
  */
     public isConsensusEstablished(options = DEFAULT_OPTIONS) {
         const req = { method: 'isConsensusEstablished' }
-        return super.call<Boolean>(req, options)
+        return this.client.call<Boolean>(req, options)
     }
 
     /**
      * Given a serialized transaction, it will return the corresponding transaction struct
      */
     public getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, options = DEFAULT_OPTIONS) {
-        return super.call<Transaction>({ method: 'getRawTransactionInfo', params: [rawTransaction] }, options)
+        return this.client.call<Transaction>({ method: 'getRawTransactionInfo', params: [rawTransaction] }, options)
     }
 
     /**
@@ -93,10 +94,10 @@ export class ConsensusClient extends HttpClient {
     public createTransaction(p: TransactionParams, options = DEFAULT_OPTIONS) {
         if (p.data) {
             const req = { method: 'createBasicTransactionWithData', params: [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)] }
-            return super.call<RawTransaction>(req, options)
+            return this.client.call<RawTransaction>(req, options)
         } else {
             const req = { method: 'createBasicTransaction', params: [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-            return super.call<RawTransaction>(req, options)
+            return this.client.call<RawTransaction>(req, options)
         }
     }
 
@@ -107,7 +108,7 @@ export class ConsensusClient extends HttpClient {
         const req = p.data
             ? { method: 'sendBasicTransactionWithData', params: [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)] }
             : { method: 'sendBasicTransaction', params: [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -124,7 +125,7 @@ export class ConsensusClient extends HttpClient {
      */
     public createNewVestingTransaction(p: VestingTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createNewVestingTransaction', params: [p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -132,7 +133,7 @@ export class ConsensusClient extends HttpClient {
      */
     public sendNewVestingTransaction(p: VestingTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendNewVestingTransaction', params: [p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -149,7 +150,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createRedeemVestingTransaction(p: RedeemVestingTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createRedeemVestingTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -157,7 +158,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendRedeemVestingTransaction(p: RedeemVestingTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendRedeemVestingTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -174,7 +175,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -182,7 +183,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -199,7 +200,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -207,7 +208,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -225,7 +226,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
 
@@ -235,7 +236,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -254,7 +255,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createRedeemEarlyHtlcTransaction', params: [p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -263,7 +264,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendRedeemEarlyHtlcTransaction', params: [p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -282,7 +283,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'signRedeemEarlyHtlcTransaction', params: [p.wallet, p.htlcAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<string>(req, options)
+        return this.client.call<string>(req, options)
     }
 
     /**
@@ -291,7 +292,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createNewStakerTransaction', params: [p.senderWallet, p.staker, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -300,7 +301,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendNewStakerTransaction', params: [p.senderWallet, p.staker, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -319,7 +320,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createStakeTransaction', params: [p.senderWallet, p.staker, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -328,7 +329,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendStakeTransaction', params: [p.senderWallet, p.staker, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -348,7 +349,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createUpdateStakerTransaction(p: UpdateStakerTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createUpdateStakerTransaction', params: [p.senderWallet, p.staker, p.newDelegation, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -358,7 +359,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendUpdateStakerTransaction(p: UpdateStakerTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendUpdateStakerTransaction', params: [p.senderWallet, p.staker, p.newDelegation, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -378,7 +379,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createUnstakeTransaction(p: UnstakeTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createUnstakeTransaction', params: [p.staker, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -387,7 +388,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendUnstakeTransaction(p: UnstakeTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendUnstakeTransaction', params: [p.staker, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -410,7 +411,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createNewValidatorTransaction(p: NewValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createNewValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -423,7 +424,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendNewValidatorTransaction(p: NewValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendNewValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -452,7 +453,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createUpdateValidatorTransaction(p: UpdateValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createUpdateValidatorTransaction', params: [p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -466,7 +467,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendUpdateValidatorTransaction', params: [p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -490,7 +491,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createDeactivateValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -499,7 +500,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendDeactivateValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -519,7 +520,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createReactivateValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -528,7 +529,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendReactivateValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -548,7 +549,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createUnparkValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -557,7 +558,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendUnparkValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -577,7 +578,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createRetireValidatorTransaction(p: RetireValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createRetireValidatorTransaction', params: [p.senderWallet, p.validator, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -586,7 +587,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendRetireValidatorTransaction(p: RetireValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendRetireValidatorTransaction', params: [p.senderWallet, p.validator, p.fee, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**
@@ -608,7 +609,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async createDeleteValidatorTransaction(p: DeleteValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'createDeleteValidatorTransaction', params: [p.validator, p.recipient, p.fee, p.value, this.getValidityStartHeight(p)] }
-        return super.call<RawTransaction>(req, options)
+        return this.client.call<RawTransaction>(req, options)
     }
 
     /**
@@ -619,7 +620,7 @@ export class ConsensusClient extends HttpClient {
      */
     public async sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'sendDeleteValidatorTransaction', params: [p.validator, p.recipient, p.fee, p.value, this.getValidityStartHeight(p)] }
-        return super.call<Hash>(req, options)
+        return this.client.call<Hash>(req, options)
     }
 
     /**

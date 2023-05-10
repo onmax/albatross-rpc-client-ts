@@ -73,8 +73,9 @@ export class WebSocketClient {
         request: Request,
         userOptions: StreamOptions<Data>
     ): Promise<Subscription<Data>> {
+        const useAuth = this.auth && this.auth.username && this.auth.password;
         const headers: HeadersInit = {
-            "Authorization": this.auth ? Buffer.from(`Basic ${this.auth.username}:${this.auth.password}`).toString('base64') : ''
+            "Authorization": useAuth ? Buffer.from(`Basic ${this.auth!.username}:${this.auth!.password}`).toString('base64') : ''
         };
 
         const ws = new WebSocket(this.url.href, { headers });

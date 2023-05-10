@@ -1,12 +1,14 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Auth, Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
+import { Hash, MempoolInfo, RawTransaction, Transaction } from "../types/common";
 
 type PushTransactionParams = { transaction: RawTransaction, withHighPriority?: boolean };
 type MempoolContentParams = { includeTransactions: boolean };
 
-export class MempoolClient extends HttpClient {
-    constructor(url: URL, auth?: Auth) {
-        super(url, auth)
+export class MempoolClient {
+    private client: HttpClient;
+
+    constructor(http: HttpClient) {
+        this.client = http;
     }
 
     /**
@@ -16,7 +18,7 @@ export class MempoolClient extends HttpClient {
      * @returns Transaction hash
      */
     public pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options = DEFAULT_OPTIONS) {
-        return super.call<Hash>({ method: withHighPriority ? 'pushHighPriorityTransaction' : 'pushTransaction', params: [transaction] }, options)
+        return this.client.call<Hash>({ method: withHighPriority ? 'pushHighPriorityTransaction' : 'pushTransaction', params: [transaction] }, options)
     }
 
     /**
@@ -26,14 +28,14 @@ export class MempoolClient extends HttpClient {
      * @returns 
      */
     public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
-        return super.call<(Hash | Transaction)[]>({ method: 'mempoolContent', params: [includeTransactions] }, options)
+        return this.client.call<(Hash | Transaction)[]>({ method: 'mempoolContent', params: [includeTransactions] }, options)
     }
 
     /**
      * @returns 
      */
     public mempool(options = DEFAULT_OPTIONS) {
-        return super.call<MempoolInfo>({ method: 'mempool' }, options)
+        return this.client.call<MempoolInfo>({ method: 'mempool' }, options)
     }
 
     /**
@@ -41,6 +43,6 @@ export class MempoolClient extends HttpClient {
      * @returns
      */
     public getMinFeePerByte(options = DEFAULT_OPTIONS) {
-        return super.call</* f64 */number>({ method: 'getMinFeePerByte' }, options)
+        return this.client.call</* f64 */number>({ method: 'getMinFeePerByte' }, options)
     }
 }

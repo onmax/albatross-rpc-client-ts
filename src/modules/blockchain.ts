@@ -1,5 +1,5 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Account, Address, Auth, BatchIndex, Block, BlockNumber, BlockchainState, EpochIndex, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
+import { Account, Address, BatchIndex, Block, BlockNumber, BlockchainState, EpochIndex, Hash, Inherent, PartialBlock, PartialValidator, SlashedSlot, Slot, Staker, Transaction, Validator } from "../types/common";
 import { LogType } from "../types/enums";
 
 export type GetBlockByHashParams = { includeTransactions?: boolean };
@@ -16,44 +16,46 @@ export type SubscribeForValidatorElectionByAddressParams = { address: Address };
 export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[] };
 
 
-export class BlockchainClient extends HttpClient {
-    constructor(url: URL, auth?: Auth) {
-        super(url, auth)
+export class BlockchainClient {
+    private client: HttpClient;
+
+    constructor(http: HttpClient) {
+        this.client = http;
     }
 
     /**
      * Returns the block number for the current head.
      */
     public async getBlockNumber(options = DEFAULT_OPTIONS) {
-        return super.call<BlockNumber>({ method: 'getBlockNumber' }, options)
+        return this.client.call<BlockNumber>({ method: 'getBlockNumber' }, options)
     }
 
     /**
      * Returns the batch number for the current head.
      */
     public async getBatchNumber(options = DEFAULT_OPTIONS) {
-        return super.call<BatchIndex>({ method: 'getBatchNumber' }, options)
+        return this.client.call<BatchIndex>({ method: 'getBatchNumber' }, options)
     }
 
     /**
      * Returns the epoch number for the current head.
      */
     public async getEpochNumber(options = DEFAULT_OPTIONS) {
-        return super.call<EpochIndex>({ method: 'getEpochNumber' }, options)
+        return this.client.call<EpochIndex>({ method: 'getEpochNumber' }, options)
     }
 
     /**
      * Tries to fetch a block given its hash. It has an option to include the transactions in the block, which defaults to false.
      */
     public async getBlockByHash<T extends GetBlockByHashParams>(hash: Hash, p?: T, options = DEFAULT_OPTIONS) {
-        return super.call<T["includeTransactions"] extends true ? Block : PartialBlock>({ method: 'getBlockByHash', params: [hash, p?.includeTransactions] }, options)
+        return this.client.call<T["includeTransactions"] extends true ? Block : PartialBlock>({ method: 'getBlockByHash', params: [hash, p?.includeTransactions] }, options)
     }
 
     /**
      * Tries to fetch a block given its number. It has an option to include the transactions in the block, which defaults to false.
      */
     public async getBlockByNumber<T extends GetBlockByBlockNumberParams>(blockNumber: BlockNumber, p?: T, options = DEFAULT_OPTIONS) {
-        return super.call<T["includeTransactions"] extends true ? Block : PartialBlock>({ method: 'getBlockByNumber', params: [blockNumber, p?.includeTransactions] }, options)
+        return this.client.call<T["includeTransactions"] extends true ? Block : PartialBlock>({ method: 'getBlockByNumber', params: [blockNumber, p?.includeTransactions] }, options)
     }
 
     /**
@@ -62,7 +64,7 @@ export class BlockchainClient extends HttpClient {
      */
     public async getLatestBlock<T extends GetLatestBlockParams>(p = { includeTransactions: false } as T, options = DEFAULT_OPTIONS) {
         const req = { method: 'getLatestBlock', params: [p.includeTransactions] }
-        return super.call<T["includeTransactions"] extends true ? Block : PartialBlock>(req, options)
+        return this.client.call<T["includeTransactions"] extends true ? Block : PartialBlock>(req, options)
     }
 
     /**
@@ -71,28 +73,28 @@ export class BlockchainClient extends HttpClient {
      * at the given height.
      */
     public async getSlotAt<T extends GetSlotAtBlockParams>(blockNumber: BlockNumber, p?: T, options = DEFAULT_OPTIONS) {
-        return super.call<Slot>({ method: 'getSlotAt', params: [blockNumber, p?.offsetOpt], withMetadata: p?.withMetadata }, options)
+        return this.client.call<Slot>({ method: 'getSlotAt', params: [blockNumber, p?.offsetOpt], withMetadata: p?.withMetadata }, options)
     }
 
     /**
      * Fetchs the transaction(s) given the hash.
      */
     public async getTransactionByHash(hash: Hash, options = DEFAULT_OPTIONS) {
-        return super.call<Transaction>({ method: 'getTransactionByHash', params: [hash] }, options);
+        return this.client.call<Transaction>({ method: 'getTransactionByHash', params: [hash] }, options);
     }
 
     /**
      * Fetchs the transaction(s) given the block number.
      */
     public async getTransactionsByBlockNumber(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<Transaction[]>({ method: 'getTransactionsByBlockNumber', params: [blockNumber] }, options);
+        return this.client.call<Transaction[]>({ method: 'getTransactionsByBlockNumber', params: [blockNumber] }, options);
     }
 
     /**
      * Fetchs the transaction(s) given the batch number.
      */
     public async getTransactionsByBatchNumber(batchIndex: BatchIndex, options = DEFAULT_OPTIONS) {
-        return super.call<Transaction[]>({ method: 'getTransactionsByBatchNumber', params: [batchIndex] }, options);
+        return this.client.call<Transaction[]>({ method: 'getTransactionsByBatchNumber', params: [batchIndex] }, options);
     }
 
     /**
@@ -105,7 +107,7 @@ export class BlockchainClient extends HttpClient {
      */
     public async getTransactionsByAddress<T extends GetTransactionsByAddressParams>(address: Address, p?: T, options = DEFAULT_OPTIONS) {
         const req = { method: p?.justHashes ? 'getTransactionHashesByAddress' : 'getTransactionsByAddress', params: [address, p?.max] }
-        return super.call<T["justHashes"] extends true ? Transaction[] : Hash[]>(req, options);
+        return this.client.call<T["justHashes"] extends true ? Transaction[] : Hash[]>(req, options);
     }
 
     /**
@@ -113,7 +115,7 @@ export class BlockchainClient extends HttpClient {
      * that this only considers blocks in the main chain.
      */
     public async getInherentsByBlockNumber(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
-        return super.call<Inherent[]>({ method: 'getInherentsByBlockNumber', params: [blockNumber] }, options)
+        return this.client.call<Inherent[]>({ method: 'getInherentsByBlockNumber', params: [blockNumber] }, options)
     }
 
     /**
@@ -121,7 +123,7 @@ export class BlockchainClient extends HttpClient {
      * that this only considers blocks in the main chain.
      */
     public async getInherentsByBatchNumber(batchIndex: BatchIndex, options = DEFAULT_OPTIONS) {
-        return super.call<Inherent[]>({ method: 'getInherentsByBatchNumber', params: [batchIndex] }, options)
+        return this.client.call<Inherent[]>({ method: 'getInherentsByBatchNumber', params: [batchIndex] }, options)
     }
 
     /**
@@ -129,7 +131,7 @@ export class BlockchainClient extends HttpClient {
      */
     public async getAccountBy<T extends GetAccountByAddressParams>(address: Address, { withMetadata }: T, options = DEFAULT_OPTIONS) {
         const req = { method: 'getAccountByAddress', params: [address], withMetadata }
-        return super.call<Account, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
+        return this.client.call<Account, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
@@ -137,7 +139,7 @@ export class BlockchainClient extends HttpClient {
     */
     public async getActiveValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
         const req = { method: 'getActiveValidators', withMetadata }
-        return super.call<Validator[], T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
+        return this.client.call<Validator[], T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
@@ -145,7 +147,7 @@ export class BlockchainClient extends HttpClient {
      * and that were disabled.
      */
     public async getCurrentSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
-        return super.call<SlashedSlot[]>({ method: 'getCurrentSlashedSlots', withMetadata }, options)
+        return this.client.call<SlashedSlot[]>({ method: 'getCurrentSlashedSlots', withMetadata }, options)
     }
 
     /**
@@ -154,7 +156,7 @@ export class BlockchainClient extends HttpClient {
      */
     public async getPreviousSlashedSlots<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
         const req = { method: 'getPreviousSlashedSlots', withMetadata }
-        return super.call<SlashedSlot[], T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
+        return this.client.call<SlashedSlot[], T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
@@ -162,7 +164,7 @@ export class BlockchainClient extends HttpClient {
      */
     public async getParkedValidators<T extends { withMetadata: boolean }>({ withMetadata }: T = { withMetadata: false } as T, options = DEFAULT_OPTIONS) {
         const req = { method: 'getParkedValidators', withMetadata }
-        return super.call<{ blockNumber: BlockNumber, validators: Validator[] }, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
+        return this.client.call<{ blockNumber: BlockNumber, validators: Validator[] }, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
 
     /**
@@ -170,7 +172,7 @@ export class BlockchainClient extends HttpClient {
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
     public async getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
-        return super.call<PartialValidator>({ method: 'getValidatorByAddress', params: [address] }, options)
+        return this.client.call<PartialValidator>({ method: 'getValidatorByAddress', params: [address] }, options)
     }
 
     /**
@@ -180,7 +182,7 @@ export class BlockchainClient extends HttpClient {
      * This function requires the read lock acquisition prior to its execution.
      */
     public async getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
-        return super.call<Staker[]>({ method: 'getStakersByAddress', params: [address] }, options)
+        return this.client.call<Staker[]>({ method: 'getStakersByAddress', params: [address] }, options)
 
     }
 
@@ -188,6 +190,6 @@ export class BlockchainClient extends HttpClient {
      * Tries to fetch a staker information given its address.
      */
     public async getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
-        return super.call<Staker>({ method: 'getStakerByAddress', params: [address] }, options)
+        return this.client.call<Staker>({ method: 'getStakerByAddress', params: [address] }, options)
     }
 }

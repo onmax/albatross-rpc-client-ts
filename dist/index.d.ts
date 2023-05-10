@@ -491,15 +491,16 @@ type ErrorStreamReturn = {
     code: number;
     message: string;
 };
-type Subscription<Data, Params extends any[]> = {
+type Subscription<Data> = {
     next: (callback: (data: MaybeStreamResponse<Data>) => void) => void;
     close: () => void;
     context: {
         headers: WebSocket.ClientOptions["headers"];
         body: {
             method: string;
-            params: Params;
+            params: any[];
             id: number;
+            jsonrpc: string;
         };
         timestamp: number;
         url: string;
@@ -529,9 +530,9 @@ declare class WebSocketClient {
     constructor(url: URL, auth?: Auth);
     subscribe<Data, Request extends {
         method: string;
-        params: any[];
+        params?: any[];
         withMetadata?: boolean;
-    }>(request: Request, userOptions: StreamOptions<Data>): Promise<Subscription<Data, Request["params"]>>;
+    }>(request: Request, userOptions: StreamOptions<Data>): Promise<Subscription<Data>>;
 }
 
 type HttpOptions = {
@@ -543,18 +544,19 @@ type SendTxCallOptions = HttpOptions & ({
 declare const DEFAULT_OPTIONS: HttpOptions;
 declare const DEFAULT_TIMEOUT_CONFIRMATION: number;
 declare const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions;
-type Context<Params extends any[] = any> = {
+type Context = {
     headers: HeadersInit;
     body: {
         method: string;
-        params: Params;
+        params: any[];
         id: number;
+        jsonrpc: string;
     };
     timestamp: number;
     url: string;
 };
-type CallResult<Params extends any[], Data, Metadata = undefined> = {
-    context: Context<Params>;
+type CallResult<Data, Metadata = undefined> = {
+    context: Context;
 } & ({
     data: Data;
     metadata: Metadata;
@@ -572,47 +574,31 @@ declare class HttpClient {
     private static id;
     private auth;
     constructor(url: URL, auth?: Auth);
-    call<Data, Request extends {
+    call<Data, Metadata = undefined>(request: {
         method: string;
-        params: any[];
+        params?: any[];
         withMetadata?: boolean;
-    }, Metadata = undefined>(request: Request, options: HttpOptions): Promise<CallResult<Request["params"], Data, Metadata>>;
+    }, options?: HttpOptions): Promise<CallResult<Data, Metadata>>;
 }
 
-type GetBlockByParams = ({
-    hash: Hash;
-} | {
-    blockNumber: BlockNumber;
-}) & {
+type GetBlockByHashParams = {
+    includeTransactions?: boolean;
+};
+type GetBlockByBlockNumberParams = {
     includeTransactions?: boolean;
 };
 type GetLatestBlockParams = {
     includeTransactions?: boolean;
 };
-type GetSlotAtParams = {
-    blockNumber: BlockNumber;
+type GetSlotAtBlockParams = {
     offsetOpt?: number;
     withMetadata?: boolean;
 };
 type GetTransactionsByAddressParams = {
-    address: Address;
     max?: number;
     justHashes?: boolean;
 };
-type GetTransactionByParams = {
-    hash: Hash;
-} | {
-    blockNumber: BlockNumber;
-} | {
-    batchNumber: BatchIndex;
-} | GetTransactionsByAddressParams;
-type GetInherentsByParams = {
-    batchNumber: BatchIndex;
-} | {
-    blockNumber: BlockNumber;
-};
 type GetAccountByAddressParams = {
-    address: Address;
     withMetadata?: boolean;
 };
 type GetValidatorByAddressParams = {
@@ -634,82 +620,101 @@ type SubscribeForLogsByAddressesAndTypesParams$1 = {
     addresses?: Address[];
     types?: LogType[];
 };
-type TransactionBy<T extends GetTransactionByParams> = CallResult<Hash[] | BlockNumber[] | (BlockNumber | number)[], T extends {
-    hash: Hash;
-} ? Transaction : T extends GetTransactionsByAddressParams ? T["justHashes"] extends true ? Hash[] : Transaction[] : Transaction[]>;
-declare class BlockchainClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
+declare class BlockchainClient {
+    private client;
+    constructor(http: HttpClient);
     /**
      * Returns the block number for the current head.
      */
-    getBlockNumber(options?: HttpOptions): Promise<CallResult<never[], number, undefined>>;
+    getBlockNumber(options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Returns the batch number for the current head.
      */
-    getBatchNumber(options?: HttpOptions): Promise<CallResult<never[], number, undefined>>;
+    getBatchNumber(options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Returns the epoch number for the current head.
      */
-    getEpochNumber(options?: HttpOptions): Promise<CallResult<never[], number, undefined>>;
+    getEpochNumber(options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
-     * Tries to fetch a block given its hash or block number. It has an option to include the transactions in the block, which defaults to false.
+     * Tries to fetch a block given its hash. It has an option to include the transactions in the block, which defaults to false.
      */
-    getBlockBy<T extends GetBlockByParams>(p: T, options?: HttpOptions): Promise<CallResult<(string | boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined> | CallResult<(number | boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+    getBlockByHash<T extends GetBlockByHashParams>(hash: Hash, p?: T, options?: HttpOptions): Promise<CallResult<T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+    /**
+     * Tries to fetch a block given its number. It has an option to include the transactions in the block, which defaults to false.
+     */
+    getBlockByNumber<T extends GetBlockByBlockNumberParams>(blockNumber: BlockNumber, p?: T, options?: HttpOptions): Promise<CallResult<T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
     /**
      * Returns the block at the head of the main chain. It has an option to include the
      * transactions in the block, which defaults to false.
      */
-    getLatestBlock<T extends GetLatestBlockParams>(p?: T, options?: HttpOptions): Promise<CallResult<(boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+    getLatestBlock<T extends GetLatestBlockParams>(p?: T, options?: HttpOptions): Promise<CallResult<T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
     /**
      * Returns the information for the slot owner at the given block height and offset. The
      * offset is optional, it will default to getting the offset for the existing block
      * at the given height.
      */
-    getSlotAt<T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T, options?: HttpOptions): Promise<CallResult<(number | undefined)[], Slot, undefined>>;
+    getSlotAt<T extends GetSlotAtBlockParams>(blockNumber: BlockNumber, p?: T, options?: HttpOptions): Promise<CallResult<Slot, undefined>>;
     /**
-     * Fetchs the transaction(s) given the parameters. The parameters can be a hash, a block number, a batch number or an address.
+     * Fetchs the transaction(s) given the hash.
+     */
+    getTransactionByHash(hash: Hash, options?: HttpOptions): Promise<CallResult<Transaction, undefined>>;
+    /**
+     * Fetchs the transaction(s) given the block number.
+     */
+    getTransactionsByBlockNumber(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<Transaction[], undefined>>;
+    /**
+     * Fetchs the transaction(s) given the batch number.
+     */
+    getTransactionsByBatchNumber(batchIndex: BatchIndex, options?: HttpOptions): Promise<CallResult<Transaction[], undefined>>;
+    /**
+     * Fetchs the transaction(s) given the address.
      *
-     * In case of address, it returns the latest transactions for a given address. All the transactions
+     * It returns the latest transactions for a given address. All the transactions
      * where the given address is listed as a recipient or as a sender are considered. Reward
      * transactions are also returned. It has an option to specify the maximum number of transactions
      * to fetch, it defaults to 500.
      */
-    getTransactionBy<T extends GetTransactionByParams>(p: T, options?: HttpOptions): Promise<TransactionBy<T> | CallResult<(number | `NQ${number} ${string}` | undefined)[], Transaction[], undefined>>;
+    getTransactionsByAddress<T extends GetTransactionsByAddressParams>(address: Address, p?: T, options?: HttpOptions): Promise<CallResult<T["justHashes"] extends true ? Transaction[] : string[], undefined>>;
     /**
-     * Returns all the inherents (including reward inherents) for the parameter. Note
+     * Returns all the inherents (including reward inherents) give the block number. Note
      * that this only considers blocks in the main chain.
      */
-    getInherentsBy<T extends GetInherentsByParams>(p: T, options?: HttpOptions): Promise<CallResult<number[], Inherent[], undefined>>;
+    getInherentsByBlockNumber(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<Inherent[], undefined>>;
+    /**
+     * Returns all the inherents (including reward inherents) give the batch number. Note
+     * that this only considers blocks in the main chain.
+     */
+    getInherentsByBatchNumber(batchIndex: BatchIndex, options?: HttpOptions): Promise<CallResult<Inherent[], undefined>>;
     /**
      * Tries to fetch the account at the given address.
      */
-    getAccountBy<T extends GetAccountByAddressParams>({ address, withMetadata }: T, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
+    getAccountBy<T extends GetAccountByAddressParams>(address: Address, { withMetadata }: T, options?: HttpOptions): Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
     /**
     * Returns a collection of the currently active validator's addresses and balances.
     */
     getActiveValidators<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<never[], Validator[], T["withMetadata"] extends true ? BlockchainState : undefined>>;
+    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<Validator[], T["withMetadata"] extends true ? BlockchainState : undefined>>;
     /**
      * Returns information about the currently slashed slots. This includes slots that lost rewards
      * and that were disabled.
      */
     getCurrentSlashedSlots<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<never[], SlashedSlot[], undefined>>;
+    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<SlashedSlot[], undefined>>;
     /**
      * Returns information about the slashed slots of the previous batch. This includes slots that
      * lost rewards and that were disabled.
      */
     getPreviousSlashedSlots<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<never[], SlashedSlot[], T["withMetadata"] extends true ? BlockchainState : undefined>>;
+    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<SlashedSlot[], T["withMetadata"] extends true ? BlockchainState : undefined>>;
     /**
      * Returns information about the currently parked validators.
      */
     getParkedValidators<T extends {
         withMetadata: boolean;
-    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<never[], {
+    }>({ withMetadata }?: T, options?: HttpOptions): Promise<CallResult<{
         blockNumber: BlockNumber;
         validators: Validator[];
     }, T["withMetadata"] extends true ? BlockchainState : undefined>>;
@@ -717,43 +722,41 @@ declare class BlockchainClient extends HttpClient {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], PartialValidator, undefined>>;
+    getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<PartialValidator, undefined>>;
     /**
      * Fetches all stakers for a given validator.
      * IMPORTANT: This operation iterates over all stakers of the staking contract
      * and thus is extremely computationally expensive.
      * This function requires the read lock acquisition prior to its execution.
      */
-    getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], Staker[], undefined>>;
+    getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<Staker[], undefined>>;
     /**
      * Tries to fetch a staker information given its address.
      */
-    getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], Staker, undefined>>;
+    getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<Staker, undefined>>;
 }
 
 type blockchain_BlockchainClient = BlockchainClient;
 declare const blockchain_BlockchainClient: typeof BlockchainClient;
 type blockchain_GetAccountByAddressParams = GetAccountByAddressParams;
-type blockchain_GetBlockByParams = GetBlockByParams;
-type blockchain_GetInherentsByParams = GetInherentsByParams;
+type blockchain_GetBlockByBlockNumberParams = GetBlockByBlockNumberParams;
+type blockchain_GetBlockByHashParams = GetBlockByHashParams;
 type blockchain_GetLatestBlockParams = GetLatestBlockParams;
-type blockchain_GetSlotAtParams = GetSlotAtParams;
+type blockchain_GetSlotAtBlockParams = GetSlotAtBlockParams;
 type blockchain_GetStakerByAddressParams = GetStakerByAddressParams;
 type blockchain_GetStakersByAddressParams = GetStakersByAddressParams;
-type blockchain_GetTransactionByParams = GetTransactionByParams;
 type blockchain_GetTransactionsByAddressParams = GetTransactionsByAddressParams;
 type blockchain_GetValidatorByAddressParams = GetValidatorByAddressParams;
 declare namespace blockchain {
   export {
     blockchain_BlockchainClient as BlockchainClient,
     blockchain_GetAccountByAddressParams as GetAccountByAddressParams,
-    blockchain_GetBlockByParams as GetBlockByParams,
-    blockchain_GetInherentsByParams as GetInherentsByParams,
+    blockchain_GetBlockByBlockNumberParams as GetBlockByBlockNumberParams,
+    blockchain_GetBlockByHashParams as GetBlockByHashParams,
     blockchain_GetLatestBlockParams as GetLatestBlockParams,
-    blockchain_GetSlotAtParams as GetSlotAtParams,
+    blockchain_GetSlotAtBlockParams as GetSlotAtBlockParams,
     blockchain_GetStakerByAddressParams as GetStakerByAddressParams,
     blockchain_GetStakersByAddressParams as GetStakersByAddressParams,
-    blockchain_GetTransactionByParams as GetTransactionByParams,
     blockchain_GetTransactionsByAddressParams as GetTransactionsByAddressParams,
     blockchain_GetValidatorByAddressParams as GetValidatorByAddressParams,
     SubscribeForHeadHashParams$1 as SubscribeForHeadHashParams,
@@ -778,22 +781,23 @@ type SubscribeForLogsByAddressesAndTypesParams = {
     types?: LogType[];
     withMetadata?: boolean;
 };
-declare class BlockchainStream extends WebSocketClient {
-    constructor(url: URL, auth?: Auth);
+declare class BlockchainStream {
+    ws: WebSocketClient;
+    constructor(ws: WebSocketClient);
     /**
      * Subscribes to new block events.
      */
-    subscribeForBlocks<T extends (SubscribeForHeadBlockParams | SubscribeForHeadHashParams), O extends StreamOptions<T extends SubscribeForHeadBlockParams ? Block | PartialBlock : Hash>>(params: T, userOptions?: Partial<O>): Promise<Subscription<any, boolean[]>>;
+    subscribeForBlocks<T extends (SubscribeForHeadBlockParams | SubscribeForHeadHashParams), O extends StreamOptions<T extends SubscribeForHeadBlockParams ? Block | PartialBlock : Hash>>(params: T, userOptions?: Partial<O>): Promise<Subscription<any>>;
     /**
      * Subscribes to pre epoch validators events.
      */
-    subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<Validator>>(p: T, userOptions?: Partial<O>): Promise<Subscription<Validator, Address[]>>;
+    subscribeForValidatorElectionByAddress<T extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<Validator>>(p: T, userOptions?: Partial<O>): Promise<Subscription<Validator>>;
     /**
      * Subscribes to log events related to a given list of addresses and of any of the log types provided.
      * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
      * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
      */
-    subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<BlockLog>>(p: T, userOptions?: Partial<O>): Promise<Subscription<BlockLog, (Address[] | LogType[])[]>>;
+    subscribeForLogsByAddressesAndTypes<T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<BlockLog>>(p: T, userOptions?: Partial<O>): Promise<Subscription<BlockLog>>;
 }
 
 type blockchainStreams_BlockchainStream = BlockchainStream;
@@ -960,28 +964,29 @@ type TxLog = {
     log?: BlockLog;
     hash: Hash;
 };
-declare class ConsensusClient extends HttpClient {
+declare class ConsensusClient {
+    private client;
     private blockchainClient;
     private blockchainStream;
-    constructor(url: URL, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream, auth?: Auth);
+    constructor(client: HttpClient, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream);
     private getValidityStartHeight;
     private waitForConfirmation;
     /**
  * Returns a boolean specifying if we have established consensus with the network
  */
-    isConsensusEstablished(options?: HttpOptions): Promise<CallResult<never[], Boolean, undefined>>;
+    isConsensusEstablished(options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
     /**
      * Given a serialized transaction, it will return the corresponding transaction struct
      */
-    getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, options?: HttpOptions): Promise<CallResult<string[], Transaction, undefined>>;
+    getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, options?: HttpOptions): Promise<CallResult<Transaction, undefined>>;
     /**
      * Creates a serialized transaction
      */
-    createTransaction(p: TransactionParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createTransaction(p: TransactionParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction
      */
-    sendTransaction(p: TransactionParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendTransaction(p: TransactionParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction and waits for confirmation
      */
@@ -989,11 +994,11 @@ declare class ConsensusClient extends HttpClient {
     /**
      * Returns a serialized transaction creating a new vesting contract
      */
-    createNewVestingTransaction(p: VestingTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createNewVestingTransaction(p: VestingTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction creating a new vesting contract to the network
      */
-    sendNewVestingTransaction(p: VestingTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendNewVestingTransaction(p: VestingTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction creating a new vesting contract to the network and waits for confirmation
      */
@@ -1001,11 +1006,11 @@ declare class ConsensusClient extends HttpClient {
     /**
      * Returns a serialized transaction redeeming a vesting contract
      */
-    createRedeemVestingTransaction(p: RedeemVestingTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createRedeemVestingTransaction(p: RedeemVestingTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a vesting contract
      */
-    sendRedeemVestingTransaction(p: RedeemVestingTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendRedeemVestingTransaction(p: RedeemVestingTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a vesting contract and waits for confirmation
      */
@@ -1013,11 +1018,11 @@ declare class ConsensusClient extends HttpClient {
     /**
      * Returns a serialized transaction creating a new HTLC contract
      */
-    createNewHtlcTransaction(p: HtlcTransactionParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createNewHtlcTransaction(p: HtlcTransactionParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction creating a new HTLC contract
      */
-    sendNewHtlcTransaction(p: HtlcTransactionParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendNewHtlcTransaction(p: HtlcTransactionParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction creating a new HTLC contract and waits for confirmation
      */
@@ -1025,11 +1030,11 @@ declare class ConsensusClient extends HttpClient {
     /**
      * Returns a serialized transaction redeeming an HTLC contract
      */
-    createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming an HTLC contract
      */
-    sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a new HTLC contract and waits for confirmation
      */
@@ -1038,12 +1043,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method
      */
-    createRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method to network
      */
-    sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a HTLC contract using the `TimeoutResolve`
      * method to network and waits for confirmation
@@ -1053,12 +1058,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
      */
-    createRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
      * method.
      */
-    sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a transaction redeeming a HTLC contract using the `EarlyResolve`
      * method and waits for confirmation
@@ -1068,17 +1073,17 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
      * the `EarlyResolve` method.
      */
-    signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    signRedeemEarlyHtlcTransaction(p: SignRedeemEarlyHtlcParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Returns a serialized `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createNewStakerTransaction(p: StakerTxParams, options?: HttpOptions): Promise<CallResult<(string | number | undefined)[], string, undefined>>;
+    createNewStakerTransaction(p: StakerTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendNewStakerTransaction(p: StakerTxParams, options?: HttpOptions): Promise<CallResult<(string | number | undefined)[], string, undefined>>;
+    sendNewStakerTransaction(p: StakerTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `new_staker` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and waits for confirmation.
@@ -1088,12 +1093,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    createStakeTransaction(p: StakeTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createStakeTransaction(p: StakeTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet`.
      */
-    sendStakeTransaction(p: StakeTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendStakeTransaction(p: StakeTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `stake` transaction. The funds to be staked and the transaction fee will
      * be paid from the `sender_wallet` and waits for confirmation.
@@ -1104,13 +1109,13 @@ declare class ConsensusClient extends HttpClient {
      * account (by providing the sender wallet) or from the staker account's balance (by not
      * providing a sender wallet).
      */
-    createUpdateStakerTransaction(p: UpdateStakerTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createUpdateStakerTransaction(p: UpdateStakerTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
      * providing a sender wallet).
      */
-    sendUpdateStakerTransaction(p: UpdateStakerTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendUpdateStakerTransaction(p: UpdateStakerTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
      * account (by providing the sender wallet) or from the staker account's balance (by not
@@ -1121,12 +1126,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
      */
-    createUnstakeTransaction(p: UnstakeTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createUnstakeTransaction(p: UnstakeTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
      */
-    sendUnstakeTransaction(p: UnstakeTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendUnstakeTransaction(p: UnstakeTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked and waits for confirmation.
@@ -1140,7 +1145,7 @@ declare class ConsensusClient extends HttpClient {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    createNewValidatorTransaction(p: NewValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createNewValidatorTransaction(p: NewValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `new_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and the validator deposit.
@@ -1149,7 +1154,7 @@ declare class ConsensusClient extends HttpClient {
      * "" = Set the signal data field to None.
      * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
      */
-    sendNewValidatorTransaction(p: NewValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendNewValidatorTransaction(p: NewValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `new_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and the validator deposit
@@ -1169,7 +1174,7 @@ declare class ConsensusClient extends HttpClient {
      * "" = Change the signal data field to None.
      * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
      */
-    createUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `update_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
@@ -1179,7 +1184,7 @@ declare class ConsensusClient extends HttpClient {
      * "" = Change the signal data field to None.
      * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
      */
-    sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `update_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee and waits for confirmation.
@@ -1194,12 +1199,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `inactivate_validator` transaction and waits for confirmation.
      * You need to provide the address of a basic account (the sender wallet)
@@ -1210,12 +1215,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `reactivate_validator` transaction and waits for confirmation.
      * You need to provide the address of a basic account (the sender wallet)
@@ -1226,12 +1231,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `unpark_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `unpark_validator` transaction and waits for confirmation.
      * You need to provide the address of a basic account (the sender wallet)
@@ -1242,12 +1247,12 @@ declare class ConsensusClient extends HttpClient {
      * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    createRetireValidatorTransaction(p: RetireValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createRetireValidatorTransaction(p: RetireValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `retire_validator` transaction. You need to provide the address of a basic
      * account (the sender wallet) to pay the transaction fee.
      */
-    sendRetireValidatorTransaction(p: RetireValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendRetireValidatorTransaction(p: RetireValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `retire_validator` transaction and waits for confirmation.
      * You need to provide the address of a basic account (the sender wallet)
@@ -1260,14 +1265,14 @@ declare class ConsensusClient extends HttpClient {
      * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
      * Failed delete validator transactions can diminish the validator deposit
      */
-    createDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    createDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Sends a `delete_validator` transaction. The transaction fee will be paid from the
      * validator deposit that is being returned.
      * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
      * Failed delete validator transactions can diminish the validator deposit
      */
-    sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: HttpOptions): Promise<CallResult<(string | number)[], string, undefined>>;
+    sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
     * Sends a `delete_validator` transaction and waits for confirmation.
     * The transaction fee will be paid from the validator deposit that is being returned.
@@ -1334,31 +1339,32 @@ type PushTransactionParams = {
 type MempoolContentParams = {
     includeTransactions: boolean;
 };
-declare class MempoolClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
+declare class MempoolClient {
+    private client;
+    constructor(http: HttpClient);
     /**
      * Pushes the given serialized transaction to the local mempool
      *
      * @param transaction Serialized transaction
      * @returns Transaction hash
      */
-    pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options?: HttpOptions): Promise<CallResult<string[], string, undefined>>;
+    pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Content of the mempool
      *
      * @param includeTransactions
      * @returns
      */
-    mempoolContent({ includeTransactions }?: MempoolContentParams, options?: HttpOptions): Promise<CallResult<boolean[], (string | Transaction)[], undefined>>;
+    mempoolContent({ includeTransactions }?: MempoolContentParams, options?: HttpOptions): Promise<CallResult<(string | Transaction)[], undefined>>;
     /**
      * @returns
      */
-    mempool(options?: HttpOptions): Promise<CallResult<never[], MempoolInfo, undefined>>;
+    mempool(options?: HttpOptions): Promise<CallResult<MempoolInfo, undefined>>;
     /**
      *
      * @returns
      */
-    getMinFeePerByte(options?: HttpOptions): Promise<CallResult<never[], number, undefined>>;
+    getMinFeePerByte(options?: HttpOptions): Promise<CallResult<number, undefined>>;
 }
 
 type mempool_MempoolClient = MempoolClient;
@@ -1369,20 +1375,21 @@ declare namespace mempool {
   };
 }
 
-declare class NetworkClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
+declare class NetworkClient {
+    private client;
+    constructor(http: HttpClient);
     /**
      * The peer ID for our local peer.
      */
-    getPeerId(options?: HttpOptions): Promise<CallResult<never[], string, undefined>>;
+    getPeerId(options?: HttpOptions): Promise<CallResult<string, undefined>>;
     /**
      * Returns the number of peers.
      */
-    getPeerCount(options?: HttpOptions): Promise<CallResult<never[], number, undefined>>;
+    getPeerCount(options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Returns a list with the IDs of all our peers.
      */
-    getPeerList(options?: HttpOptions): Promise<CallResult<never[], string[], undefined>>;
+    getPeerList(options?: HttpOptions): Promise<CallResult<string[], undefined>>;
 }
 
 type network_NetworkClient = NetworkClient;
@@ -1393,30 +1400,27 @@ declare namespace network {
   };
 }
 
-type JustBlockNumber = {
-    blockNumber: BlockNumber;
-};
-type JustEpochIndex = {
-    epochIndex: EpochIndex;
-};
-type JustBatchIndex = {
-    batchIndex: BatchIndex;
-};
-type BlockNumberWithIndex = {
-    blockNumber: BlockNumber;
+type JustIndexOption = {
     justIndex?: boolean;
+};
+type EpochIndexOption = {
+    epochIndex?: EpochIndex;
+};
+type BatchIndexOption = {
+    batchIndex?: BatchIndex;
 };
 type SupplyAtParams = {
     genesisSupply: number;
     genesisTime: number;
     currentTime: number;
 };
-declare class PolicyClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
+declare class PolicyClient {
+    private client;
+    constructor(http: HttpClient);
     /**
      * Gets a bundle of policy constants
      */
-    getPolicyConstants(options?: HttpOptions): Promise<CallResult<never[], PolicyConstants, undefined>>;
+    getPolicyConstants(options?: HttpOptions): Promise<CallResult<PolicyConstants, undefined>>;
     /**
      * Gets the epoch number at a given `block_number` (height)
      *
@@ -1425,7 +1429,7 @@ declare class PolicyClient extends HttpClient {
      * For example, the first block of any epoch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height) or index
      */
-    getEpochAt({ blockNumber, justIndex }: BlockNumberWithIndex, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getEpochAt(blockNumber: BlockNumber, p?: JustIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the batch number at a given `block_number` (height)
      *
@@ -1434,14 +1438,14 @@ declare class PolicyClient extends HttpClient {
      * For example, the first block of any batch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height).
      */
-    getBatchAt({ blockNumber, justIndex }: BlockNumberWithIndex, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getBatchAt(batchIndex: BatchIndex, p?: JustIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the number (height) of the next election macro block after a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The number (height) of the next election macro block after a given block number (height).
      */
-    getElectionBlockAfter({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getElectionBlockAfter(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number (height) of the preceding election macro block before a given block number (height).
      * If the given block number is an election macro block, it returns the election macro block before it.
@@ -1449,7 +1453,7 @@ declare class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding election macro block before a given block number (height).
      */
-    getElectionBlockBefore({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getElectionBlockBefore(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number (height) of the last election macro block at a given block number (height).
      * If the given block number is an election macro block, then it returns that block number.
@@ -1457,28 +1461,28 @@ declare class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns
      */
-    getLastElectionBlock({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getLastElectionBlock(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
      *
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
      */
-    getIsElectionBlockAt({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], Boolean, undefined>>;
+    getIsElectionBlockAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
     /**
      * Gets the block number (height) of the next macro block after a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next macro block after a given block number (height).
      */
-    getMacroBlockAfter({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getMacroBlockAfter(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number (height) of the preceding macro block before a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding macro block before a given block number (height).
      */
-    getMacroBlockBefore({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getMacroBlockBefore(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number (height) of the last macro block at a given block number (height).
      * If the given block number is a macro block, then it returns that block number.
@@ -1486,49 +1490,49 @@ declare class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the last macro block at a given block number (height).
      */
-    getLastMacroBlock({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getLastMacroBlock(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets a boolean expressing if the block at a given block number (height) is a macro block.
      *
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is a macro block.
      */
-    getIsMacroBlockAt({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], Boolean, undefined>>;
+    getIsMacroBlockAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
     /**
      * Gets the block number (height) of the next micro block after a given block number (height).
      *
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next micro block after a given block number (height).
      */
-    getIsMicroBlockAt({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], Boolean, undefined>>;
+    getIsMicroBlockAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
     /**
      * Gets the block number (height) of the first block of the given epoch (which is always a micro block).
      *
      * @param epochIndex The epoch index to query.
      * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
      */
-    getFirstBlockOf({ epochIndex }: JustEpochIndex, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getFirstBlockOf({ epochIndex }: EpochIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number of the first block of the given batch (which is always a micro block).
      *
      * @param batchIndex The batch index to query.
      * @returns The block number of the first block of the given batch (which is always a micro block).
      */
-    getFirstBlockOfBatch({ batchIndex }: JustBatchIndex, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getFirstBlockOfBatch({ batchIndex }: BatchIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number of the election macro block of the given epoch (which is always the last block).
      *
      * @param epochIndex The epoch index to query.
      * @returns The block number of the election macro block of the given epoch (which is always the last block).
      */
-    getElectionBlockOf({ epochIndex }: JustEpochIndex, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getElectionBlockOf({ epochIndex }: EpochIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
      *
      * @param batchIndex The batch index to query.
      * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
      */
-    getMacroBlockOf({ batchIndex }: JustBatchIndex, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getMacroBlockOf({ batchIndex }: BatchIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets a boolean expressing if the batch at a given block number (height) is the first batch
      * of the epoch.
@@ -1536,7 +1540,7 @@ declare class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the batch at a given block number (height) is the first batch
      */
-    getFirstBatchOfEpoch({ blockNumber }: JustBlockNumber, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getFirstBatchOfEpoch(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
      * calculated using the following formula:
@@ -1549,7 +1553,7 @@ declare class PolicyClient extends HttpClient {
      * @param currentTime timestamp to calculate supply at
      * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
      */
-    getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams, options?: HttpOptions): Promise<CallResult<number[], number, undefined>>;
+    getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams, options?: HttpOptions): Promise<CallResult<number, undefined>>;
 }
 
 type policy_PolicyClient = PolicyClient;
@@ -1563,24 +1567,25 @@ declare namespace policy {
 type SetAutomaticReactivationParams = {
     automaticReactivation: boolean;
 };
-declare class ValidatorClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
+declare class ValidatorClient {
+    private client;
+    constructor(http: HttpClient);
     /**
      * Returns our validator address.
      */
-    getAddress(options?: HttpOptions): Promise<CallResult<never[], `NQ${number} ${string}`, undefined>>;
+    getAddress(options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`, undefined>>;
     /**
      * Returns our validator signing key
      */
-    getSigningKey(options?: HttpOptions): Promise<CallResult<never[], String, undefined>>;
+    getSigningKey(options?: HttpOptions): Promise<CallResult<String, undefined>>;
     /**
      * Returns our validator voting key
     */
-    getVotingKey(options?: HttpOptions): Promise<CallResult<never[], String, undefined>>;
+    getVotingKey(options?: HttpOptions): Promise<CallResult<String, undefined>>;
     /**
      * Updates the configuration setting to automatically reactivate our validator
     */
-    setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams, options?: HttpOptions): Promise<CallResult<boolean[], null, undefined>>;
+    setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams, options?: HttpOptions): Promise<CallResult<null, undefined>>;
 }
 
 type validator_ValidatorClient = ValidatorClient;
@@ -1595,19 +1600,9 @@ type ImportKeyParams = {
     keyData: string;
     passphrase?: string;
 };
-type IsAccountImportedParams = {
-    address: Address;
-};
-type LockAccountParams = {
-    address: Address;
-};
 type UnlockAccountParams = {
-    address: Address;
     passphrase?: string;
     duration?: number;
-};
-type IsAccountLockedParams = {
-    address: Address;
 };
 type CreateAccountParams = {
     passphrase?: string;
@@ -1624,36 +1619,48 @@ type VerifySignatureParams = {
     signature: Signature;
     isHex: boolean;
 };
-declare class WalletClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
-    importRawKey({ keyData, passphrase }: ImportKeyParams, options?: HttpOptions): Promise<CallResult<(string | undefined)[], `NQ${number} ${string}`, undefined>>;
-    isAccountImported({ address }: IsAccountImportedParams, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], Boolean, undefined>>;
-    listAccounts(options?: HttpOptions): Promise<CallResult<never[], Boolean, undefined>>;
-    lockAccount({ address }: LockAccountParams, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], null, undefined>>;
-    createAccount(p?: CreateAccountParams, options?: HttpOptions): Promise<CallResult<(string | undefined)[], WalletAccount, undefined>>;
-    unlockAccount({ address, passphrase, duration }: UnlockAccountParams, options?: HttpOptions): Promise<CallResult<(string | number | undefined)[], Boolean, undefined>>;
-    isAccountLocked({ address }: IsAccountLockedParams, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`[], Boolean, undefined>>;
-    sign({ message, address, passphrase, isHex }: SignParams, options?: HttpOptions): Promise<CallResult<(string | boolean)[], Signature, undefined>>;
-    verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams, options?: HttpOptions): Promise<CallResult<(string | boolean | Signature)[], Boolean, undefined>>;
+declare class WalletClient {
+    private client;
+    constructor(http: HttpClient);
+    importRawKey({ keyData, passphrase }: ImportKeyParams, options?: HttpOptions): Promise<CallResult<`NQ${number} ${string}`, undefined>>;
+    isAccountImported(address: Address, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
+    listAccounts(options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
+    lockAccount(address: Address, options?: HttpOptions): Promise<CallResult<null, undefined>>;
+    createAccount(p?: CreateAccountParams, options?: HttpOptions): Promise<CallResult<WalletAccount, undefined>>;
+    unlockAccount(address: Address, { passphrase, duration }: UnlockAccountParams, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
+    isAccountLocked(address: Address, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
+    sign({ message, address, passphrase, isHex }: SignParams, options?: HttpOptions): Promise<CallResult<Signature, undefined>>;
+    verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams, options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
 }
 
+type wallet_CreateAccountParams = CreateAccountParams;
+type wallet_ImportKeyParams = ImportKeyParams;
+type wallet_SignParams = SignParams;
+type wallet_UnlockAccountParams = UnlockAccountParams;
+type wallet_VerifySignatureParams = VerifySignatureParams;
 type wallet_WalletClient = WalletClient;
 declare const wallet_WalletClient: typeof WalletClient;
 declare namespace wallet {
   export {
+    wallet_CreateAccountParams as CreateAccountParams,
+    wallet_ImportKeyParams as ImportKeyParams,
+    wallet_SignParams as SignParams,
+    wallet_UnlockAccountParams as UnlockAccountParams,
+    wallet_VerifySignatureParams as VerifySignatureParams,
     wallet_WalletClient as WalletClient,
   };
 }
 
-declare class ZkpComponentClient extends HttpClient {
-    constructor(url: URL, auth?: Auth);
+declare class ZkpComponentClient {
+    private client;
+    constructor(http: HttpClient);
     getZkpState(options?: HttpOptions): Promise<{
         error: {
             code: number;
             message: string;
         };
         data: undefined;
-        context: Context<never[]>;
+        context: Context;
         metadata?: undefined;
     } | {
         error: undefined;
@@ -1662,7 +1669,7 @@ declare class ZkpComponentClient extends HttpClient {
             latestBlockNumber: number;
             latestProof: string | undefined;
         };
-        context: Context<never[]>;
+        context: Context;
         metadata: undefined;
     }>;
 }
@@ -1676,274 +1683,219 @@ declare namespace zkpComponent {
 }
 
 declare class Client {
+    http: HttpClient;
+    ws: WebSocketClient;
     block: {
-        current: (options?: HttpOptions) => Promise<CallResult<never[], number, undefined>>;
-        getBy: <T extends GetBlockByParams>(p: T, options?: HttpOptions) => Promise<CallResult<(string | boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined> | CallResult<(number | boolean | undefined)[], T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
-        latest: <T_1 extends GetLatestBlockParams>(p?: T_1, options?: HttpOptions) => Promise<CallResult<(boolean | undefined)[], T_1["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+        current: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        getByHash: <T extends GetBlockByHashParams>(hash: string, p?: T | undefined, options?: HttpOptions) => Promise<CallResult<T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+        getByNumber: <T_1 extends GetBlockByBlockNumberParams>(blockNumber: number, p?: T_1 | undefined, options?: HttpOptions) => Promise<CallResult<T_1["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+        latest: <T_2 extends GetLatestBlockParams>(p?: T_2, options?: HttpOptions) => Promise<CallResult<T_2["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
         election: {
-            after: ({ blockNumber }: {
-                blockNumber: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-            before: ({ blockNumber }: {
-                blockNumber: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-            last: ({ blockNumber }: {
-                blockNumber: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-            getBy: ({ epochIndex }: {
-                epochIndex: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-            subscribe: <T_2 extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<Validator>>(p: T_2, userOptions?: Partial<O> | undefined) => Promise<Subscription<Validator, `NQ${number} ${string}`[]>>;
+            after: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            before: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            last: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            get: ({ epochIndex }: {
+                epochIndex?: number | undefined;
+            }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            subscribe: <T_3 extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<Validator>>(p: T_3, userOptions?: Partial<O> | undefined) => Promise<Subscription<Validator>>;
         };
-        isElection: ({ blockNumber }: {
-            blockNumber: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], Boolean, undefined>>;
+        isElection: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
         macro: {
-            after: ({ blockNumber }: {
-                blockNumber: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-            before: ({ blockNumber }: {
-                blockNumber: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-            last: ({ blockNumber }: {
-                blockNumber: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+            after: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            before: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            last: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
             getBy: ({ batchIndex }: {
-                batchIndex: number;
-            }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+                batchIndex?: number | undefined;
+            }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
         };
-        isMacro: ({ blockNumber }: {
-            blockNumber: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], Boolean, undefined>>;
-        isMicro: ({ blockNumber }: {
-            blockNumber: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], Boolean, undefined>>;
-        subscribe: <T_3 extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams, O_1 extends StreamOptions<T_3 extends SubscribeForHeadBlockParams ? Block | PartialBlock : string>>(params: T_3, userOptions?: Partial<O_1> | undefined) => Promise<Subscription<any, boolean[]>>;
+        isMacro: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        isMicro: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        subscribe: <T_4 extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams, O_1 extends StreamOptions<T_4 extends SubscribeForHeadBlockParams ? Block | PartialBlock : string>>(params: T_4, userOptions?: Partial<O_1> | undefined) => Promise<Subscription<any>>;
     };
     batch: {
-        current: (options?: HttpOptions) => Promise<CallResult<never[], number, undefined>>;
-        at: ({ blockNumber, justIndex }: {
-            blockNumber: number;
+        current: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        at: (batchIndex: number, p?: {
             justIndex?: boolean | undefined;
-        }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+        } | undefined, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
         firstBlock: ({ epochIndex }: {
-            epochIndex: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+            epochIndex?: number | undefined;
+        }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
     };
     epoch: {
-        current: (options?: HttpOptions) => Promise<CallResult<never[], number, undefined>>;
-        at: ({ blockNumber, justIndex }: {
-            blockNumber: number;
+        current: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        at: (blockNumber: number, p?: {
             justIndex?: boolean | undefined;
-        }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+        } | undefined, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
         firstBlock: ({ epochIndex }: {
-            epochIndex: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
-        firstBatch: ({ blockNumber }: {
-            blockNumber: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+            epochIndex?: number | undefined;
+        }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        firstBatch: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
     };
     transaction: {
-        getBy: <T extends GetTransactionByParams>(p: T, options?: HttpOptions) => Promise<CallResult<(number | `NQ${number} ${string}` | undefined)[], Transaction[], undefined> | ({
-            context: Context<string[] | number[] | number[]>;
-        } & ({
-            data: undefined;
-            metadata: undefined;
-            error: {
-                code: number;
-                message: string;
-            };
-        } | {
-            data: T extends {
-                hash: string;
-            } ? Transaction : T extends GetTransactionsByAddressParams ? T["justHashes"] extends true ? string[] : Transaction[] : Transaction[];
-            metadata: undefined;
-            error: undefined;
-        }))>;
+        getByAddress: <T extends GetTransactionsByAddressParams>(address: `NQ${number} ${string}`, p?: T | undefined, options?: HttpOptions) => Promise<CallResult<T["justHashes"] extends true ? Transaction[] : string[], undefined>>;
+        getByBatch: (batchIndex: number, options?: HttpOptions) => Promise<CallResult<Transaction[], undefined>>;
+        getByBlockNumber: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Transaction[], undefined>>;
+        getByHash: (hash: string, options?: HttpOptions) => Promise<CallResult<Transaction, undefined>>;
         push: ({ transaction, withHighPriority }: {
             transaction: string;
             withHighPriority?: boolean | undefined;
-        }, options?: HttpOptions) => Promise<CallResult<string[], string, undefined>>;
-        minFeePerByte: (options?: HttpOptions) => Promise<CallResult<never[], number, undefined>>;
-        create: (p: TransactionParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-        send: (p: TransactionParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+        }, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        minFeePerByte: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        create: (p: TransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        send: (p: TransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
         sendSync: (p: TransactionParams, options: SendTxCallOptions) => Promise<unknown>;
     };
     inherent: {
-        getBy: <T extends GetInherentsByParams>(p: T, options?: HttpOptions) => Promise<CallResult<number[], Inherent[], undefined>>;
+        getByBatch: (batchIndex: number, options?: HttpOptions) => Promise<CallResult<Inherent[], undefined>>;
+        getByBlock: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Inherent[], undefined>>;
     };
     account: {
-        getBy: <T extends GetAccountByAddressParams>({ address, withMetadata }: T, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
-        importRawKey: ({ keyData, passphrase }: {
-            keyData: string;
-            passphrase?: string | undefined;
-        }, options?: HttpOptions) => Promise<CallResult<(string | undefined)[], `NQ${number} ${string}`, undefined>>;
-        new: (p?: {
-            passphrase?: string | undefined;
-        } | undefined, options?: HttpOptions) => Promise<CallResult<(string | undefined)[], WalletAccount, undefined>>;
-        isImported: ({ address }: {
-            address: `NQ${number} ${string}`;
-        }, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], Boolean, undefined>>;
-        list: (options?: HttpOptions) => Promise<CallResult<never[], Boolean, undefined>>;
-        lock: ({ address }: {
-            address: `NQ${number} ${string}`;
-        }, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], null, undefined>>;
-        unlock: ({ address, passphrase, duration }: {
-            address: `NQ${number} ${string}`;
-            passphrase?: string | undefined;
-            duration?: number | undefined;
-        }, options?: HttpOptions) => Promise<CallResult<(string | number | undefined)[], Boolean, undefined>>;
-        isLocked: ({ address }: {
-            address: `NQ${number} ${string}`;
-        }, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], Boolean, undefined>>;
-        sign: ({ message, address, passphrase, isHex }: {
-            message: string;
-            address: `NQ${number} ${string}`;
-            passphrase: string;
-            isHex: boolean;
-        }, options?: HttpOptions) => Promise<CallResult<(string | boolean)[], Signature, undefined>>;
-        verify: ({ message, publicKey, signature, isHex }: {
-            message: string;
-            publicKey: string;
-            signature: Signature;
-            isHex: boolean;
-        }, options?: HttpOptions) => Promise<CallResult<(string | boolean | Signature)[], Boolean, undefined>>;
+        getBy: <T extends GetAccountByAddressParams>(address: `NQ${number} ${string}`, { withMetadata }: T, options?: HttpOptions) => Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
+        importRawKey: ({ keyData, passphrase }: ImportKeyParams, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`, undefined>>;
+        new: (p?: CreateAccountParams | undefined, options?: HttpOptions) => Promise<CallResult<WalletAccount, undefined>>;
+        isImported: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        list: (options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        lock: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<null, undefined>>;
+        unlock: (address: `NQ${number} ${string}`, { passphrase, duration }: UnlockAccountParams, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        isLocked: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        sign: ({ message, address, passphrase, isHex }: SignParams, options?: HttpOptions) => Promise<CallResult<Signature, undefined>>;
+        verify: ({ message, publicKey, signature, isHex }: VerifySignatureParams, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
     };
     validator: {
-        byAddress: <T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], PartialValidator, undefined>>;
+        byAddress: <T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<PartialValidator, undefined>>;
         setAutomaticReactivation: ({ automaticReactivation }: {
             automaticReactivation: boolean;
-        }, options?: HttpOptions) => Promise<CallResult<boolean[], null, undefined>>;
+        }, options?: HttpOptions) => Promise<CallResult<null, undefined>>;
         selfNode: {
-            address: (options?: HttpOptions) => Promise<CallResult<never[], `NQ${number} ${string}`, undefined>>;
-            signingKey: (options?: HttpOptions) => Promise<CallResult<never[], String, undefined>>;
-            votingKey: (options?: HttpOptions) => Promise<CallResult<never[], String, undefined>>;
+            address: (options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`, undefined>>;
+            signingKey: (options?: HttpOptions) => Promise<CallResult<String, undefined>>;
+            votingKey: (options?: HttpOptions) => Promise<CallResult<String, undefined>>;
         };
         activeList: <T_1 extends {
             withMetadata: boolean;
-        }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<never[], Validator[], T_1["withMetadata"] extends true ? BlockchainState : undefined>>;
+        }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<Validator[], T_1["withMetadata"] extends true ? BlockchainState : undefined>>;
         parked: <T_2 extends {
             withMetadata: boolean;
-        }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<never[], {
+        }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<{
             blockNumber: number;
             validators: Validator[];
         }, T_2["withMetadata"] extends true ? BlockchainState : undefined>>;
         action: {
             new: {
-                createTx: (p: NewValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: NewValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: NewValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: NewValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
             update: {
-                createTx: (p: UpdateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: UpdateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: UpdateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: UpdateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
             deactivate: {
-                createTx: (p: DeactiveValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: DeactiveValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: DeactiveValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: DeactiveValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
             reactivate: {
-                createTx: (p: ReactivateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: ReactivateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: ReactivateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: ReactivateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
             unpark: {
-                createTx: (p: UnparkValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: UnparkValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: UnparkValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: UnparkValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
             retire: {
-                createTx: (p: RetireValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: RetireValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: RetireValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: RetireValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
             delete: {
-                createTx: (p: DeleteValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: DeleteValidatorTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: DeleteValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: DeleteValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             };
         };
     };
     slots: {
-        at: <T extends GetSlotAtParams>({ blockNumber, offsetOpt, withMetadata }: T, options?: HttpOptions) => Promise<CallResult<(number | undefined)[], Slot, undefined>>;
+        at: <T extends GetSlotAtBlockParams>(blockNumber: number, p?: T | undefined, options?: HttpOptions) => Promise<CallResult<Slot, undefined>>;
         slashed: {
             current: <T_1 extends {
                 withMetadata: boolean;
-            }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<never[], SlashedSlot[], undefined>>;
+            }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<SlashedSlot[], undefined>>;
             previous: <T_2 extends {
                 withMetadata: boolean;
-            }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<never[], SlashedSlot[], T_2["withMetadata"] extends true ? BlockchainState : undefined>>;
+            }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<SlashedSlot[], T_2["withMetadata"] extends true ? BlockchainState : undefined>>;
         };
     };
     mempool: {
-        info: (options?: HttpOptions) => Promise<CallResult<never[], MempoolInfo, undefined>>;
+        info: (options?: HttpOptions) => Promise<CallResult<MempoolInfo, undefined>>;
         content: ({ includeTransactions }?: {
             includeTransactions: boolean;
-        }, options?: HttpOptions) => Promise<CallResult<boolean[], (string | Transaction)[], undefined>>;
+        }, options?: HttpOptions) => Promise<CallResult<(string | Transaction)[], undefined>>;
     };
     stakes: {
         new: {
-            createTx: (p: StakeTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-            sendTx: (p: StakeTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+            createTx: (p: StakeTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            sendTx: (p: StakeTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             sendSyncTx: (p: StakeTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
     };
     staker: {
-        fromValidator: <T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], Staker[], undefined>>;
-        getBy: <T_1 extends GetStakerByAddressParams>({ address }: T_1, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`[], Staker, undefined>>;
+        fromValidator: <T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<Staker[], undefined>>;
+        getBy: <T_1 extends GetStakerByAddressParams>({ address }: T_1, options?: HttpOptions) => Promise<CallResult<Staker, undefined>>;
         new: {
-            createTx: (p: StakerTxParams, options?: HttpOptions) => Promise<CallResult<(string | number | undefined)[], string, undefined>>;
-            sendTx: (p: StakerTxParams, options?: HttpOptions) => Promise<CallResult<(string | number | undefined)[], string, undefined>>;
+            createTx: (p: StakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            sendTx: (p: StakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             sendSyncTx: (p: StakerTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
         update: {
-            createTx: (p: UpdateStakerTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-            sendTx: (p: UpdateStakerTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+            createTx: (p: UpdateStakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            sendTx: (p: UpdateStakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             sendSyncTx: (p: UpdateStakerTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
     };
     peers: {
-        id: (options?: HttpOptions) => Promise<CallResult<never[], string, undefined>>;
-        count: (options?: HttpOptions) => Promise<CallResult<never[], number, undefined>>;
-        peers: (options?: HttpOptions) => Promise<CallResult<never[], string[], undefined>>;
-        consensusEstablished: (options?: HttpOptions) => Promise<CallResult<never[], Boolean, undefined>>;
+        id: (options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        count: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        peers: (options?: HttpOptions) => Promise<CallResult<string[], undefined>>;
+        consensusEstablished: (options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
     };
     constant: {
-        params: (options?: HttpOptions) => Promise<CallResult<never[], PolicyConstants, undefined>>;
+        params: (options?: HttpOptions) => Promise<CallResult<PolicyConstants, undefined>>;
         supply: ({ genesisSupply, genesisTime, currentTime }: {
             genesisSupply: number;
             genesisTime: number;
             currentTime: number;
-        }, options?: HttpOptions) => Promise<CallResult<number[], number, undefined>>;
+        }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
     };
     htlc: {
         new: {
-            createTx: (p: HtlcTransactionParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-            sendTx: (p: HtlcTransactionParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+            createTx: (p: HtlcTransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            sendTx: (p: HtlcTransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             sendSyncTx: (p: HtlcTransactionParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
         redeem: {
             regular: {
-                createTx: (p: RedeemRegularHtlcTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: RedeemRegularHtlcTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: RedeemRegularHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: RedeemRegularHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
                 sendSyncTx: (p: RedeemRegularHtlcTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             timeoutTx: {
-                createTx: (p: RedeemTimeoutHtlcTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: RedeemTimeoutHtlcTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: RedeemTimeoutHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: RedeemTimeoutHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
                 sendSyncTx: (p: RedeemTimeoutHtlcTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             earlyTx: {
-                createTx: (p: RedeemEarlyHtlcTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-                sendTx: (p: RedeemEarlyHtlcTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+                createTx: (p: RedeemEarlyHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                sendTx: (p: RedeemEarlyHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
                 sendSyncTx: (p: RedeemEarlyHtlcTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
         };
     };
     vesting: {
         new: {
-            createTx: (p: VestingTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-            sendTx: (p: VestingTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+            createTx: (p: VestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            sendTx: (p: VestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             sendSyncTx: (p: VestingTxParams, options: SendTxCallOptions) => Promise<unknown>;
         };
         redeem: {
-            createTx: (p: RedeemVestingTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
-            sendTx: (p: RedeemVestingTxParams, options?: HttpOptions) => Promise<CallResult<(string | number)[], string, undefined>>;
+            createTx: (p: RedeemVestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            sendTx: (p: RedeemVestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
             sendSyncTx: (p: RedeemVestingTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
     };
@@ -1954,7 +1906,7 @@ declare class Client {
                 message: string;
             };
             data: undefined;
-            context: Context<never[]>;
+            context: Context;
             metadata?: undefined;
         } | {
             error: undefined;
@@ -1963,12 +1915,12 @@ declare class Client {
                 latestBlockNumber: number;
                 latestProof: string | undefined;
             };
-            context: Context<never[]>;
+            context: Context;
             metadata: undefined;
         }>;
     };
     logs: {
-        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<BlockLog>>(p: T, userOptions?: Partial<O> | undefined) => Promise<Subscription<BlockLog, (`NQ${number} ${string}`[] | LogType[])[]>>;
+        subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<BlockLog>>(p: T, userOptions?: Partial<O> | undefined) => Promise<Subscription<BlockLog>>;
     };
     _modules: {
         blockchain: BlockchainClient;

@@ -1,7 +1,12 @@
+import { HttpClient } from "./client/http";
+import { WebSocketClient } from "./client/web-socket";
 import * as Modules from "./modules";
 import { Auth } from "./types/common";
 
 export default class Client {
+    public http: HttpClient;
+    public ws: WebSocketClient;
+
     public block;
     public batch;
     public epoch;
@@ -22,15 +27,18 @@ export default class Client {
     public _modules;
 
     constructor(url: URL, auth?: Auth) {
-        const blockchain = new Modules.BlockchainClient.BlockchainClient(url, auth);
-        const blockchainStreams = new Modules.BlockchainStream.BlockchainStream(url, auth);
-        const consensus = new Modules.ConsensusClient.ConsensusClient(url, blockchain, blockchainStreams, auth);
-        const mempool = new Modules.MempoolClient.MempoolClient(url, auth);
-        const network = new Modules.NetworkClient.NetworkClient(url, auth);
-        const policy = new Modules.PolicyClient.PolicyClient(url, auth);
-        const validator_ = new Modules.ValidatorClient.ValidatorClient(url, auth);
-        const wallet = new Modules.WalletClient.WalletClient(url, auth);
-        const zkpComponent = new Modules.ZkpComponentClient.ZkpComponentClient(url, auth);
+        this.http = new HttpClient(url, auth);
+        this.ws = new WebSocketClient(url, auth);
+
+        const blockchain = new Modules.BlockchainClient.BlockchainClient(this.http);
+        const blockchainStreams = new Modules.BlockchainStream.BlockchainStream(this.ws);
+        const consensus = new Modules.ConsensusClient.ConsensusClient(this.http, blockchain, blockchainStreams);
+        const mempool = new Modules.MempoolClient.MempoolClient(this.http);
+        const network = new Modules.NetworkClient.NetworkClient(this.http);
+        const policy = new Modules.PolicyClient.PolicyClient(this.http);
+        const validator_ = new Modules.ValidatorClient.ValidatorClient(this.http);
+        const wallet = new Modules.WalletClient.WalletClient(this.http);
+        const zkpComponent = new Modules.ZkpComponentClient.ZkpComponentClient(this.http);
 
         this._modules = {
             blockchain,
@@ -250,10 +258,10 @@ export default class Client {
     }
 }
 
+export { AccountType, BlockType, LogType } from "src/types/enums";
+export { Context, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, HttpClient, HttpOptions, SendTxCallOptions, type CallResult } from "./client/http";
+export { ErrorStreamReturn, FilterStreamFn, MaybeStreamResponse, StreamOptions, Subscription, WS_DEFAULT_OPTIONS, WebSocketClient } from "./client/web-socket";
 export { BlockchainClient, BlockchainStream, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient } from "./modules";
 export type { Account, Address, BasicAccount, BatchIndex, Block, BlockNumber, BlockchainState, Coin, CurrentTime, ElectionMacroBlock, EpochIndex, GenesisSupply, GenesisTime, Hash, HtlcAccount, Inherent, MacroBlock, MempoolInfo, MicroBlock, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PolicyConstants, RawTransaction, Signature, SlashedSlot, Slot, Staker, Transaction, Validator, ValidityStartHeight, VestingAccount, WalletAccount, ZKPState } from "./types/common";
-export { AccountType, BlockType, LogType } from "src/types/enums";
 export type { AppliedBlockLog, BlockLog, CreateStakerLog, CreateValidatorLog, DeactivateValidatorLog, DeleteValidatorLog, FailedTransactionLog, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, HtlcCreateLog, Log, ParkLog, PayFeeLog, PayoutRewardLog, ReactivateValidatorLog, RetireValidatorLog, RevertContractLog, RevertedBlockLog, SlashLog, StakeLog, StakerFeeDeductionLog, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog, ValidatorFeeDeductionLog, VestingCreateLog } from "./types/logs";
-export { HttpClient, type CallResult, Context, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, HttpOptions, SendTxCallOptions } from "./client/http"
-export { WebSocketClient, ErrorStreamReturn, FilterStreamFn, MaybeStreamResponse, StreamOptions, Subscription, WS_DEFAULT_OPTIONS } from "./client/web-socket"
 

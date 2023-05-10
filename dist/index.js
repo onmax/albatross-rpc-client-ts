@@ -23,8 +23,12 @@ var _HttpClient = class {
   async call(request, options = DEFAULT_OPTIONS) {
     const { method, params: requestParams, withMetadata } = request;
     const { timeout } = options;
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    let controller;
+    let timeoutId;
+    if (timeout !== false) {
+      controller = new AbortController();
+      timeoutId = setTimeout(() => controller.abort(), timeout);
+    }
     const useAuth = this.auth && this.auth.username && this.auth.password;
     const params = (requestParams == null ? void 0 : requestParams.map((item) => item === void 0 ? null : item)) || [];
     const context = {
@@ -45,7 +49,7 @@ var _HttpClient = class {
       method: "POST",
       headers: context.headers,
       body: JSON.stringify(context.body),
-      signal: controller.signal
+      signal: controller == null ? void 0 : controller.signal
     }).catch((error) => {
       if (error.name === "AbortError") {
         return { ok: false, status: 408, statusText: `AbortError: Service Unavailable: ${error.message}` };

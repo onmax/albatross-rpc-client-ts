@@ -536,7 +536,7 @@ declare class WebSocketClient {
 }
 
 type HttpOptions = {
-    timeout?: number;
+    timeout?: number | false;
 };
 type SendTxCallOptions = HttpOptions & ({
     waitForConfirmationTimeout?: number;

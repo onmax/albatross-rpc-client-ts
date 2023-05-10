@@ -17,11 +17,11 @@
   "license": "MIT",
   "author": "onmax",
   "private": false,
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
     "dev": "vitest",
     "test": "vitest run",
-    "build": "tsup src/index.ts --format cjs,esm --dts --out-dir dist --target node14",
+    "build": "tsup src/index.ts --format esm --dts",
     "lint": "tsc",
     "ci": "pnpm lint && pnpm build",
     "release": "pnpm lint && pnpm build && changeset publish"

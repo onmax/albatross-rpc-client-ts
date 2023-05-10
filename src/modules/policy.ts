@@ -1,10 +1,9 @@
 import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import { Auth, BatchIndex, BlockNumber, EpochIndex, PolicyConstants } from "../types/common";
+import { Auth, BatchIndex, Block, BlockNumber, EpochIndex, PolicyConstants } from "../types/common";
 
-type JustBlockNumber = { blockNumber: BlockNumber };
-type JustEpochIndex = { epochIndex: EpochIndex };
-type JustBatchIndex = { batchIndex: BatchIndex };
-type BlockNumberWithIndex = { blockNumber: BlockNumber, justIndex?: boolean };
+type JustIndexOption = { justIndex?: boolean };
+type EpochIndexOption = { epochIndex?: EpochIndex };
+type BatchIndexOption = { batchIndex?: BatchIndex };
 type SupplyAtParams = { genesisSupply: number, genesisTime: number, currentTime: number };
 
 export class PolicyClient extends HttpClient {
@@ -16,8 +15,7 @@ export class PolicyClient extends HttpClient {
      * Gets a bundle of policy constants
      */
     public async getPolicyConstants(options = DEFAULT_OPTIONS) {
-        const req = { method: 'getPolicyConstants', params: [] }
-        return super.call<PolicyConstants, typeof req>(req, options)
+        return super.call<PolicyConstants>({ method: 'getPolicyConstants' }, options)
     }
 
     /**
@@ -28,14 +26,8 @@ export class PolicyClient extends HttpClient {
      * For example, the first block of any epoch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height) or index
      */
-    public async getEpochAt({ blockNumber, justIndex }: BlockNumberWithIndex, options = DEFAULT_OPTIONS) {
-        if (justIndex) {
-            const req = { method: 'getEpochIndexAt', params: [blockNumber] }
-            return super.call<EpochIndex, typeof req>(req, options)
-        } else {
-            const req = { method: 'getEpochAt', params: [blockNumber] }
-            return super.call<EpochIndex, typeof req>(req, options)
-        }
+    public async getEpochAt(blockNumber: BlockNumber, p?: JustIndexOption, options = DEFAULT_OPTIONS) {
+        return super.call<EpochIndex>({ method: p?.justIndex ? 'getEpochIndexAt' : 'getEpochAt', params: [blockNumber] }, options)
     }
 
     /**
@@ -46,14 +38,8 @@ export class PolicyClient extends HttpClient {
      * For example, the first block of any batch always has an epoch index of 0.
      * @returns The epoch number at the given block number (height).
      */
-    public async getBatchAt({ blockNumber, justIndex }: BlockNumberWithIndex, options = DEFAULT_OPTIONS) {
-        if (justIndex) {
-            const req = { method: 'getBatchIndexAt', params: [blockNumber] }
-            return super.call<BatchIndex, typeof req>(req, options)
-        } else {
-            const req = { method: 'getBatchAt', params: [blockNumber] }
-            return super.call<BatchIndex, typeof req>(req, options)
-        }
+    public async getBatchAt(batchIndex: BatchIndex, p?: JustIndexOption, options = DEFAULT_OPTIONS) {
+        return super.call<BatchIndex>({ method: p?.justIndex ? 'getBatchIndexAt' : 'getBatchAt', params: [batchIndex] }, options)
     }
 
     /**
@@ -62,9 +48,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The number (height) of the next election macro block after a given block number (height).
      */
-    public async getElectionBlockAfter({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getElectionBlockAfter', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+    public async getElectionBlockAfter(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<BlockNumber>({ method: 'getElectionBlockAfter', params: [blockNumber] }, options)
     }
 
     /**
@@ -74,9 +59,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding election macro block before a given block number (height).
      */
-    public async getElectionBlockBefore({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getElectionBlockBefore', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+    public async getElectionBlockBefore(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<BlockNumber>({ method: 'getElectionBlockBefore', params: [blockNumber] }, options)
     }
 
     /**
@@ -86,9 +70,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns 
      */
-    public async getLastElectionBlock({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getLastElectionBlock', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+    public async getLastElectionBlock(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<BlockNumber>({ method: 'getLastElectionBlock', params: [blockNumber] }, options)
     }
 
     /**
@@ -97,9 +80,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
      */
-    public async getIsElectionBlockAt({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getIsElectionBlockAt', params: [blockNumber] }
-        return super.call<Boolean, typeof req>(req, options)
+    public async getIsElectionBlockAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<Boolean>({ method: 'getIsElectionBlockAt', params: [blockNumber] }, options)
     }
 
     /**
@@ -108,9 +90,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next macro block after a given block number (height).
      */
-    public async getMacroBlockAfter({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getMacroBlockAfter', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+    public async getMacroBlockAfter(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<BlockNumber>({ method: 'getMacroBlockAfter', params: [blockNumber] }, options)
     }
 
     /**
@@ -119,9 +100,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the preceding macro block before a given block number (height).
      */
-    public async getMacroBlockBefore({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getMacroBlockBefore', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+    public async getMacroBlockBefore(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<BlockNumber>({ method: 'getMacroBlockBefore', params: [blockNumber] }, options)
     }
 
     /**
@@ -131,9 +111,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the last macro block at a given block number (height).
      */
-    public async getLastMacroBlock({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getLastMacroBlock', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+    public async getLastMacroBlock(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<BlockNumber>({ method: 'getLastMacroBlock', params: [blockNumber] }, options)
     }
 
 
@@ -144,9 +123,8 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the block at a given block number (height) is a macro block.
      */
-    public async getIsMacroBlockAt({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
-        const req = { method: 'getIsMacroBlockAt', params: [blockNumber] }
-        return super.call<Boolean, typeof req>(req, options)
+    public async getIsMacroBlockAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return super.call<Boolean>({ method: 'getIsMacroBlockAt', params: [blockNumber] }, options)
     }
 
     /**
@@ -155,9 +133,9 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns The block number (height) of the next micro block after a given block number (height).
      */
-    public async getIsMicroBlockAt({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
+    public async getIsMicroBlockAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
         const req = { method: 'getIsMicroBlockAt', params: [blockNumber] }
-        return super.call<Boolean, typeof req>(req, options)
+        return super.call<Boolean>(req, options)
     }
 
     /**
@@ -166,9 +144,9 @@ export class PolicyClient extends HttpClient {
      * @param epochIndex The epoch index to query.
      * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
      */
-    public async getFirstBlockOf({ epochIndex }: JustEpochIndex, options = DEFAULT_OPTIONS) {
+    public async getFirstBlockOf({ epochIndex }: EpochIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getFirstBlockOf', params: [epochIndex] }
-        return super.call<BlockNumber, typeof req>(req, options)
+        return super.call<BlockNumber>(req, options)
     }
 
     /**
@@ -177,9 +155,9 @@ export class PolicyClient extends HttpClient {
      * @param batchIndex The batch index to query.
      * @returns The block number of the first block of the given batch (which is always a micro block).
      */
-    public async getFirstBlockOfBatch({ batchIndex }: JustBatchIndex, options = DEFAULT_OPTIONS) {
+    public async getFirstBlockOfBatch({ batchIndex }: BatchIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getFirstBlockOfBatch', params: [batchIndex] }
-        return super.call<BlockNumber, typeof req>(req, options)
+        return super.call<BlockNumber>(req, options)
     }
 
     /**
@@ -188,9 +166,9 @@ export class PolicyClient extends HttpClient {
      * @param epochIndex The epoch index to query.
      * @returns The block number of the election macro block of the given epoch (which is always the last block).
      */
-    public async getElectionBlockOf({ epochIndex }: JustEpochIndex, options = DEFAULT_OPTIONS) {
+    public async getElectionBlockOf({ epochIndex }: EpochIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getElectionBlockOf', params: [epochIndex] }
-        return super.call<BlockNumber, typeof req>(req, options)
+        return super.call<BlockNumber>(req, options)
     }
 
     /**
@@ -199,9 +177,9 @@ export class PolicyClient extends HttpClient {
      * @param batchIndex The batch index to query.
      * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
      */
-    public async getMacroBlockOf({ batchIndex }: JustBatchIndex, options = DEFAULT_OPTIONS) {
+    public async getMacroBlockOf({ batchIndex }: BatchIndexOption, options = DEFAULT_OPTIONS) {
         const req = { method: 'getMacroBlockOf', params: [batchIndex] }
-        return super.call<BlockNumber, typeof req>(req, options)
+        return super.call<BlockNumber>(req, options)
     }
 
     /**
@@ -211,9 +189,9 @@ export class PolicyClient extends HttpClient {
      * @param blockNumber The block number (height) to query.
      * @returns A boolean expressing if the batch at a given block number (height) is the first batch
      */
-    public async getFirstBatchOfEpoch({ blockNumber }: JustBlockNumber, options = DEFAULT_OPTIONS) {
+    public async getFirstBatchOfEpoch(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
         const req = { method: 'getFirstBatchOfEpoch', params: [blockNumber] }
-        return super.call<BlockNumber, typeof req>(req, options)
+        return super.call<BlockNumber>(req, options)
     }
 
     /**
@@ -230,6 +208,6 @@ export class PolicyClient extends HttpClient {
      */
     public async getSupplyAt({ genesisSupply, genesisTime, currentTime }: SupplyAtParams, options = DEFAULT_OPTIONS) {
         const req = { method: 'getSupplyAt', params: [genesisSupply, genesisTime, currentTime] }
-        return super.call<number, typeof req>(req, options)
+        return super.call<number>(req, options)
     }
 }

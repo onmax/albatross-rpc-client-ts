@@ -16,13 +16,7 @@ export class MempoolClient extends HttpClient {
      * @returns Transaction hash
      */
     public pushTransaction({ transaction, withHighPriority }: PushTransactionParams, options = DEFAULT_OPTIONS) {
-        if (withHighPriority) {
-            const req = { method: 'pushHighPriorityTransaction', params: [transaction] }
-            return super.call<Hash, typeof req>(req, options)
-        } else {
-            const req = { method: 'pushTransaction', params: [transaction] }
-            return super.call<Hash, typeof req>(req, options)
-        }
+        return super.call<Hash>({ method: withHighPriority ? 'pushHighPriorityTransaction' : 'pushTransaction', params: [transaction] }, options)
     }
 
     /**
@@ -32,16 +26,14 @@ export class MempoolClient extends HttpClient {
      * @returns 
      */
     public mempoolContent({ includeTransactions }: MempoolContentParams = { includeTransactions: false }, options = DEFAULT_OPTIONS) {
-        const req = { method: 'mempoolContent', params: [includeTransactions] }
-        return super.call<(Hash | Transaction)[], typeof req>(req, options)
+        return super.call<(Hash | Transaction)[]>({ method: 'mempoolContent', params: [includeTransactions] }, options)
     }
 
     /**
      * @returns 
      */
     public mempool(options = DEFAULT_OPTIONS) {
-        const req = { method: 'mempool', params: [] }
-        return super.call<MempoolInfo, typeof req>(req, options)
+        return super.call<MempoolInfo>({ method: 'mempool' }, options)
     }
 
     /**
@@ -49,7 +41,6 @@ export class MempoolClient extends HttpClient {
      * @returns
      */
     public getMinFeePerByte(options = DEFAULT_OPTIONS) {
-        const req = { method: 'getMinFeePerByte', params: [] }
-        return super.call</* f64 */number, typeof req>(req, options)
+        return super.call</* f64 */number>({ method: 'getMinFeePerByte' }, options)
     }
 }

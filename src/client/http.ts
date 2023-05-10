@@ -19,19 +19,19 @@ export const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions = {
     timeout: DEFAULT_TIMEOUT_CONFIRMATION,
 }
 
-export type Context<Params extends any[] = any> = {
+export type Context = {
     headers: HeadersInit,
     body: {
         method: string;
-        params: Params;
+        params: any[];
         id: number;
     }
     timestamp: number;
     url: string;
 }
 
-export type CallResult<Params extends any[], Data, Metadata = undefined> = {
-    context: Context<Params>
+export type CallResult<Data, Metadata = undefined> = {
+    context: Context
 } & (
         | {
             data: Data;
@@ -60,24 +60,21 @@ export class HttpClient {
 
     async call<
         Data,
-        Request extends { method: string; params: any[], withMetadata?: boolean },
         Metadata = undefined,
     >(
-        request: Request,
+        request: { method: string; params?: any[], withMetadata?: boolean },
         options: HttpOptions
-    ): Promise<CallResult<Request["params"], Data, Metadata>> {
-        const { method, params: requestParams, withMetadata } = request;
+    ): Promise<CallResult<Data, Metadata>> {
+        const { method, params, withMetadata } = request;
         const { timeout } = options;
 
         const controller = new AbortController();
         const timeoutId = setTimeout(() => controller.abort(), timeout);
 
-        const params = (requestParams as any[]).map((param: any) => (param === undefined ? null : param)) as Context<Request["params"]>['body']['params'];
-
-        const context: Context<Request["params"]> = {
+        const context: Context = {
             body: {
                 method,
-                params,
+                params: params?.map((item) => item === undefined ? null : item) || [],
                 id: HttpClient.id,
             },
             headers: {

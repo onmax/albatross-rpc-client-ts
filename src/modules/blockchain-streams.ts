@@ -23,7 +23,7 @@ export class BlockchainStream extends WebSocketClient {
     >(params: T, userOptions?: Partial<O>) {
         if (params.retrieve === 'HASH') {
             const options: StreamOptions<Hash> = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions<Hash> }
-            return super.subscribe({ method: "subscribeForHeadBlockHash", params: [], withMetadata: false }, options) as Promise<Subscription<Hash, []>>
+            return super.subscribe({ method: "subscribeForHeadBlockHash" }, options) as Promise<Subscription<Hash>>
         }
 
         let filter;
@@ -50,7 +50,7 @@ export class BlockchainStream extends WebSocketClient {
         T extends SubscribeForValidatorElectionByAddressParams,
         O extends StreamOptions<Validator>
     >(p: T, userOptions?: Partial<O>):
-        Promise<Subscription<Validator, Address[]>> {
+        Promise<Subscription<Validator>> {
         return super.subscribe({ method: "subscribeForValidatorElectionByAddress", params: [p.address], withMetadata: p?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
     }
 
@@ -63,7 +63,7 @@ export class BlockchainStream extends WebSocketClient {
         T extends SubscribeForLogsByAddressesAndTypesParams,
         O extends StreamOptions<BlockLog>
     >(p: T, userOptions?: Partial<O>):
-        Promise<Subscription<BlockLog, (Address[] | LogType[])[]>> {
+        Promise<Subscription<BlockLog>> {
         return super.subscribe({ method: "subscribeForLogsByAddressesAndTypes", params: [p?.addresses || [], p?.types || []], withMetadata: p?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
     }
 }

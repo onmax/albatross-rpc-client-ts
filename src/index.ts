@@ -46,13 +46,14 @@ export default class Client {
 
         this.block = {
             current: blockchain.getBlockNumber.bind(blockchain),
-            getBy: blockchain.getBlockBy.bind(blockchain),
+            getByHash: blockchain.getBlockByHash.bind(blockchain),
+            getByNumber: blockchain.getBlockByNumber.bind(blockchain),
             latest: blockchain.getLatestBlock.bind(blockchain),
             election: {
                 after: policy.getElectionBlockAfter.bind(policy),
                 before: policy.getElectionBlockBefore.bind(policy),
                 last: policy.getLastElectionBlock.bind(policy),
-                getBy: policy.getElectionBlockOf.bind(policy),
+                get: policy.getElectionBlockOf.bind(policy),
                 subscribe: blockchainStreams.subscribeForValidatorElectionByAddress.bind(blockchainStreams),
             },
             isElection: policy.getIsElectionBlockAt.bind(policy),
@@ -93,7 +94,10 @@ export default class Client {
         }
 
         this.transaction = {
-            getBy: blockchain.getTransactionBy.bind(blockchain),
+            getByAddress: blockchain.getTransactionsByAddress.bind(blockchain),
+            getByBatch: blockchain.getTransactionsByBatchNumber.bind(blockchain),
+            getByBlockNumber: blockchain.getTransactionsByBlockNumber.bind(blockchain),
+            getByHash: blockchain.getTransactionByHash.bind(blockchain),
             push: mempool.pushTransaction.bind(mempool),
             minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
             create: consensus.createTransaction.bind(consensus),
@@ -163,7 +167,9 @@ export default class Client {
         }
 
         this.inherent = {
-            getBy: blockchain.getInherentsBy.bind(blockchain),
+            getByBatch: blockchain.getInherentsByBatchNumber.bind(blockchain),
+            getByBlock: blockchain.getInherentsByBlockNumber.bind(blockchain),
+
         }
 
         this.account = {

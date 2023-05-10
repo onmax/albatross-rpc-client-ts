@@ -7,7 +7,7 @@ export type ErrorStreamReturn = {
     message: string,
 }
 
-export type Subscription<Data, Params extends any[]> = {
+export type Subscription<Data> = {
     next: (callback: (data: MaybeStreamResponse<Data>) => void) => void;
     close: () => void;
 
@@ -15,8 +15,9 @@ export type Subscription<Data, Params extends any[]> = {
         headers: WebSocket.ClientOptions["headers"],
         body: {
             method: string;
-            params: Params;
+            params: any[];
             id: number;
+            jsonrpc: string;
         },
         timestamp: number;
         url: string;
@@ -67,11 +68,11 @@ export class WebSocketClient {
 
     async subscribe<
         Data,
-        Request extends { method: string; params: any[], withMetadata?: boolean },
+        Request extends { method: string; params?: any[], withMetadata?: boolean },
     >(
         request: Request,
         userOptions: StreamOptions<Data>
-    ): Promise<Subscription<Data, Request["params"]>> {
+    ): Promise<Subscription<Data>> {
         const headers: HeadersInit = {
             "Authorization": this.auth ? Buffer.from(`Basic ${this.auth.username}:${this.auth.password}`).toString('base64') : ''
         };
@@ -81,7 +82,7 @@ export class WebSocketClient {
 
         const requestBody = {
             method: request.method,
-            params: request.params,
+            params: request.params || [],
             jsonrpc: '2.0',
             id: this.id++,
         };
@@ -94,7 +95,7 @@ export class WebSocketClient {
         const { once, filter } = options;
         const withMetadata = 'withMetadata' in request ? request.withMetadata : false;
 
-        const args: Subscription<Data, Request["params"]> = {
+        const args: Subscription<Data> = {
             next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
                 ws.onerror = (error: WebSocket.ErrorEvent) => {
                     callback({ data: undefined, metadata: undefined, error: { code: 1000, message: error.message } });

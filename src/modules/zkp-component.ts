@@ -13,8 +13,7 @@ export class ZkpComponentClient extends HttpClient {
     }
 
     public async getZkpState(options = DEFAULT_OPTIONS) {
-        const req = { method: 'getZkpState', params: [] }
-        const { data, error, context, metadata } = await super.call<ZKPStateKebab, typeof req>(req, options)
+        const { data, error, context, metadata } = await super.call<ZKPStateKebab>({ method: 'getZkpState' }, options)
         if (error) {
             return { error, data, context };
         } else {

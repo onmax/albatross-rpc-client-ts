@@ -21,27 +21,35 @@ export class PolicyClient {
     }
 
     /**
-     * Gets the epoch number at a given `block_number` (height)
-     * 
-     * @param blockNumber The block number (height) to query.
-     * @param justIndex The epoch index is the number of a block relative to the epoch it is in.
-     * For example, the first block of any epoch always has an epoch index of 0.
-     * @returns The epoch number at the given block number (height) or index
+     * Returns the epoch number at a given block number (height).
      */
-    public async getEpochAt(blockNumber: BlockNumber, p?: JustIndexOption, options = DEFAULT_OPTIONS) {
-        return this.client.call<EpochIndex>({ method: p?.justIndex ? 'getEpochIndexAt' : 'getEpochAt', params: [blockNumber] }, options)
+    public async getEpochAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return this.client.call<EpochIndex>({ method: 'getEpochAt', params: [blockNumber] }, options)
+    }
+
+
+    /**
+     *  Returns the epoch index at a given block number. The epoch index is the number of a block relative
+     * to the epoch it is in. For example, the first block of any epoch always has an epoch index of 0.
+     */
+    public async getEpochIndexAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return this.client.call<EpochIndex>({ method: 'getEpochIndexAt', params: [blockNumber] }, options)
     }
 
     /**
-     * Gets the batch number at a given `block_number` (height)
-     * 
-     * @param blockNumber The block number (height) to query.
-     * @param justIndex The batch index is the number of a block relative to the batch it is in.
-     * For example, the first block of any batch always has an epoch index of 0.
-     * @returns The epoch number at the given block number (height).
+     * Returns the batch number at a given `block_number` (height)
      */
-    public async getBatchAt(batchIndex: BatchIndex, p?: JustIndexOption, options = DEFAULT_OPTIONS) {
-        return this.client.call<BatchIndex>({ method: p?.justIndex ? 'getBatchIndexAt' : 'getBatchAt', params: [batchIndex] }, options)
+    public async getBatchAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return this.client.call<EpochIndex>({ method: 'getBatchAt', params: [blockNumber] }, options)
+    }
+
+
+    /**
+     * Returns the batch index at a given block number. The batch index is the number of a block relative
+     * to the batch it is in. For example, the first block of any batch always has an batch index of 0.
+     */
+    public async getBatchIndexAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+        return this.client.call<EpochIndex>({ method: 'getBatchIndexAt', params: [blockNumber] }, options)
     }
 
     /**

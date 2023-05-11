@@ -14,7 +14,10 @@ export class ZkpComponentClient {
         this.client = http;
     }
 
-
+    /**
+     * Returns the latest header number, block number and proof
+     * @returns 
+     */
     public async getZkpState(options = DEFAULT_OPTIONS) {
         const { data, error, context, metadata } = await this.client.call<ZKPStateKebab>({ method: 'getZkpState' }, options)
         if (error) {

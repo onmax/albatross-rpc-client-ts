@@ -1400,9 +1400,6 @@ declare namespace network {
   };
 }
 
-type JustIndexOption = {
-    justIndex?: boolean;
-};
 type EpochIndexOption = {
     epochIndex?: EpochIndex;
 };
@@ -1422,23 +1419,23 @@ declare class PolicyClient {
      */
     getPolicyConstants(options?: HttpOptions): Promise<CallResult<PolicyConstants, undefined>>;
     /**
-     * Gets the epoch number at a given `block_number` (height)
-     *
-     * @param blockNumber The block number (height) to query.
-     * @param justIndex The epoch index is the number of a block relative to the epoch it is in.
-     * For example, the first block of any epoch always has an epoch index of 0.
-     * @returns The epoch number at the given block number (height) or index
+     * Returns the epoch number at a given block number (height).
      */
-    getEpochAt(blockNumber: BlockNumber, p?: JustIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
+    getEpochAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
-     * Gets the batch number at a given `block_number` (height)
-     *
-     * @param blockNumber The block number (height) to query.
-     * @param justIndex The batch index is the number of a block relative to the batch it is in.
-     * For example, the first block of any batch always has an epoch index of 0.
-     * @returns The epoch number at the given block number (height).
+     *  Returns the epoch index at a given block number. The epoch index is the number of a block relative
+     * to the epoch it is in. For example, the first block of any epoch always has an epoch index of 0.
      */
-    getBatchAt(batchIndex: BatchIndex, p?: JustIndexOption, options?: HttpOptions): Promise<CallResult<number, undefined>>;
+    getEpochIndexAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
+    /**
+     * Returns the batch number at a given `block_number` (height)
+     */
+    getBatchAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
+    /**
+     * Returns the batch index at a given block number. The batch index is the number of a block relative
+     * to the batch it is in. For example, the first block of any batch always has an batch index of 0.
+     */
+    getBatchIndexAt(blockNumber: BlockNumber, options?: HttpOptions): Promise<CallResult<number, undefined>>;
     /**
      * Gets the number (height) of the next election macro block after a given block number (height).
      *
@@ -1654,6 +1651,10 @@ declare namespace wallet {
 declare class ZkpComponentClient {
     private client;
     constructor(http: HttpClient);
+    /**
+     * Returns the latest header number, block number and proof
+     * @returns
+     */
     getZkpState(options?: HttpOptions): Promise<{
         error: {
             code: number;
@@ -1686,94 +1687,347 @@ declare class Client {
     http: HttpClient;
     ws: WebSocketClient;
     block: {
+        /**
+         * Returns the block number for the current head.
+         */
         current: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Tries to fetch a block given its hash. It has an option to include the transactions in
+         * the block, which defaults to false.
+         */
         getByHash: <T extends GetBlockByHashParams>(hash: string, p?: T | undefined, options?: HttpOptions) => Promise<CallResult<T["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+        /**
+         * Tries to fetch a block given its number. It has an option to include the transactions in
+         * the block, which defaults to false.
+         */
         getByNumber: <T_1 extends GetBlockByBlockNumberParams>(blockNumber: number, p?: T_1 | undefined, options?: HttpOptions) => Promise<CallResult<T_1["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+        /**
+         * Returns the block at the head of the main chain. It has an option to include the
+         * transactions in the block, which defaults to false.
+        */
         latest: <T_2 extends GetLatestBlockParams>(p?: T_2, options?: HttpOptions) => Promise<CallResult<T_2["includeTransactions"] extends true ? Block : PartialBlock, undefined>>;
+        /**
+         * Returns the index of the block in its batch. Starting from 0.
+         */
+        batchIndex: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Returns the index of the block in its epoch. Starting from 0.
+         */
+        epochIndex: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Election blocks are the first blocks of each epoch
+         */
         election: {
+            /**
+             * Gets the number (height) of the next election macro block after a given block
+             * number (height).
+             *
+             * @param blockNumber The block number (height) to query.
+             * @returns The number (height) of the next election macro block after a given
+             * block number (height).
+             */
             after: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Gets the block number (height) of the preceding election macro block before
+             * a given block number (height). If the given block number is an election macro
+             * block, it returns the election macro block before it.
+             *
+             * @param blockNumber The block number (height) to query.
+             * @returns The block number (height) of the preceding election macro block before
+             * a given block number (height).
+             */
             before: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Gets the block number (height) of the last election macro block at a given block
+             * number (height). If the given block number is an election macro block, then it
+             * returns that block number.
+             *
+             * @param blockNumber The block number (height) to query.
+             * @returns
+             */
             last: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Gets the block number of the election macro block of the given epoch (which is
+             * always the last block).
+             *
+             * @param epochIndex The epoch index to query.
+             * @returns The block number of the election macro block of the given epoch (which
+             * is always the last block).
+             */
             get: ({ epochIndex }: {
                 epochIndex?: number | undefined;
             }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Subscribes to pre epoch validators events.
+             */
             subscribe: <T_3 extends SubscribeForValidatorElectionByAddressParams, O extends StreamOptions<Validator>>(p: T_3, userOptions?: Partial<O> | undefined) => Promise<Subscription<Validator>>;
         };
+        /**
+ * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
+ *
+ * @param blockNumber The block number (height) to query.
+ * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
+ */
         isElection: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Macro blocks are the first blocks of each batch
+         */
         macro: {
+            /**
+             * Gets the block number (height) of the next macro block after a given block number (height).
+             *
+             * @param blockNumber The block number (height) to query.
+             * @returns The block number (height) of the next macro block after a given block number (height).
+             */
             after: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Gets the block number (height) of the preceding macro block before a given block number
+             * (height).
+             *
+             * @param blockNumber The block number (height) to query.
+             * @returns The block number (height) of the preceding macro block before a given block
+             * number (height).
+             */
             before: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Gets the block number (height) of the last macro block at a given block number (height).
+             * If the given block number is a macro block, then it returns that block number.
+             *
+             * @param blockNumber The block number (height) to query.
+             * @returns The block number (height) of the last macro block at a given block number (height).
+             */
             last: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+            /**
+             * Gets the block number of the macro block (checkpoint or election) of the given batch
+             * (which
+             * is always the last block).
+             *
+             * @param batchIndex The batch index to query.
+             * @returns The block number of the macro block (checkpoint or election) of the given
+             * batch (which
+             * is always the last block).
+             */
             getBy: ({ batchIndex }: {
                 batchIndex?: number | undefined;
             }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
         };
+        /**
+         * Gets a boolean expressing if the block at a given block number (height) is a macro block.
+         *
+         * @param blockNumber The block number (height) to query.
+         * @returns A boolean expressing if the block at a given block number (height) is a macro block.
+         */
         isMacro: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Gets the block number (height) of the next micro block after a given block number (height).
+         *
+         * @param blockNumber The block number (height) to query.
+         * @returns The block number (height) of the next micro block after a given block number (height).
+         */
         isMicro: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Subscribes to new block events.
+         */
         subscribe: <T_4 extends SubscribeForHeadBlockParams | SubscribeForHeadHashParams, O_1 extends StreamOptions<T_4 extends SubscribeForHeadBlockParams ? Block | PartialBlock : string>>(params: T_4, userOptions?: Partial<O_1> | undefined) => Promise<Subscription<any>>;
     };
     batch: {
+        /**
+         * Returns the batch number for the current head.
+         */
         current: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
-        at: (batchIndex: number, p?: {
-            justIndex?: boolean | undefined;
-        } | undefined, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Gets the batch number at a given `block_number` (height)
+         *
+         * @param blockNumber The block number (height) to query.
+         * @param justIndex The batch index is the number of a block relative to the batch it is in.
+         * For example, the first block of any batch always has an epoch index of 0.
+         * @returns The epoch number at the given block number (height).
+         */
+        at: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Gets the block number (height) of the first block of the given epoch (which is always
+         * a micro block).
+         *
+         * @param epochIndex The epoch index to query.
+         * @returns The block number (height) of the first block of the given epoch (which is always
+         * a micro block).
+         */
         firstBlock: ({ epochIndex }: {
             epochIndex?: number | undefined;
         }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
     };
     epoch: {
+        /**
+         * Returns the epoch number for the current head.
+         */
         current: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
-        at: (blockNumber: number, p?: {
-            justIndex?: boolean | undefined;
-        } | undefined, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Gets the epoch number at a given `block_number` (height)
+         *
+         * @param blockNumber The block number (height) to query.
+         * @param justIndex The epoch index is the number of a block relative to the epoch it is in.
+         * For example, the first block of any epoch always has an epoch index of 0.
+         * @returns The epoch number at the given block number (height) or index
+         */
+        at: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Gets the block number (height) of the first block of the given epoch (which is always a micro block).
+         *
+         * @param epochIndex The epoch index to query.
+         * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
+         */
         firstBlock: ({ epochIndex }: {
             epochIndex?: number | undefined;
         }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Gets a boolean expressing if the batch at a given block number (height) is the first batch
+         * of the epoch.
+         *
+         * @param blockNumber The block number (height) to query.
+         * @returns A boolean expressing if the batch at a given block number (height) is the first batch
+         */
         firstBatch: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
     };
     transaction: {
+        /**
+         * Fetchs the transactions given the address.
+         *
+         * It returns the latest transactions for a given address. All the transactions
+         * where the given address is listed as a recipient or as a sender are considered. Reward
+         * transactions are also returned. It has an option to specify the maximum number of transactions
+         * to fetch, it defaults to 500.
+         */
         getByAddress: <T extends GetTransactionsByAddressParams>(address: `NQ${number} ${string}`, p?: T | undefined, options?: HttpOptions) => Promise<CallResult<T["justHashes"] extends true ? Transaction[] : string[], undefined>>;
+        /**
+         * Fetchs the transactions given the batch number.
+         */
         getByBatch: (batchIndex: number, options?: HttpOptions) => Promise<CallResult<Transaction[], undefined>>;
+        /**
+         * Fetchs the transactions given the block number.
+         */
         getByBlockNumber: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Transaction[], undefined>>;
+        /**
+         * Fetchs the transaction given the hash.
+         */
         getByHash: (hash: string, options?: HttpOptions) => Promise<CallResult<Transaction, undefined>>;
+        /**
+         * Pushes the given serialized transaction to the local mempool
+         *
+         * @param transaction Serialized transaction
+         * @returns Transaction hash
+         */
         push: ({ transaction, withHighPriority }: {
             transaction: string;
             withHighPriority?: boolean | undefined;
         }, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        /**
+         *
+         * @returns
+         */
         minFeePerByte: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Creates a serialized transaction
+         */
         create: (p: TransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        /**
+         * Sends a transaction
+         */
         send: (p: TransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        /**
+        * Sends a transaction and waits for confirmation
+        */
         sendSync: (p: TransactionParams, options: SendTxCallOptions) => Promise<unknown>;
     };
     inherent: {
+        /**
+         * Fetchs the inherents given the batch number.
+         */
         getByBatch: (batchIndex: number, options?: HttpOptions) => Promise<CallResult<Inherent[], undefined>>;
+        /**
+         * Fetchs the inherents given the block number.
+         */
         getByBlock: (blockNumber: number, options?: HttpOptions) => Promise<CallResult<Inherent[], undefined>>;
     };
     account: {
+        /**
+         * Tries to fetch the account at the given address.
+         */
         getBy: <T extends GetAccountByAddressParams>(address: `NQ${number} ${string}`, { withMetadata }: T, options?: HttpOptions) => Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
+        /**
+         * Fetchs the account given the address.
+         */
         importRawKey: ({ keyData, passphrase }: ImportKeyParams, options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`, undefined>>;
+        /**
+         * Fetchs the account given the address.
+         */
         new: (p?: CreateAccountParams | undefined, options?: HttpOptions) => Promise<CallResult<WalletAccount, undefined>>;
+        /**
+         * Returns a boolean indicating whether the account is imported or not.
+         */
         isImported: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Returns a list of all accounts.
+         */
         list: (options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Locks the account at the given address.
+         */
         lock: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<null, undefined>>;
+        /**
+         * Unlocks the account at the given address.
+         */
         unlock: (address: `NQ${number} ${string}`, { passphrase, duration }: UnlockAccountParams, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Returns a boolean indicating whether the account is locked or not.
+         */
         isLocked: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
+        /**
+         * Signs the given data with the account at the given address.
+         */
         sign: ({ message, address, passphrase, isHex }: SignParams, options?: HttpOptions) => Promise<CallResult<Signature, undefined>>;
+        /**
+         * Verifies the given signature with the account at the given address.
+         */
         verify: ({ message, publicKey, signature, isHex }: VerifySignatureParams, options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
     };
     validator: {
+        /**
+         * Tries to fetch a validator information given its address. It has an option to include a map
+         * containing the addresses and stakes of all the stakers that are delegating to the validator.
+         */
         byAddress: <T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<PartialValidator, undefined>>;
+        /**
+         * Updates the configuration setting to automatically reactivate our validator
+         */
         setAutomaticReactivation: ({ automaticReactivation }: {
             automaticReactivation: boolean;
         }, options?: HttpOptions) => Promise<CallResult<null, undefined>>;
+        /**
+         * Returns the information of the validator running on the node
+         */
         selfNode: {
+            /**
+             * Returns our validator address.
+             */
             address: (options?: HttpOptions) => Promise<CallResult<`NQ${number} ${string}`, undefined>>;
+            /**
+             * Returns our validator signing key.
+             */
             signingKey: (options?: HttpOptions) => Promise<CallResult<String, undefined>>;
+            /**
+             * Returns our validator voting key.
+             */
             votingKey: (options?: HttpOptions) => Promise<CallResult<String, undefined>>;
         };
+        /**
+         * Returns a collection of the currently active validator's addresses and balances.
+         */
         activeList: <T_1 extends {
             withMetadata: boolean;
         }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<Validator[], T_1["withMetadata"] extends true ? BlockchainState : undefined>>;
+        /**
+         * Returns information about the currently parked validators.
+         */
         parked: <T_2 extends {
             withMetadata: boolean;
         }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<{
@@ -1782,81 +2036,292 @@ declare class Client {
         }, T_2["withMetadata"] extends true ? BlockchainState : undefined>>;
         action: {
             new: {
+                /**
+                 * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee and the validator deposit.
+                 * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+                 * have a double Option. So we use the following work-around for the signal data:
+                 * "" = Set the signal data field to None.
+                 * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
+                 */
                 createTx: (p: NewValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `new_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee and the validator deposit.
+                 * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+                 * have a double Option. So we use the following work-around for the signal data:
+                 * "" = Set the signal data field to None.
+                 * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
+                 */
                 sendTx: (p: NewValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `new_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee and the validator deposit
+                 * and waits for confirmation.
+                 * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+                 * have a double Option. So we use the following work-around for the signal data:
+                 * "" = Set the signal data field to None.
+                 * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
+                 */
+                sendSyncTx: (p: NewValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             update: {
+                /**
+                 * Returns a serialized `update_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+                 * have a double Option. So we use the following work-around for the signal data:
+                 * null = No change in the signal data field.
+                 * "" = Change the signal data field to None.
+                 * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
+                 */
                 createTx: (p: UpdateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `update_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+                 * have a double Option. So we use the following work-around for the signal data:
+                 * null = No change in the signal data field.
+                 * "" = Change the signal data field to None.
+                 * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
+                 */
                 sendTx: (p: UpdateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                * Sends a `update_validator` transaction. You need to provide the address of a basic
+                * account (the sender wallet) to pay the transaction fee and waits for confirmation.
+                * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
+                * have a double Option. So we use the following work-around for the signal data:
+                * null = No change in the signal data field.
+                * "" = Change the signal data field to None.
+                * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
+                */
+                sendSyncTx: (p: UpdateValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             deactivate: {
+                /**
+                 * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 createTx: (p: DeactiveValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 sendTx: (p: DeactiveValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `inactivate_validator` transaction and waits for confirmation.
+                 * You need to provide the address of a basic account (the sender wallet)
+                 * to pay the transaction fee.
+                 */
+                sendSyncTx: (p: DeactiveValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             reactivate: {
+                /**
+                * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
+                * account (the sender wallet) to pay the transaction fee.
+                */
                 createTx: (p: ReactivateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 sendTx: (p: ReactivateValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `reactivate_validator` transaction and waits for confirmation.
+                 * You need to provide the address of a basic account (the sender wallet)
+                 * to pay the transaction fee.
+                 */
+                sendSyncTx: (p: ReactivateValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             unpark: {
+                /**
+                 * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 createTx: (p: UnparkValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `unpark_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 sendTx: (p: UnparkValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `unpark_validator` transaction and waits for confirmation.
+                 * You need to provide the address of a basic account (the sender wallet)
+                 * to pay the transaction fee.
+                 */
+                sendSyncTx: (p: UnparkValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             retire: {
+                /**
+                 * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 createTx: (p: RetireValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `retire_validator` transaction. You need to provide the address of a basic
+                 * account (the sender wallet) to pay the transaction fee.
+                 */
                 sendTx: (p: RetireValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `retire_validator` transaction and waits for confirmation.
+                 * You need to provide the address of a basic account (the sender wallet)
+                 * to pay the transaction fee.
+                 */
+                sendSyncTx: (p: RetireValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             delete: {
+                /**
+                 * Returns a serialized `delete_validator` transaction. The transaction fee will be paid from the
+                 * validator deposit that is being returned.
+                 * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
+                 * Failed delete validator transactions can diminish the validator deposit
+                 */
                 createTx: (p: DeleteValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a `delete_validator` transaction. The transaction fee will be paid from the
+                 * validator deposit that is being returned.
+                 * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
+                 * Failed delete validator transactions can diminish the validator deposit
+                 */
                 sendTx: (p: DeleteValidatorTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                * Sends a `delete_validator` transaction and waits for confirmation.
+                * The transaction fee will be paid from the validator deposit that is being returned.
+                * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
+                * Failed delete validator transactions can diminish the validator deposit
+                */
+                sendSyncTx: (p: DeleteValidatorTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
         };
     };
     slots: {
+        /**
+         * Returns the information for the slot owner at the given block height and offset. The
+         * offset is optional, it will default to getting the offset for the existing block
+         * at the given height.
+         */
         at: <T extends GetSlotAtBlockParams>(blockNumber: number, p?: T | undefined, options?: HttpOptions) => Promise<CallResult<Slot, undefined>>;
         slashed: {
+            /**
+             * Returns information about the currently slashed slots. This includes slots that lost rewards
+             * and that were disabled.
+             */
             current: <T_1 extends {
                 withMetadata: boolean;
             }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<SlashedSlot[], undefined>>;
+            /**
+             * Returns information about the slashed slots of the previous batch. This includes slots that
+             * lost rewards and that were disabled.
+             */
             previous: <T_2 extends {
                 withMetadata: boolean;
             }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<SlashedSlot[], T_2["withMetadata"] extends true ? BlockchainState : undefined>>;
         };
     };
     mempool: {
+        /**
+         * @returns
+         */
         info: (options?: HttpOptions) => Promise<CallResult<MempoolInfo, undefined>>;
+        /**
+         * Content of the mempool
+         *
+         * @param includeTransactions
+         * @returns
+         */
         content: ({ includeTransactions }?: {
             includeTransactions: boolean;
         }, options?: HttpOptions) => Promise<CallResult<(string | Transaction)[], undefined>>;
     };
     stakes: {
         new: {
+            /**
+             * Returns a serialized transaction creating a new stake contract
+             */
             createTx: (p: StakeTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction creating a new stake contract to the network
+             */
             sendTx: (p: StakeTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction creating a new stake contract to the network and waits for confirmation
+             */
             sendSyncTx: (p: StakeTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
     };
     staker: {
+        /**
+         * Fetchs the stakers given the batch number.
+         */
         fromValidator: <T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<Staker[], undefined>>;
+        /**
+         * Fetchs the staker given the address.
+         */
         getBy: <T_1 extends GetStakerByAddressParams>({ address }: T_1, options?: HttpOptions) => Promise<CallResult<Staker, undefined>>;
         new: {
+            /**
+             * Creates a new staker transaction
+             */
             createTx: (p: StakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a new staker transaction
+             */
             sendTx: (p: StakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a new staker transaction and waits for confirmation
+             */
             sendSyncTx: (p: StakerTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
         update: {
+            /**
+             * Creates a new staker transaction
+             */
             createTx: (p: UpdateStakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a new staker transaction
+             */
             sendTx: (p: UpdateStakerTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a new staker transaction and waits for confirmation
+             */
             sendSyncTx: (p: UpdateStakerTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
     };
     peers: {
+        /**
+         * The peer ID for our local peer.
+         */
         id: (options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+        /**
+         * Returns the number of peers.
+         */
         count: (options?: HttpOptions) => Promise<CallResult<number, undefined>>;
+        /**
+         * Returns a list with the IDs of all our peers.
+         */
         peers: (options?: HttpOptions) => Promise<CallResult<string[], undefined>>;
+        /**
+         * Returns a boolean specifying if we have established consensus with the network
+         */
         consensusEstablished: (options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
     };
     constant: {
+        /**
+         * Gets a bundle of policy constants
+         */
         params: (options?: HttpOptions) => Promise<CallResult<PolicyConstants, undefined>>;
+        /**
+         * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
+         * calculated using the following formula:
+         * Supply (t) = Genesis_supply + Initial_supply_velocity / Supply_decay * (1 - e^(- Supply_decay * t))
+         * Where e is the exponential function, t is the time in milliseconds since the genesis block and
+         * Genesis_supply is the supply at the genesis of the Nimiq 2.0 chain.
+         *
+         * @param genesisSupply supply at genesis
+         * @param genesisTime timestamp of genesis block
+         * @param currentTime timestamp to calculate supply at
+         * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
+         */
         supply: ({ genesisSupply, genesisTime, currentTime }: {
             genesisSupply: number;
             genesisTime: number;
@@ -1865,41 +2330,99 @@ declare class Client {
     };
     htlc: {
         new: {
+            /**
+             * Returns a serialized transaction creating a new HTLC contract
+             */
             createTx: (p: HtlcTransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Creates a serialized transaction creating a new HTLC contract
+             */
             sendTx: (p: HtlcTransactionParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction creating a new HTLC contract to the network and waits for confirmation
+             */
             sendSyncTx: (p: HtlcTransactionParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
         redeem: {
             regular: {
+                /**
+                 * Returns a serialized transaction redeeming a regular HTLC contract
+                 */
                 createTx: (p: RedeemRegularHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a transaction redeeming a regular HTLC contract to the network
+                 */
                 sendTx: (p: RedeemRegularHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a transaction redeeming a regular HTLC contract to the network and waits for confirmation
+                 */
                 sendSyncTx: (p: RedeemRegularHtlcTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             timeoutTx: {
+                /**
+                 * Returns a serialized transaction redeeming a timeout HTLC contract
+                 */
                 createTx: (p: RedeemTimeoutHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a transaction redeeming a timeout HTLC contract to the network
+                 */
                 sendTx: (p: RedeemTimeoutHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a transaction redeeming a timeout HTLC contract to the network and waits for confirmation
+                 */
                 sendSyncTx: (p: RedeemTimeoutHtlcTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
             earlyTx: {
+                /**
+                 * Returns a serialized transaction redeeming an early HTLC contract
+                 */
                 createTx: (p: RedeemEarlyHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a transaction redeeming an early HTLC contract to the network
+                 */
                 sendTx: (p: RedeemEarlyHtlcTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+                /**
+                 * Sends a transaction redeeming an early HTLC contract to the network and waits for confirmation
+                 */
                 sendSyncTx: (p: RedeemEarlyHtlcTxParams, options?: SendTxCallOptions) => Promise<unknown>;
             };
         };
     };
     vesting: {
         new: {
+            /**
+             * Returns a serialized transaction creating a new vesting contract
+             */
             createTx: (p: VestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction creating a new vesting contract to the network
+             */
             sendTx: (p: VestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction creating a new vesting contract to the network and waits for confirmation
+             */
             sendSyncTx: (p: VestingTxParams, options: SendTxCallOptions) => Promise<unknown>;
         };
         redeem: {
+            /**
+             * Returns a serialized transaction redeeming a vesting contract
+             */
             createTx: (p: RedeemVestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction redeeming a vesting contract to the network
+             */
             sendTx: (p: RedeemVestingTxParams, options?: HttpOptions) => Promise<CallResult<string, undefined>>;
+            /**
+             * Sends a transaction redeeming a vesting contract to the network and waits for confirmation
+             */
             sendSyncTx: (p: RedeemVestingTxParams, options?: SendTxCallOptions) => Promise<unknown>;
         };
     };
     zeroKnowledgeProof: {
+        /**
+         * Returns the latest header number, block number and proof
+         * @returns
+         */
         state: (options?: HttpOptions) => Promise<{
             error: {
                 code: number;
@@ -1920,6 +2443,14 @@ declare class Client {
         }>;
     };
     logs: {
+        /**
+         * Subscribes to log events related to a given list of addresses and of any of the log types
+         * provided. If addresses is empty it does not filter by address. If log_types is empty it
+         * won't filter by log types.
+         *
+         * Thus the behavior is to assume all addresses or log_types are to be provided if the
+         * corresponding vec is empty.
+         */
         subscribe: <T extends SubscribeForLogsByAddressesAndTypesParams, O extends StreamOptions<BlockLog>>(p: T, userOptions?: Partial<O> | undefined) => Promise<Subscription<BlockLog>>;
     };
     _modules: {

@@ -74,8 +74,8 @@ export class ConsensusClient {
     }
 
     /**
- * Returns a boolean specifying if we have established consensus with the network
- */
+     * Returns a boolean specifying if we have established consensus with the network
+     */
     public isConsensusEstablished(options = DEFAULT_OPTIONS) {
         const req = { method: 'isConsensusEstablished' }
         return this.client.call<Boolean>(req, options)

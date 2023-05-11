@@ -160,10 +160,23 @@ export class WebSocketClient {
             }
         }
 
+        let hasOpened = false;
         return new Promise((resolve) => {
+            ws.onerror = (error: WebSocket.ErrorEvent) => {
+                if (hasOpened) {
+                    return;
+                }
+                resolve({
+                    ...args,
+                    next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
+                        callback({ data: undefined, metadata: undefined, error: { code: 1000, message: error.message } });
+                    }
+                });
+            }
             ws.onopen = () => {
                 ws.send(JSON.stringify(requestBody));
                 resolve(args);
+                hasOpened = true;
             }
         });
     }

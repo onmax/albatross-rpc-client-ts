@@ -196,10 +196,23 @@ var WebSocketClient = class {
         timestamp: Date.now()
       }
     };
+    let hasOpened = false;
     return new Promise((resolve) => {
+      ws.onerror = (error) => {
+        if (hasOpened) {
+          return;
+        }
+        resolve({
+          ...args,
+          next: (callback) => {
+            callback({ data: void 0, metadata: void 0, error: { code: 1e3, message: error.message } });
+          }
+        });
+      };
       ws.onopen = () => {
         ws.send(JSON.stringify(requestBody));
         resolve(args);
+        hasOpened = true;
       };
     });
   }
@@ -501,8 +514,8 @@ var ConsensusClient = class {
     });
   }
   /**
-  * Returns a boolean specifying if we have established consensus with the network
-  */
+   * Returns a boolean specifying if we have established consensus with the network
+   */
   isConsensusEstablished(options = DEFAULT_OPTIONS) {
     const req = { method: "isConsensusEstablished" };
     return this.client.call(req, options);

@@ -972,8 +972,8 @@ declare class ConsensusClient {
     private getValidityStartHeight;
     private waitForConfirmation;
     /**
- * Returns a boolean specifying if we have established consensus with the network
- */
+     * Returns a boolean specifying if we have established consensus with the network
+     */
     isConsensusEstablished(options?: HttpOptions): Promise<CallResult<Boolean, undefined>>;
     /**
      * Given a serialized transaction, it will return the corresponding transaction struct

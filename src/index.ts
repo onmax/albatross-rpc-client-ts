@@ -1,5 +1,8 @@
+import { DEFAULT_OPTIONS } from "./client/http";
+import { HttpOptions } from "./client/http";
+import { CallResult } from "./client/http";
 import { HttpClient } from "./client/http";
-import { WebSocketClient } from "./client/web-socket";
+import { StreamOptions, Subscription, WebSocketClient } from "./client/web-socket";
 import * as Modules from "./modules";
 import { Auth } from "./types/common";
 
@@ -545,7 +548,7 @@ export default class Client {
             /**
              * Tries to fetch the account at the given address.
              */
-            getBy: blockchain.getAccountBy.bind(blockchain),
+            getBy: blockchain.getAccountByAddress.bind(blockchain),
 
             /**
              * Fetchs the account given the address.
@@ -874,6 +877,34 @@ export default class Client {
              */
             state: zkpComponent.getZkpState.bind(zkpComponent),
         }
+    }
+
+    /**
+     * Make a raw call to the Albatross Node.
+     * 
+     * @param request 
+     * @param options 
+     * @returns 
+     */
+    async call<Data, Metadata = undefined>(
+        request: { method: string; params?: any[], withMetadata?: boolean },
+        options: HttpOptions = DEFAULT_OPTIONS
+    ): Promise<CallResult<Data, Metadata>> {
+        return this.http.call<Data, Metadata>(request, options);
+    }
+
+    /**
+     * Make a raw streaming call to the Albatross Node.
+     * 
+     * @param request 
+     * @param userOptions 
+     * @returns 
+     */
+    async subscribe<Data, Request extends { method: string; params?: any[], withMetadata?: boolean }>(
+        request: Request,
+        userOptions: StreamOptions<Data>
+    ): Promise<Subscription<Data>> {
+        return this.ws.subscribe<Data, Request>(request, userOptions);
     }
 }
 

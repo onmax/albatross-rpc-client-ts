@@ -15,7 +15,6 @@ export type SubscribeForHeadHashParams = { retrieve: 'HASH' };
 export type SubscribeForValidatorElectionByAddressParams = { address: Address };
 export type SubscribeForLogsByAddressesAndTypesParams = { addresses?: Address[], types?: LogType[] };
 
-
 export class BlockchainClient {
     private client: HttpClient;
 
@@ -129,7 +128,7 @@ export class BlockchainClient {
     /**
      * Tries to fetch the account at the given address.
      */
-    public async getAccountBy<T extends GetAccountByAddressParams>(address: Address, { withMetadata }: T, options = DEFAULT_OPTIONS) {
+    public async getAccountByAddress<T extends { withMetadata: boolean }>(address: Address, { withMetadata }: T, options = DEFAULT_OPTIONS) {
         const req = { method: 'getAccountByAddress', params: [address], withMetadata }
         return this.client.call<Account, T["withMetadata"] extends true ? BlockchainState : undefined>(req, options)
     }
@@ -171,7 +170,7 @@ export class BlockchainClient {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    public async getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
+    public async getValidatorBy(address: Address, options = DEFAULT_OPTIONS) {
         return this.client.call<PartialValidator>({ method: 'getValidatorByAddress', params: [address] }, options)
     }
 
@@ -181,7 +180,7 @@ export class BlockchainClient {
      * and thus is extremely computationally expensive.
      * This function requires the read lock acquisition prior to its execution.
      */
-    public async getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
+    public async getStakersByAddress(address: Address, options = DEFAULT_OPTIONS) {
         return this.client.call<Staker[]>({ method: 'getStakersByAddress', params: [address] }, options)
 
     }
@@ -189,7 +188,7 @@ export class BlockchainClient {
     /**
      * Tries to fetch a staker information given its address.
      */
-    public async getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options = DEFAULT_OPTIONS) {
+    public async getStakerByAddress(address: Address, options = DEFAULT_OPTIONS) {
         return this.client.call<Staker>({ method: 'getStakerByAddress', params: [address] }, options)
     }
 }

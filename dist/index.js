@@ -320,7 +320,7 @@ var BlockchainClient = class {
   /**
    * Tries to fetch the account at the given address.
    */
-  async getAccountBy(address, { withMetadata }, options = DEFAULT_OPTIONS) {
+  async getAccountByAddress(address, { withMetadata }, options = DEFAULT_OPTIONS) {
     const req = { method: "getAccountByAddress", params: [address], withMetadata };
     return this.client.call(req, options);
   }
@@ -357,7 +357,7 @@ var BlockchainClient = class {
    * Tries to fetch a validator information given its address. It has an option to include a map
    * containing the addresses and stakes of all the stakers that are delegating to the validator.
    */
-  async getValidatorBy({ address }, options = DEFAULT_OPTIONS) {
+  async getValidatorBy(address, options = DEFAULT_OPTIONS) {
     return this.client.call({ method: "getValidatorByAddress", params: [address] }, options);
   }
   /**
@@ -366,13 +366,13 @@ var BlockchainClient = class {
    * and thus is extremely computationally expensive.
    * This function requires the read lock acquisition prior to its execution.
    */
-  async getStakersByAddress({ address }, options = DEFAULT_OPTIONS) {
+  async getStakersByAddress(address, options = DEFAULT_OPTIONS) {
     return this.client.call({ method: "getStakersByAddress", params: [address] }, options);
   }
   /**
    * Tries to fetch a staker information given its address.
    */
-  async getStakerByAddress({ address }, options = DEFAULT_OPTIONS) {
+  async getStakerByAddress(address, options = DEFAULT_OPTIONS) {
     return this.client.call({ method: "getStakerByAddress", params: [address] }, options);
   }
 };
@@ -1861,7 +1861,7 @@ var Client = class {
       /**
        * Tries to fetch the account at the given address.
        */
-      getBy: blockchain.getAccountBy.bind(blockchain),
+      getBy: blockchain.getAccountByAddress.bind(blockchain),
       /**
        * Fetchs the account given the address.
        */
@@ -2125,25 +2125,7 @@ var Client = class {
        */
       consensusEstablished: consensus.isConsensusEstablished.bind(network)
     };
-    this.constant = {
-      /**
-       * Gets a bundle of policy constants
-       */
-      params: policy.getPolicyConstants.bind(policy),
-      /**
-       * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
-       * calculated using the following formula:
-       * Supply (t) = Genesis_supply + Initial_supply_velocity / Supply_decay * (1 - e^(- Supply_decay * t))
-       * Where e is the exponential function, t is the time in milliseconds since the genesis block and
-       * Genesis_supply is the supply at the genesis of the Nimiq 2.0 chain.
-       * 
-       * @param genesisSupply supply at genesis
-       * @param genesisTime timestamp of genesis block
-       * @param currentTime timestamp to calculate supply at
-       * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
-       */
-      supply: policy.getSupplyAt.bind(policy)
-    };
+    this.supply_at = policy.getSupplyAt.bind(policy);
     this.zeroKnowledgeProof = {
       /**
        * Returns the latest header number, block number and proof
@@ -2151,6 +2133,32 @@ var Client = class {
        */
       state: zkpComponent.getZkpState.bind(zkpComponent)
     };
+  }
+  async init() {
+    const result = await this._modules.policy.getPolicyConstants();
+    if (result.error)
+      return result.error;
+    Client.policy = result.data;
+  }
+  /**
+   * Make a raw call to the Albatross Node.
+   * 
+   * @param request 
+   * @param options 
+   * @returns 
+   */
+  async call(request, options = DEFAULT_OPTIONS) {
+    return this.http.call(request, options);
+  }
+  /**
+   * Make a raw streaming call to the Albatross Node.
+   * 
+   * @param request 
+   * @param userOptions 
+   * @returns 
+   */
+  async subscribe(request, userOptions) {
+    return this.ws.subscribe(request, userOptions);
   }
 };
 export {

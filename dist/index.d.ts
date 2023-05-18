@@ -487,6 +487,52 @@ type RevertedBlockLog = BlockLog & {
     type: 'reverted-block';
 }
 
+type HttpOptions = {
+    timeout?: number | false;
+};
+type SendTxCallOptions = HttpOptions & ({
+    waitForConfirmationTimeout?: number;
+});
+declare const DEFAULT_OPTIONS: HttpOptions;
+declare const DEFAULT_TIMEOUT_CONFIRMATION: number;
+declare const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions;
+type Context = {
+    headers: HeadersInit;
+    body: {
+        method: string;
+        params: any[];
+        id: number;
+        jsonrpc: string;
+    };
+    timestamp: number;
+    url: string;
+};
+type CallResult<Data, Metadata = undefined> = {
+    context: Context;
+} & ({
+    data: Data;
+    metadata: Metadata;
+    error: undefined;
+} | {
+    data: undefined;
+    metadata: undefined;
+    error: {
+        code: number;
+        message: string;
+    };
+});
+declare class HttpClient {
+    private url;
+    private static id;
+    private auth;
+    constructor(url: URL, auth?: Auth);
+    call<Data, Metadata = undefined>(request: {
+        method: string;
+        params?: any[];
+        withMetadata?: boolean;
+    }, options?: HttpOptions): Promise<CallResult<Data, Metadata>>;
+}
+
 type ErrorStreamReturn = {
     code: number;
     message: string;
@@ -533,52 +579,6 @@ declare class WebSocketClient {
         params?: any[];
         withMetadata?: boolean;
     }>(request: Request, userOptions: StreamOptions<Data>): Promise<Subscription<Data>>;
-}
-
-type HttpOptions = {
-    timeout?: number | false;
-};
-type SendTxCallOptions = HttpOptions & ({
-    waitForConfirmationTimeout?: number;
-});
-declare const DEFAULT_OPTIONS: HttpOptions;
-declare const DEFAULT_TIMEOUT_CONFIRMATION: number;
-declare const DEFAULT_OPTIONS_SEND_TX: SendTxCallOptions;
-type Context = {
-    headers: HeadersInit;
-    body: {
-        method: string;
-        params: any[];
-        id: number;
-        jsonrpc: string;
-    };
-    timestamp: number;
-    url: string;
-};
-type CallResult<Data, Metadata = undefined> = {
-    context: Context;
-} & ({
-    data: Data;
-    metadata: Metadata;
-    error: undefined;
-} | {
-    data: undefined;
-    metadata: undefined;
-    error: {
-        code: number;
-        message: string;
-    };
-});
-declare class HttpClient {
-    private url;
-    private static id;
-    private auth;
-    constructor(url: URL, auth?: Auth);
-    call<Data, Metadata = undefined>(request: {
-        method: string;
-        params?: any[];
-        withMetadata?: boolean;
-    }, options?: HttpOptions): Promise<CallResult<Data, Metadata>>;
 }
 
 type GetBlockByHashParams = {
@@ -688,7 +688,9 @@ declare class BlockchainClient {
     /**
      * Tries to fetch the account at the given address.
      */
-    getAccountBy<T extends GetAccountByAddressParams>(address: Address, { withMetadata }: T, options?: HttpOptions): Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
+    getAccountByAddress<T extends {
+        withMetadata: boolean;
+    }>(address: Address, { withMetadata }: T, options?: HttpOptions): Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
     /**
     * Returns a collection of the currently active validator's addresses and balances.
     */
@@ -722,18 +724,18 @@ declare class BlockchainClient {
      * Tries to fetch a validator information given its address. It has an option to include a map
      * containing the addresses and stakes of all the stakers that are delegating to the validator.
      */
-    getValidatorBy<T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<PartialValidator, undefined>>;
+    getValidatorBy(address: Address, options?: HttpOptions): Promise<CallResult<PartialValidator, undefined>>;
     /**
      * Fetches all stakers for a given validator.
      * IMPORTANT: This operation iterates over all stakers of the staking contract
      * and thus is extremely computationally expensive.
      * This function requires the read lock acquisition prior to its execution.
      */
-    getStakersByAddress<T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<Staker[], undefined>>;
+    getStakersByAddress(address: Address, options?: HttpOptions): Promise<CallResult<Staker[], undefined>>;
     /**
      * Tries to fetch a staker information given its address.
      */
-    getStakerByAddress<T extends GetStakerByAddressParams>({ address }: T, options?: HttpOptions): Promise<CallResult<Staker, undefined>>;
+    getStakerByAddress(address: Address, options?: HttpOptions): Promise<CallResult<Staker, undefined>>;
 }
 
 type blockchain_BlockchainClient = BlockchainClient;
@@ -1952,7 +1954,9 @@ declare class Client {
         /**
          * Tries to fetch the account at the given address.
          */
-        getBy: <T extends GetAccountByAddressParams>(address: `NQ${number} ${string}`, { withMetadata }: T, options?: HttpOptions) => Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
+        getBy: <T extends {
+            withMetadata: boolean;
+        }>(address: `NQ${number} ${string}`, { withMetadata }: T, options?: HttpOptions) => Promise<CallResult<Account, T["withMetadata"] extends true ? BlockchainState : undefined>>;
         /**
          * Fetchs the account given the address.
          */
@@ -1995,7 +1999,7 @@ declare class Client {
          * Tries to fetch a validator information given its address. It has an option to include a map
          * containing the addresses and stakes of all the stakers that are delegating to the validator.
          */
-        byAddress: <T extends GetValidatorByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<PartialValidator, undefined>>;
+        byAddress: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<PartialValidator, undefined>>;
         /**
          * Updates the configuration setting to automatically reactivate our validator
          */
@@ -2022,18 +2026,18 @@ declare class Client {
         /**
          * Returns a collection of the currently active validator's addresses and balances.
          */
-        activeList: <T_1 extends {
+        activeList: <T extends {
             withMetadata: boolean;
-        }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<Validator[], T_1["withMetadata"] extends true ? BlockchainState : undefined>>;
+        }>({ withMetadata }?: T, options?: HttpOptions) => Promise<CallResult<Validator[], T["withMetadata"] extends true ? BlockchainState : undefined>>;
         /**
          * Returns information about the currently parked validators.
          */
-        parked: <T_2 extends {
+        parked: <T_1 extends {
             withMetadata: boolean;
-        }>({ withMetadata }?: T_2, options?: HttpOptions) => Promise<CallResult<{
+        }>({ withMetadata }?: T_1, options?: HttpOptions) => Promise<CallResult<{
             blockNumber: number;
             validators: Validator[];
-        }, T_2["withMetadata"] extends true ? BlockchainState : undefined>>;
+        }, T_1["withMetadata"] extends true ? BlockchainState : undefined>>;
         action: {
             new: {
                 /**
@@ -2253,11 +2257,11 @@ declare class Client {
         /**
          * Fetchs the stakers given the batch number.
          */
-        fromValidator: <T extends GetStakersByAddressParams>({ address }: T, options?: HttpOptions) => Promise<CallResult<Staker[], undefined>>;
+        fromValidator: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<Staker[], undefined>>;
         /**
          * Fetchs the staker given the address.
          */
-        getBy: <T_1 extends GetStakerByAddressParams>({ address }: T_1, options?: HttpOptions) => Promise<CallResult<Staker, undefined>>;
+        getBy: (address: `NQ${number} ${string}`, options?: HttpOptions) => Promise<CallResult<Staker, undefined>>;
         new: {
             /**
              * Creates a new staker transaction
@@ -2305,29 +2309,11 @@ declare class Client {
          */
         consensusEstablished: (options?: HttpOptions) => Promise<CallResult<Boolean, undefined>>;
     };
-    constant: {
-        /**
-         * Gets a bundle of policy constants
-         */
-        params: (options?: HttpOptions) => Promise<CallResult<PolicyConstants, undefined>>;
-        /**
-         * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
-         * calculated using the following formula:
-         * Supply (t) = Genesis_supply + Initial_supply_velocity / Supply_decay * (1 - e^(- Supply_decay * t))
-         * Where e is the exponential function, t is the time in milliseconds since the genesis block and
-         * Genesis_supply is the supply at the genesis of the Nimiq 2.0 chain.
-         *
-         * @param genesisSupply supply at genesis
-         * @param genesisTime timestamp of genesis block
-         * @param currentTime timestamp to calculate supply at
-         * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
-         */
-        supply: ({ genesisSupply, genesisTime, currentTime }: {
-            genesisSupply: number;
-            genesisTime: number;
-            currentTime: number;
-        }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
-    };
+    supply_at: ({ genesisSupply, genesisTime, currentTime }: {
+        genesisSupply: number;
+        genesisTime: number;
+        currentTime: number;
+    }, options?: HttpOptions) => Promise<CallResult<number, undefined>>;
     htlc: {
         new: {
             /**
@@ -2464,7 +2450,36 @@ declare class Client {
         wallet: WalletClient;
         zkpComponent: ZkpComponentClient;
     };
+    /**
+     * Policy constants. Make sure to call `await client.init()` before using them.
+     */
+    static policy: PolicyConstants;
     constructor(url: URL, auth?: Auth);
+    init(): Promise<boolean | any>;
+    /**
+     * Make a raw call to the Albatross Node.
+     *
+     * @param request
+     * @param options
+     * @returns
+     */
+    call<Data, Metadata = undefined>(request: {
+        method: string;
+        params?: any[];
+        withMetadata?: boolean;
+    }, options?: HttpOptions): Promise<CallResult<Data, Metadata>>;
+    /**
+     * Make a raw streaming call to the Albatross Node.
+     *
+     * @param request
+     * @param userOptions
+     * @returns
+     */
+    subscribe<Data, Request extends {
+        method: string;
+        params?: any[];
+        withMetadata?: boolean;
+    }>(request: Request, userOptions: StreamOptions<Data>): Promise<Subscription<Data>>;
 }
 
 export { Account, AccountType, Address, AppliedBlockLog, BasicAccount, BatchIndex, Block, BlockLog, BlockNumber, BlockType, blockchain as BlockchainClient, BlockchainState, blockchainStreams as BlockchainStream, CallResult, Coin, consensus as ConsensusClient, Context, CreateStakerLog, CreateValidatorLog, CurrentTime, DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION, DeactivateValidatorLog, DeleteValidatorLog, ElectionMacroBlock, EpochIndex, ErrorStreamReturn, FailedTransactionLog, FilterStreamFn, GenesisSupply, GenesisTime, HTLCEarlyResolve, HTLCRegularTransfer, HTLCTimeoutResolve, Hash, HtlcAccount, HtlcCreateLog, HttpClient, HttpOptions, Inherent, Log, LogType, MacroBlock, MaybeStreamResponse, mempool as MempoolClient, MempoolInfo, MicroBlock, network as NetworkClient, ParkLog, ParkedSet, PartialBlock, PartialMacroBlock, PartialMicroBlock, PartialValidator, PayFeeLog, PayoutRewardLog, policy as PolicyClient, PolicyConstants, RawTransaction, ReactivateValidatorLog, RetireValidatorLog, RevertContractLog, RevertedBlockLog, SendTxCallOptions, Signature, SlashLog, SlashedSlot, Slot, StakeLog, Staker, StakerFeeDeductionLog, StreamOptions, Subscription, Transaction, TransactionLog, TransferLog, UnparkValidatorLog, UnstakeLog, UpdateStakerLog, UpdateValidatorLog, Validator, validator as ValidatorClient, ValidatorFeeDeductionLog, ValidityStartHeight, VestingAccount, VestingCreateLog, WS_DEFAULT_OPTIONS, WalletAccount, wallet as WalletClient, WebSocketClient, ZKPState, zkpComponent as ZkpComponentClient, Client as default };

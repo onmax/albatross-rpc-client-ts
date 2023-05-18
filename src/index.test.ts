@@ -2,18 +2,19 @@ import { describe, expect, it } from 'vitest';
 import Client, { Transaction } from '.';
 
 let client: Client;
-function getClient() {
+async function getClient() {
     if (client) return client;
     // const secret = process.env.NIMIQ_SECRET || '';
     const url = new URL(process.env.RPC_URL || 'http://localhost:10200');
     const username = process.env.RPC_USERNAME || '';
     const password = process.env.RPC_PASSWORD || '';
     client = new Client(url, { username, password })
+    await client.init();
     return client;
 }
 
 describe('Test for block module', async () => {
-    const { block } = getClient();
+    const { block } = await getClient();
     const current = (await block.current());
     if (current.error) throw new Error('current block is undefined');
     const blockData = (await block.getByNumber(current.data)).data!;
@@ -43,7 +44,7 @@ describe('Test for block module', async () => {
 });
 
 describe('Test for subscriptions', async () => {
-    const client = getClient();
+    const client = await getClient();
     it('subscribe to new full blocks', async () => {
         const { next, close } = await client.block.subscribe({ retrieve: 'FULL' })
         next(data => expect(data).toHaveProperty('transactions'))
@@ -83,14 +84,14 @@ describe('Test for subscriptions', async () => {
 })
 
 describe('Test for batch module', async () => {
-    const { batch } = getClient();
+    const { batch } = await getClient();
     it('.current ok', async () => expect((await batch.current()).data).toBeGreaterThanOrEqual(0));
     it('.at ok', async () => expect((await batch.at(0)).data).toBeGreaterThanOrEqual(0));
     it('.firstBlock ok', async () => expect((await batch.firstBlock({ epochIndex: 1 })).data).toBeGreaterThanOrEqual(0));
 });
 
 describe('Test for epoch module', async () => {
-    const { epoch } = getClient();
+    const { epoch } = await getClient();
     it('.current ok', async () => expect((await epoch.current()).data).toBeGreaterThanOrEqual(0));
     it('.at ok', async () => expect((await epoch.at(0)).data).toBeGreaterThanOrEqual(0));
     it('.firstBlock ok', async () => expect((await epoch.firstBlock({ epochIndex: 1 })).data).toBeGreaterThanOrEqual(0));
@@ -98,7 +99,7 @@ describe('Test for epoch module', async () => {
 });
 
 describe('Test for transaction module', async () => {
-    const { transaction, block, batch, constant } = getClient();
+    const { transaction, block, batch } = await getClient();
 
     let txs: Transaction[] = []
     let i = (await block.current()).data!
@@ -111,7 +112,7 @@ describe('Test for transaction module', async () => {
     }
 
     const batchNumber = (await batch.at(txs[0].blockNumber)).data!
-    const stakingContract = (await constant.params()).data!.stakingContractAddress
+    const stakingContract = Client.policy.stakingContractAddress
 
     it('.get block number ok', async () => expect(txs).toBeInstanceOf(Array));
     it('.get hash ok', async () => expect(await transaction.getByHash(txs[0].hash)).toHaveProperty('data'));
@@ -126,33 +127,33 @@ describe('Test for transaction module', async () => {
 });
 
 describe.skip('Test for vesting module', async () => {
-    // const { vesting } = getClient();
+    // const { vesting } = await getClient();
     // TODO
 });
 
 describe.skip('Test for htlc module', async () => {
-    // const { htlc } = getClient();
+    // const { htlc } = await getClient();
     // TODO
 });
 
 describe.skip('Test for stakes module', async () => {
-    // const { stakes } = getClient();
+    // const { stakes } = await getClient();
     // TODO
 });
 
 describe.skip('Test for staker module', async () => {
-    // const { staker } = getClient();
+    // const { staker } = await getClient();
     // TODO
 });
 
 describe('Test for inherent module', async () => {
-    const { inherent } = getClient();
+    const { inherent } = await getClient();
     it('.get blockNumber', async () => expect((await inherent.getByBlock(0)).data).toBeInstanceOf(Array));
     it('.get batchNumber', async () => expect((await inherent.getByBatch(0)).data).toBeInstanceOf(Array));
 });
 
 describe('Test for validator module', async () => {
-    const { validator } = getClient();
+    const { validator } = await getClient();
     const validatorAddresses = (await validator.activeList()).data!;
     it('.active ok', async () => expect(validatorAddresses).toBeInstanceOf(Array));
     const validatorInfo = validatorAddresses[0];
@@ -167,7 +168,7 @@ describe('Test for validator module', async () => {
 });
 
 describe('Test for slots module', async () => {
-    const { slots, block } = getClient();
+    const { slots, block } = await getClient();
     const currentBlock = (await block.current()).data!;
     it('.current ok', async () => expect((await slots.at(currentBlock - 10)).data).haveOwnProperty('slotNumber'));
     it('.current ok offset', async () => expect((await slots.at(currentBlock - 10, { offsetOpt: 10 })).data).haveOwnProperty('slotNumber'));
@@ -179,7 +180,7 @@ describe('Test for slots module', async () => {
 });
 
 describe.skip('Test for mempool module', async () => {
-    const { mempool } = getClient();
+    const { mempool } = await getClient();
     // TODO .info is failing
     // it('.info ok', async () => expect(await mempool.info()).toHaveProperty('size'));
     // TODO .content is failing
@@ -187,7 +188,7 @@ describe.skip('Test for mempool module', async () => {
 });
 
 describe('Test for peers module', async () => {
-    const { peers } = getClient();
+    const { peers } = await getClient();
     it('.id ok', async () => expect(typeof (await peers.id()).data).toBe('string'));
     it('.count ok', async () => expect((await peers.count()).data).toBeGreaterThanOrEqual(0));
     it('.peers ok', async () => expect((await peers.peers()).data).toBeInstanceOf(Array));
@@ -195,14 +196,14 @@ describe('Test for peers module', async () => {
 });
 
 describe('Test for constant module', async () => {
-    const { constant } = getClient();
+    const { supply_at } = await getClient();
     const oneYearAgo = new Date().getTime() - 31536000000;
-    it('.params ok', async () => expect((await constant.params()).data).toHaveProperty('stakingContractAddress'));
-    it('.supply ok', async () => expect((await constant.supply({ genesisSupply: 100000, genesisTime: oneYearAgo, currentTime: new Date().getTime() })).data).toBeGreaterThanOrEqual(0));
+    it('.params ok', async () => expect(Client.policy).toHaveProperty('stakingContractAddress'));
+    it('.supply ok', async () => expect(((await supply_at({ genesisSupply: 100000, genesisTime: oneYearAgo, currentTime: new Date().getTime() })).data)).toBeGreaterThanOrEqual(0));
 });
 
 describe('Test for zeroKnowledgeProof module', async () => {
-    const { zeroKnowledgeProof } = getClient();
+    const { zeroKnowledgeProof } = await getClient();
     it('.state ok', async () => expect((await zeroKnowledgeProof.state()).data).toHaveProperty('latestHeaderHash'));
 });
 

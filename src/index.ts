@@ -4,7 +4,7 @@ import { CallResult } from "./client/http";
 import { HttpClient } from "./client/http";
 import { StreamOptions, Subscription, WebSocketClient } from "./client/web-socket";
 import * as Modules from "./modules";
-import { Auth } from "./types/common";
+import { Auth, PolicyConstants } from "./types/common";
 
 export default class Client {
     public http: HttpClient;
@@ -22,12 +22,17 @@ export default class Client {
     public stakes;
     public staker;
     public peers;
-    public constant;
+    public supply_at;
     public htlc;
     public vesting;
     public zeroKnowledgeProof;
     public logs;
-    public _modules;
+    public modules;
+
+    /**
+     * Policy constants. Make sure to call `await client.init()` before using them.
+     */
+    public static policy: PolicyConstants;
 
     constructor(url: URL, auth?: Auth) {
         this.http = new HttpClient(url, auth);
@@ -43,7 +48,7 @@ export default class Client {
         const wallet = new Modules.WalletClient.WalletClient(this.http);
         const zkpComponent = new Modules.ZkpComponentClient.ZkpComponentClient(this.http);
 
-        this._modules = {
+        this.modules = {
             blockchain,
             blockchainStreams,
             consensus,
@@ -849,26 +854,19 @@ export default class Client {
             consensusEstablished: consensus.isConsensusEstablished.bind(network),
         }
 
-        this.constant = {
-            /**
-             * Gets a bundle of policy constants
-             */
-            params: policy.getPolicyConstants.bind(policy),
-
-            /**
-             * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
-             * calculated using the following formula:
-             * Supply (t) = Genesis_supply + Initial_supply_velocity / Supply_decay * (1 - e^(- Supply_decay * t))
-             * Where e is the exponential function, t is the time in milliseconds since the genesis block and
-             * Genesis_supply is the supply at the genesis of the Nimiq 2.0 chain.
-             * 
-             * @param genesisSupply supply at genesis
-             * @param genesisTime timestamp of genesis block
-             * @param currentTime timestamp to calculate supply at
-             * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
-             */
-            supply: policy.getSupplyAt.bind(policy),
-        }
+        /**
+         * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
+         * calculated using the following formula:
+         * Supply (t) = Genesis_supply + Initial_supply_velocity / Supply_decay * (1 - e^(- Supply_decay * t))
+         * Where e is the exponential function, t is the time in milliseconds since the genesis block and
+         * Genesis_supply is the supply at the genesis of the Nimiq 2.0 chain.
+         * 
+         * @param genesisSupply supply at genesis
+         * @param genesisTime timestamp of genesis block
+         * @param currentTime timestamp to calculate supply at
+         * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
+         */
+        this.supply_at = policy.getSupplyAt.bind(policy)
 
         this.zeroKnowledgeProof = {
             /**
@@ -877,6 +875,12 @@ export default class Client {
              */
             state: zkpComponent.getZkpState.bind(zkpComponent),
         }
+    }
+
+    async init(): Promise<boolean | any> {
+        const result = await this.modules.policy.getPolicyConstants();
+        if (result.error) return result.error;
+        Client.policy = result.data;
     }
 
     /**

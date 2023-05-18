@@ -1,5 +1,15 @@
 # nimiq-rpc-client-ts
 
+## 0.1.2
+
+### Patch Changes
+
+- aac9a2d: version
+- 78447bb: allow timeout to be false
+- 27eb9db: api
+- 050df38: policy static
+- 50b53ef: update internal relations
+
 ## 0.1.1
 
 ### Patch Changes

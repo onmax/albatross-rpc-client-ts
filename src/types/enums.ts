@@ -23,6 +23,7 @@ export enum LogType {
     CreateStaker = "create-staker",
     Stake = "stake",
     StakerFeeDeduction = "staker-fee-deduction",
+    SetInactiveStake = "set-inactive-stake",
     UpdateStaker = "update-staker",
     RetireValidator = "retire-validator",
     DeleteValidator = "delete-validator",

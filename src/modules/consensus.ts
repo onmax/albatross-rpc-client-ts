@@ -9,20 +9,20 @@ export type RawTransactionInfoParams = { rawTransaction: string };
 export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string, } & ValidityStartHeight;
 export type VestingTxParams = { wallet: Address, owner: Address, startTime: number, timeStep: number, numSteps: number, value: Coin, fee: Coin } & ValidityStartHeight;
 export type RedeemVestingTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
-export type HtlcTransactionParams = { wallet: Address, htlcSender: Address, htlcRecipient: Address, hashRoot: string, hashCount: number, hashAlgorithm: string, timeout: number, value: Coin, fee: Coin } & ValidityStartHeight;
-export type RedeemRegularHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, preImage: string, hashRoot: string, hashCount: number, hashAlgorithm: string, value: Coin, fee: Coin } & ValidityStartHeight;
+export type HtlcTransactionParams = { wallet: Address, htlcSender: Address, htlcRecipient: Address, hashRoot: string, hashCount: number, timeout: number, value: Coin, fee: Coin } & ValidityStartHeight;
+export type RedeemRegularHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, preImage: string, hashRoot: string, hashCount: number, value: Coin, fee: Coin } & ValidityStartHeight;
 export type RedeemTimeoutHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
 export type RedeemEarlyHtlcTxParams = { wallet: Address, htlcAddress: Address, recipient: Address, htlcSenderSignature: string, htlcRecipientSignature: string, value: Coin, fee: Coin } & ValidityStartHeight;
 export type SignRedeemEarlyHtlcParams = { wallet: Address, htlcAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
-export type StakerTxParams = { senderWallet: Address, staker: Address, delegation: Address | undefined, value: Coin, fee: Coin } & ValidityStartHeight;
-export type StakeTxParams = { senderWallet: Address, staker: Address, value: Coin, fee: Coin } & ValidityStartHeight;
-export type UpdateStakerTxParams = { senderWallet: Address, staker: Address, newDelegation: Address, fee: Coin } & ValidityStartHeight;
-export type UnstakeTxParams = { staker: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
+export type StakerTxParams = { senderWallet: Address, stakerWallet: string, delegation: Address | undefined, value: Coin, fee: Coin } & ValidityStartHeight;
+export type StakeTxParams = { senderWallet: Address, stakerWallet: string, value: Coin, fee: Coin } & ValidityStartHeight;
+export type UpdateStakerTxParams = { senderWallet: Address, stakerWallet: string, newDelegation: Address, reactivateAllStake: boolean, fee: Coin } & ValidityStartHeight;
+export type SetInactiveStakeTxParams = { senderWallet: Address, stakerWallet: string, value: Coin, fee: Coin } & ValidityStartHeight;
+export type UnstakeTxParams = { stakerWallet: string, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight;
 export type NewValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight;
 export type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin } & ValidityStartHeight;
 export type DeactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
-export type UnparkValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight;
 export type RetireValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin } & ValidityStartHeight;
 export type DeleteValidatorTxParams = { validator: Address, recipient: Address, fee: Coin, value: Coin } & ValidityStartHeight;
 
@@ -77,8 +77,7 @@ export class ConsensusClient {
      * Returns a boolean specifying if we have established consensus with the network
      */
     public isConsensusEstablished(options = DEFAULT_OPTIONS) {
-        const req = { method: 'isConsensusEstablished' }
-        return this.client.call<Boolean>(req, options)
+        return this.client.call<boolean>({method: 'isConsensusEstablished'}, options)
     }
 
     /**
@@ -174,7 +173,7 @@ export class ConsensusClient {
      * Returns a serialized transaction creating a new HTLC contract
      */
     public async createNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'createNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<RawTransaction>(req, options)
     }
 
@@ -182,7 +181,7 @@ export class ConsensusClient {
      * Sends a transaction creating a new HTLC contract
      */
     public async sendNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.hashAlgorithm, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'sendNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<Hash>(req, options)
     }
 
@@ -199,7 +198,7 @@ export class ConsensusClient {
      * Returns a serialized transaction redeeming an HTLC contract
      */
     public async createRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'createRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<RawTransaction>(req, options)
     }
 
@@ -207,7 +206,7 @@ export class ConsensusClient {
      * Sends a transaction redeeming an HTLC contract
      */
     public async sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.hashAlgorithm, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'sendRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<Hash>(req, options)
     }
 
@@ -291,7 +290,7 @@ export class ConsensusClient {
      * account (the sender wallet) to pay the transaction fee.
      */
     public async createNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createNewStakerTransaction', params: [p.senderWallet, p.staker, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'createNewStakerTransaction', params: [p.senderWallet, p.stakerWallet, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<RawTransaction>(req, options)
     }
 
@@ -300,7 +299,7 @@ export class ConsensusClient {
      * account (the sender wallet) to pay the transaction fee.
      */
     public async sendNewStakerTransaction(p: StakerTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendNewStakerTransaction', params: [p.senderWallet, p.staker, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'sendNewStakerTransaction', params: [p.senderWallet, p.stakerWallet, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<Hash>(req, options)
     }
 
@@ -319,7 +318,7 @@ export class ConsensusClient {
      * be paid from the `sender_wallet`.
      */
     public async createStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createStakeTransaction', params: [p.senderWallet, p.staker, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'createStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<RawTransaction>(req, options)
     }
 
@@ -328,7 +327,7 @@ export class ConsensusClient {
      * be paid from the `sender_wallet`.
      */
     public async sendStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendStakeTransaction', params: [p.senderWallet, p.staker, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'sendStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<Hash>(req, options)
     }
 
@@ -348,7 +347,7 @@ export class ConsensusClient {
      * providing a sender wallet).
      */
     public async createUpdateStakerTransaction(p: UpdateStakerTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createUpdateStakerTransaction', params: [p.senderWallet, p.staker, p.newDelegation, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'createUpdateStakerTransaction', params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.reactivateAllStake, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<RawTransaction>(req, options)
     }
 
@@ -358,9 +357,10 @@ export class ConsensusClient {
      * providing a sender wallet).
      */
     public async sendUpdateStakerTransaction(p: UpdateStakerTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendUpdateStakerTransaction', params: [p.senderWallet, p.staker, p.newDelegation, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'sendUpdateStakerTransaction', params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.reactivateAllStake, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<Hash>(req, options)
     }
+
 
     /**
      * Sends a `update_staker` transaction. You can pay the transaction fee from a basic
@@ -374,23 +374,54 @@ export class ConsensusClient {
     }
 
     /**
+     * Returns a serialized `set_inactive_stake` transaction. You can pay the transaction fee from a basic 
+     * account (by providing the sender wallet) or from the staker account's balance (by not
+     * providing a sender wallet).
+     */
+    public async createSetInactiveStakeTransaction(p: SetInactiveStakeTxParams, options = DEFAULT_OPTIONS) {
+        const req = { method: 'createSetInactiveStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] }
+        return this.client.call<RawTransaction>(req, options)
+    }
+
+    /**
+     * Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+     * account (by providing the sender wallet) or from the staker account's balance (by not
+     * providing a sender wallet).
+     */
+    public async sendSetInactiveStakeTransaction(p: SetInactiveStakeTxParams, options = DEFAULT_OPTIONS) {
+        const req = { method: 'sendSetInactiveStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] }
+        return this.client.call<Hash>(req, options)
+    }
+    
+    /**
+     * Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+     * account (by providing the sender wallet) or from the staker account's balance (by not
+     * providing a sender wallet) and waits for confirmation. 
+     */
+    public async sendSyncSetInactiveStakeTransaction(p: SetInactiveStakeTxParams, options = DEFAULT_OPTIONS_SEND_TX) {
+        const hash = await this.sendSetInactiveStakeTransaction(p, options);
+        if (hash.error) return hash;
+        return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.SetInactiveStake] }, options.waitForConfirmationTimeout, hash.context);
+    }
+
+    /**
      * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
      */
     public async createUnstakeTransaction(p: UnstakeTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createUnstakeTransaction', params: [p.staker, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'createUnstakeTransaction', params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<RawTransaction>(req, options)
     }
 
     /**
      * Sends a `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked.
-     */
+    */
     public async sendUnstakeTransaction(p: UnstakeTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendUnstakeTransaction', params: [p.staker, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
+        const req = { method: 'sendUnstakeTransaction', params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
         return this.client.call<Hash>(req, options)
     }
-
+    
     /**
      * Sends a `unstake` transaction. The transaction fee will be paid from the funds
      * being unstaked and waits for confirmation.
@@ -541,35 +572,6 @@ export class ConsensusClient {
         const hash = await this.sendReactivateValidatorTransaction(p, options);
         if (hash.error) return hash;
         return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.ReactivateValidator] }, options.waitForConfirmationTimeout, hash.context);
-    }
-
-    /**
-     * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
-     * account (the sender wallet) to pay the transaction fee.
-     */
-    public async createUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'createUnparkValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return this.client.call<RawTransaction>(req, options)
-    }
-
-    /**
-     * Sends a `unpark_validator` transaction. You need to provide the address of a basic
-     * account (the sender wallet) to pay the transaction fee.
-     */
-    public async sendUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS) {
-        const req = { method: 'sendUnparkValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-        return this.client.call<Hash>(req, options)
-    }
-
-    /**
-     * Sends a `unpark_validator` transaction and waits for confirmation.
-     * You need to provide the address of a basic account (the sender wallet)
-     * to pay the transaction fee.
-     */
-    public async sendSyncUnparkValidatorTransaction(p: UnparkValidatorTxParams, options = DEFAULT_OPTIONS_SEND_TX) {
-        const hash = await this.sendUnparkValidatorTransaction(p, options);
-        if (hash.error) return hash;
-        return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.UnparkValidator] }, options.waitForConfirmationTimeout, hash.context);
     }
 
     /**

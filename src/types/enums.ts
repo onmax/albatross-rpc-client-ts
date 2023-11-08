@@ -1,7 +1,6 @@
 export enum BlockType {
   MICRO = 'micro',
   MACRO = 'macro',
-  ELECTION = 'election',
 }
 
 export enum LogType {

@@ -191,22 +191,23 @@ export interface PenalizedSlot {
 //   validators: Address[];
 // };
 
-export interface Inherent {
-  reward?: {
-    block_number: number
-    block_time: number
-    target: Address
-    value: Coin
-    hash: string
-  }
-  penalize?: {
-    block_number: number
-    block_time: number
-    slot: number
-    validator_address: Address
-    offense_event_block: number
-  }
+export interface InherentReward {
+  blockNumber: number
+  blockTime: number
+  target: Address
+  value: Coin
+  hash: string
 }
+
+export interface InherentPenalize {
+  blockNumber: number
+  blockTime: number
+  slot: number
+  validatorAddress: Address
+  offenseEventBlock: number
+}
+
+export type Inherent = { reward: InherentReward } | { penalize: InherentPenalize }
 
 export interface MempoolInfo {
   _0?: number // u32

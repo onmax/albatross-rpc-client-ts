@@ -10,7 +10,7 @@ import {
 import * as Modules from './modules'
 import type { Auth, PolicyConstants } from './types/common'
 
-export default class Client {
+export class Client {
   public http: HttpClient
   public ws: WebSocketClient
 
@@ -963,9 +963,9 @@ export default class Client {
     return this.ws.subscribe<Data, Request>(request, userOptions)
   }
 }
-export * from 'src/types/enums'
 export * from './client/http'
 export * from './client/web-socket'
 export * from './modules'
+export * from './types/enums'
 export * from './types/common'
 export * from './types/logs'

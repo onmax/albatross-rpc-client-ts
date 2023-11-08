@@ -1,6 +1,6 @@
 import { Buffer } from 'node:buffer'
 import fetch from 'node-fetch'
-import type { Auth } from 'src/types/common'
+import type { Auth } from '../types/common'
 
 export interface HttpOptions {
   timeout?: number | false // in ms

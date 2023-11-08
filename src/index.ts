@@ -1,68 +1,68 @@
-import { DEFAULT_OPTIONS } from "./client/http";
-import { HttpOptions } from "./client/http";
-import { CallResult } from "./client/http";
-import { HttpClient } from "./client/http";
-import {
+import type { CallResult, HttpOptions } from './client/http'
+import { DEFAULT_OPTIONS, HttpClient } from './client/http'
+import type {
   StreamOptions,
   Subscription,
+} from './client/web-socket'
+import {
   WebSocketClient,
-} from "./client/web-socket";
-import * as Modules from "./modules";
-import { Auth, PolicyConstants } from "./types/common";
+} from './client/web-socket'
+import * as Modules from './modules'
+import type { Auth, PolicyConstants } from './types/common'
 
 export default class Client {
-  public http: HttpClient;
-  public ws: WebSocketClient;
+  public http: HttpClient
+  public ws: WebSocketClient
 
-  public block;
-  public batch;
-  public epoch;
-  public transaction;
-  public inherent;
-  public account;
-  public validator;
-  public slots;
-  public mempool;
-  public stakes;
-  public staker;
-  public peers;
-  public supply_at;
-  public htlc;
-  public vesting;
-  public zeroKnowledgeProof;
-  public logs;
-  public modules;
+  public block
+  public batch
+  public epoch
+  public transaction
+  public inherent
+  public account
+  public validator
+  public slots
+  public mempool
+  public stakes
+  public staker
+  public peers
+  public supply_at
+  public htlc
+  public vesting
+  public zeroKnowledgeProof
+  public logs
+  public modules
 
   /**
    * Policy constants. Make sure to call `await client.init()` before using them.
    */
-  public static policy: PolicyConstants;
+  public static policy: PolicyConstants
 
   /**
    * @param url Node URL [?secret=secret]
    * @param auth { username, password }
    */
   constructor(url: URL, auth?: Auth) {
-    this.http = new HttpClient(url, auth);
-    this.ws = new WebSocketClient(url, auth);
+    this.http = new HttpClient(url, auth)
+    this.ws = new WebSocketClient(url, auth)
 
-    const blockchain = new Modules.BlockchainClient.BlockchainClient(this.http);
+    const blockchain = new Modules.BlockchainClient.BlockchainClient(this.http)
     const blockchainStreams = new Modules.BlockchainStream.BlockchainStream(
       this.ws,
-    );
+    )
     const consensus = new Modules.ConsensusClient.ConsensusClient(
       this.http,
       blockchain,
       blockchainStreams,
-    );
-    const mempool = new Modules.MempoolClient.MempoolClient(this.http);
-    const network = new Modules.NetworkClient.NetworkClient(this.http);
-    const policy = new Modules.PolicyClient.PolicyClient(this.http);
-    const validator_ = new Modules.ValidatorClient.ValidatorClient(this.http);
-    const wallet = new Modules.WalletClient.WalletClient(this.http);
+    )
+    const mempool = new Modules.MempoolClient.MempoolClient(this.http)
+    const network = new Modules.NetworkClient.NetworkClient(this.http)
+    const policy = new Modules.PolicyClient.PolicyClient(this.http)
+    const validator_ = new Modules.ValidatorClient.ValidatorClient(this.http)
+    const wallet = new Modules.WalletClient.WalletClient(this.http)
     const zkpComponent = new Modules.ZkpComponentClient.ZkpComponentClient(
       this.http,
-    );
+    )
 
     this.modules = {
       blockchain,
@@ -74,7 +74,7 @@ export default class Client {
       validator: validator_,
       wallet,
       zkpComponent,
-    };
+    }
 
     this.block = {
       /**
@@ -152,7 +152,7 @@ export default class Client {
          * @returns The block number of the election macro block of the given epoch (which
          * is always the last block).
          */
-        get: policy.getElectionBlockOf.bind(policy),
+        getByEpoch: policy.getElectionBlockOfEpoch.bind(policy),
         /**
          * Subscribes to pre epoch validators events.
          */
@@ -209,7 +209,7 @@ export default class Client {
          * batch (which
          * is always the last block).
          */
-        getBy: policy.getMacroBlockOf.bind(policy),
+        getByBatch: policy.getMacroBlockOfBatch.bind(policy),
       },
 
       /**
@@ -232,7 +232,7 @@ export default class Client {
        * Subscribes to new block events.
        */
       subscribe: blockchainStreams.subscribeForBlocks.bind(blockchainStreams),
-    };
+    }
 
     this.logs = {
       /**
@@ -246,7 +246,7 @@ export default class Client {
       subscribe: blockchainStreams.subscribeForLogsByAddressesAndTypes.bind(
         blockchainStreams,
       ),
-    };
+    }
 
     this.batch = {
       /**
@@ -272,8 +272,8 @@ export default class Client {
        * @returns The block number (height) of the first block of the given epoch (which is always
        * a micro block).
        */
-      firstBlock: policy.getFirstBlockOf.bind(policy),
-    };
+      firstBlock: policy.getFirstBlockOfBatch.bind(policy),
+    }
 
     this.epoch = {
       /**
@@ -297,7 +297,7 @@ export default class Client {
        * @param epochIndex The epoch index to query.
        * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
        */
-      firstBlock: policy.getFirstBlockOf.bind(policy),
+      firstBlock: policy.getFirstBlockOfEpoch.bind(policy),
 
       /**
        * Gets a boolean expressing if the batch at a given block number (height) is the first batch
@@ -307,7 +307,7 @@ export default class Client {
        * @returns A boolean expressing if the batch at a given block number (height) is the first batch
        */
       firstBatch: policy.getFirstBatchOfEpoch.bind(policy),
-    };
+    }
 
     this.slots = {
       /**
@@ -317,24 +317,24 @@ export default class Client {
        */
       at: blockchain.getSlotAt.bind(blockchain),
 
-      slashed: {
+      penalized: {
         /**
-         * Returns information about the currently slashed slots. This includes slots that lost rewards
+         * Returns information about the currently penalized slots. This includes slots that lost rewards
          * and that were disabled.
          */
-        current: blockchain.getCurrentSlashedSlots.bind(blockchain),
+        current: blockchain.getCurrentPenalizedSlots.bind(blockchain),
 
         /**
-         * Returns information about the slashed slots of the previous batch. This includes slots that
+         * Returns information about the penalized slots of the previous batch. This includes slots that
          * lost rewards and that were disabled.
          */
-        previous: blockchain.getPreviousSlashedSlots.bind(blockchain),
+        previous: blockchain.getPreviousPenalizedSlots.bind(blockchain),
       },
-    };
+    }
 
     this.transaction = {
       /**
-       * Fetchs the transactions given the address.
+       * Fetches the transactions given the address.
        *
        * It returns the latest transactions for a given address. All the transactions
        * where the given address is listed as a recipient or as a sender are considered. Reward
@@ -344,19 +344,19 @@ export default class Client {
       getByAddress: blockchain.getTransactionsByAddress.bind(blockchain),
 
       /**
-       * Fetchs the transactions given the batch number.
+       * Fetches the transactions given the batch number.
        */
       getByBatch: blockchain.getTransactionsByBatchNumber.bind(blockchain),
 
       /**
-       * Fetchs the transactions given the block number.
+       * Fetches the transactions given the block number.
        */
       getByBlockNumber: blockchain.getTransactionsByBlockNumber.bind(
         blockchain,
       ),
 
       /**
-       * Fetchs the transaction given the hash.
+       * Fetches the transaction given the hash.
        */
       getByHash: blockchain.getTransactionByHash.bind(blockchain),
 
@@ -387,7 +387,7 @@ export default class Client {
        * Sends a transaction and waits for confirmation
        */
       sendSync: consensus.sendSyncTransaction.bind(consensus),
-    };
+    }
 
     this.vesting = {
       new: {
@@ -422,7 +422,7 @@ export default class Client {
          */
         sendSyncTx: consensus.sendSyncRedeemVestingTransaction.bind(consensus),
       },
-    };
+    }
 
     this.htlc = {
       new: {
@@ -501,7 +501,7 @@ export default class Client {
           ),
         },
       },
-    };
+    }
 
     this.stakes = {
       new: {
@@ -520,18 +520,18 @@ export default class Client {
          */
         sendSyncTx: consensus.sendSyncStakeTransaction.bind(consensus),
       },
-    };
+    }
 
     this.staker = {
       /**
-       * Fetchs the stakers given the batch number.
+       * Fetches the stakers given the batch number.
        */
-      fromValidator: blockchain.getStakersByAddress.bind(blockchain),
+      fromValidator: blockchain.getValidatorByAddress.bind(blockchain),
 
       /**
-       * Fetchs the staker given the address.
+       * Fetches the staker given the address.
        */
-      getBy: blockchain.getStakerByAddress.bind(blockchain),
+      getByAddress: blockchain.getStakerByAddress.bind(blockchain),
       new: {
         /**
          * Creates a new staker transaction
@@ -564,33 +564,33 @@ export default class Client {
          */
         sendSyncTx: consensus.sendSyncUpdateStakerTransaction.bind(consensus),
       },
-    };
+    }
 
     this.inherent = {
       /**
-       * Fetchs the inherents given the batch number.
+       * Fetches the inherents given the batch number.
        */
       getByBatch: blockchain.getInherentsByBatchNumber.bind(blockchain),
 
       /**
-       * Fetchs the inherents given the block number.
+       * Fetches the inherents given the block number.
        */
       getByBlock: blockchain.getInherentsByBlockNumber.bind(blockchain),
-    };
+    }
 
     this.account = {
       /**
        * Tries to fetch the account at the given address.
        */
-      getBy: blockchain.getAccountByAddress.bind(blockchain),
+      getByAddress: blockchain.getAccountByAddress.bind(blockchain),
 
       /**
-       * Fetchs the account given the address.
+       * Fetches the account given the address.
        */
       importRawKey: wallet.importRawKey.bind(wallet),
 
       /**
-       * Fetchs the account given the address.
+       * Fetches the account given the address.
        */
       new: wallet.createAccount.bind(wallet),
 
@@ -628,14 +628,14 @@ export default class Client {
        * Verifies the given signature with the account at the given address.
        */
       verify: wallet.verifySignature.bind(wallet),
-    };
+    }
 
     this.validator = {
       /**
        * Tries to fetch a validator information given its address. It has an option to include a map
        * containing the addresses and stakes of all the stakers that are delegating to the validator.
        */
-      byAddress: blockchain.getValidatorBy.bind(blockchain),
+      byAddress: blockchain.getValidatorByAddress.bind(blockchain),
 
       /**
        * Updates the configuration setting to automatically reactivate our validator
@@ -669,10 +669,6 @@ export default class Client {
        */
       activeList: blockchain.getActiveValidators.bind(blockchain),
 
-      /**
-       * Returns information about the currently parked validators.
-       */
-      parked: blockchain.getParkedValidators.bind(blockchain),
       action: {
         new: {
           /**
@@ -792,23 +788,25 @@ export default class Client {
         },
         unpark: {
           /**
-           * Returns a serialized `unpark_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
+           * Returns a serialized `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+           * account (by providing the sender wallet) or from the staker account's balance (by not
+           * providing a sender wallet).
            */
-          createTx: consensus.createUnparkValidatorTransaction.bind(consensus),
+          createTx: consensus.createSetInactiveStakeTransaction.bind(consensus),
 
           /**
-           * Sends a `unpark_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
+           * Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+           * account (by providing the sender wallet) or from the staker account's balance (by not
+           * providing a sender wallet).
            */
-          sendTx: consensus.sendUnparkValidatorTransaction.bind(consensus),
+          sendTx: consensus.sendSetInactiveStakeTransaction.bind(consensus),
 
           /**
-           * Sends a `unpark_validator` transaction and waits for confirmation.
-           * You need to provide the address of a basic account (the sender wallet)
-           * to pay the transaction fee.
+           *  Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+           * account (by providing the sender wallet) or from the staker account's balance (by not
+           * providing a sender wallet) and waits for confirmation.
            */
-          sendSyncTx: consensus.sendSyncUnparkValidatorTransaction.bind(
+          sendSyncTx: consensus.sendSyncSetInactiveStakeTransaction.bind(
             consensus,
           ),
         },
@@ -862,7 +860,7 @@ export default class Client {
           ),
         },
       },
-    };
+    }
 
     this.mempool = {
       /**
@@ -877,7 +875,7 @@ export default class Client {
        * @returns
        */
       content: mempool.mempoolContent.bind(mempool),
-    };
+    }
 
     this.peers = {
       /**
@@ -899,7 +897,7 @@ export default class Client {
        * Returns a boolean specifying if we have established consensus with the network
        */
       consensusEstablished: consensus.isConsensusEstablished.bind(network),
-    };
+    }
 
     /**
      * Gets the supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas). It is
@@ -913,7 +911,7 @@ export default class Client {
      * @param currentTime timestamp to calculate supply at
      * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
      */
-    this.supply_at = policy.getSupplyAt.bind(policy);
+    this.supply_at = policy.getSupplyAt.bind(policy)
 
     this.zeroKnowledgeProof = {
       /**
@@ -921,27 +919,31 @@ export default class Client {
        * @returns
        */
       state: zkpComponent.getZkpState.bind(zkpComponent),
-    };
+    }
   }
 
   async init(): Promise<boolean | any> {
-    const result = await this.modules.policy.getPolicyConstants();
-    if (result.error) return result.error;
-    Client.policy = result.data;
+    const result = await this.modules.policy.getPolicyConstants()
+    if (result.error)
+      return result.error
+    Client.policy = result.data
   }
 
   /**
    * Make a raw call to the Albatross Node.
    *
-   * @param request
-   * @param options
-   * @returns
+   * @param request - The request object containing the following properties:
+   * @param request.method - The name of the method to call.
+   * @param request.params - The parameters to pass with the call, if any.
+   * @param request.withMetadata - Flag indicating whether metadata should be included in the response.
+   * @param options - The HTTP options for the call. Defaults to DEFAULT_OPTIONS if not provided.
+   * @returns A promise that resolves with the result of the call, which includes data and optionally metadata.
    */
   async call<Data, Metadata = undefined>(
     request: { method: string; params?: any[]; withMetadata?: boolean },
     options: HttpOptions = DEFAULT_OPTIONS,
   ): Promise<CallResult<Data, Metadata>> {
-    return this.http.call<Data, Metadata>(request, options);
+    return this.http.call<Data, Metadata>(request, options)
   }
 
   /**
@@ -949,7 +951,7 @@ export default class Client {
    *
    * @param request
    * @param userOptions
-   * @returns
+   * @returns A promise that resolves with a Subscription object.
    */
   async subscribe<
     Data,
@@ -958,107 +960,12 @@ export default class Client {
     request: Request,
     userOptions: StreamOptions<Data>,
   ): Promise<Subscription<Data>> {
-    return this.ws.subscribe<Data, Request>(request, userOptions);
+    return this.ws.subscribe<Data, Request>(request, userOptions)
   }
 }
-
-export { AccountType, BlockType, LogType } from "src/types/enums";
-export {
-  type CallResult,
-  Context,
-  DEFAULT_OPTIONS,
-  DEFAULT_OPTIONS_SEND_TX,
-  DEFAULT_TIMEOUT_CONFIRMATION,
-  HttpClient,
-  HttpOptions,
-  SendTxCallOptions,
-} from "./client/http";
-export {
-  ErrorStreamReturn,
-  FilterStreamFn,
-  MaybeStreamResponse,
-  StreamOptions,
-  Subscription,
-  WebSocketClient,
-  WS_DEFAULT_OPTIONS,
-} from "./client/web-socket";
-export {
-  BlockchainClient,
-  BlockchainStream,
-  ConsensusClient,
-  MempoolClient,
-  NetworkClient,
-  PolicyClient,
-  ValidatorClient,
-  WalletClient,
-  ZkpComponentClient,
-} from "./modules";
-export type {
-  Account,
-  Address,
-  BasicAccount,
-  BatchIndex,
-  Block,
-  BlockchainState,
-  BlockNumber,
-  Coin,
-  CurrentTime,
-  ElectionMacroBlock,
-  EpochIndex,
-  GenesisSupply,
-  GenesisTime,
-  Hash,
-  HtlcAccount,
-  Inherent,
-  MacroBlock,
-  MempoolInfo,
-  MicroBlock,
-  // ParkedSet,
-  PartialBlock,
-  PartialMacroBlock,
-  PartialMicroBlock,
-  PenalizedSlot,
-  PolicyConstants,
-  RawTransaction,
-  Signature,
-  Slot,
-  Staker,
-  Transaction,
-  Validator,
-  ValidityStartHeight,
-  VestingAccount,
-  WalletAccount,
-  ZKPState,
-} from "./types/common";
-export type {
-  AppliedBlockLog,
-  BlockLog,
-  CreateStakerLog,
-  CreateValidatorLog,
-  DeactivateValidatorLog,
-  DeleteValidatorLog,
-  FailedTransactionLog,
-  HtlcCreateLog,
-  HTLCEarlyResolve,
-  HTLCRegularTransfer,
-  HTLCTimeoutResolve,
-  Log,
-  ParkLog,
-  PayFeeLog,
-  PayoutRewardLog,
-  ReactivateValidatorLog,
-  RetireValidatorLog,
-  RevertContractLog,
-  RevertedBlockLog,
-  SlashLog,
-  StakeLog,
-  StakerFeeDeductionLog,
-  TransactionLog,
-  TransferLog,
-  UnparkValidatorLog,
-  UnstakeLog,
-  UpdateStakerLog,
-  UpdateValidatorLog,
-  ValidatorFeeDeductionLog,
-  VestingCreateLog,
-} from "./types/logs";
+export * from 'src/types/enums'
+export * from './client/http'
+export * from './client/web-socket'
+export * from './modules'
+export * from './types/common'
+export * from './types/logs'

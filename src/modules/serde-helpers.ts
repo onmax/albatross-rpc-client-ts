@@ -1,10 +1,10 @@
-import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
+import type { HttpClient } from '../client/http'
 
 export class SerdeHelper {
-  private client: HttpClient;
+  private client: HttpClient
 
   constructor(http: HttpClient) {
-    this.client = http;
+    this.client = http
   }
 
   // TODO: https://github.com/nimiq/core-rs-albatross/blob/albatross/rpc-interface/src/serde_helpers.rs

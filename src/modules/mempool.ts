@@ -1,30 +1,31 @@
-import { type } from "os";
-import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import {
+import type { HttpClient } from '../client/http'
+import { DEFAULT_OPTIONS } from '../client/http'
+import type {
   Hash,
   MempoolInfo,
   RawTransaction,
   Transaction,
-} from "../types/common";
+} from '../types/common'
 
-type PushTransactionParams = {
-  transaction: RawTransaction;
-  withHighPriority?: boolean;
-};
-type MempoolContentParams = { includeTransactions: boolean };
-type GetTransactionFromMempoolParams = { hash: Hash };
+export interface PushTransactionParams {
+  transaction: RawTransaction
+  withHighPriority?: boolean
+}
+export interface MempoolContentParams { includeTransactions: boolean }
 
 export class MempoolClient {
-  private client: HttpClient;
+  private client: HttpClient
 
   constructor(http: HttpClient) {
-    this.client = http;
+    this.client = http
   }
 
   /**
    * Pushes the given serialized transaction to the local mempool
    *
-   * @param transaction Serialized transaction
+   * @param params
+   * @param params.transaction Serialized transaction
+   * @param params.withHighPriority Whether to push the transaction with high priority
    * @returns Transaction hash
    */
   public pushTransaction(
@@ -33,16 +34,17 @@ export class MempoolClient {
   ) {
     return this.client.call<Hash>({
       method: withHighPriority
-        ? "pushHighPriorityTransaction"
-        : "pushTransaction",
+        ? 'pushHighPriorityTransaction'
+        : 'pushTransaction',
       params: [transaction],
-    }, options);
+    }, options)
   }
 
   /**
    * Content of the mempool
    *
-   * @param includeTransactions
+   * @param params
+   * @param params.includeTransactions
    * @returns includeTransactions ? Transaction[] : Hash[]
    */
   public mempoolContent(
@@ -52,28 +54,32 @@ export class MempoolClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<(Hash | Transaction)[]>({
-      method: "mempoolContent",
+      method: 'mempoolContent',
       params: [includeTransactions],
-    }, options);
+    }, options)
   }
 
   /**
    * Obtains the mempool content in fee per byte buckets
-   * @returns
+   *
+   * @params options
+   * @returns Mempool content in fee per byte buckets
    */
   public mempool(options = DEFAULT_OPTIONS) {
-    return this.client.call<MempoolInfo>({ method: "mempool" }, options);
+    return this.client.call<MempoolInfo>({ method: 'mempool' }, options)
   }
 
   /**
    * Obtains the minimum fee per byte as per mempool configuration
-   * @returns
+   *
+   * @params options
+   * @returns Minimum fee per byte
    */
   public getMinFeePerByte(options = DEFAULT_OPTIONS) {
     return this.client.call</* f64 */ number>(
-      { method: "getMinFeePerByte" },
+      { method: 'getMinFeePerByte' },
       options,
-    );
+    )
   }
 
   /**
@@ -81,12 +87,12 @@ export class MempoolClient {
    * @returns Transaction
    */
   public getTransactionFromMempool(
-    { hash }: GetTransactionFromMempoolParams,
+    hash: Hash,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<Transaction>({
-      method: "getTransactionFromMempool",
+      method: 'getTransactionFromMempool',
       params: [hash],
-    }, options);
+    }, options)
   }
 }

@@ -1,89 +1,116 @@
-import { DEFAULT_OPTIONS, HttpClient } from "../client/http";
-import {
+import type { HttpClient } from '../client/http'
+import { DEFAULT_OPTIONS } from '../client/http'
+import type {
   BatchIndex,
   BlockNumber,
   EpochIndex,
   PolicyConstants,
-} from "../types/common";
+} from '../types/common'
 
-type JustIndexOption = { justIndex?: boolean };
-type EpochIndexOption = { epochIndex?: EpochIndex };
-type BatchIndexOption = { batchIndex?: BatchIndex };
-type SupplyAtParams = {
-  genesisSupply: number;
-  genesisTime: number;
-  currentTime: number;
-};
+export interface SupplyAtParams {
+  genesisSupply: number
+  genesisTime: number
+  currentTime: number
+}
 
 export class PolicyClient {
-  private client: HttpClient;
+  private client: HttpClient
 
   constructor(http: HttpClient) {
-    this.client = http;
+    this.client = http
   }
 
   /**
    * Gets a bundle of policy constants
+   *
+   * RPC method name: "getPolicyConstants"
+   *
+   * @param options
    */
   public async getPolicyConstants(options = DEFAULT_OPTIONS) {
     return this.client.call<PolicyConstants>(
-      { method: "getPolicyConstants" },
+      { method: 'getPolicyConstants' },
       options,
-    );
+    )
   }
 
   /**
    * Returns the epoch number at a given block number (height).
+   *
+   * RPC method name: "getEpochAt"
+   *
+   * @param blockNumber
+   * @param options
    */
   public async getEpochAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
     return this.client.call<EpochIndex>({
-      method: "getEpochAt",
+      method: 'getEpochAt',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    *  Returns the epoch index at a given block number. The epoch index is the number of a block relative
    * to the epoch it is in. For example, the first block of any epoch always has an epoch index of 0.
+   *
+   * RPC method name: "getEpochIndexAt"
+   *
+   * @param blockNumber
+   * @param options
+   * @returns The epoch index at a given block number.
    */
   public async getEpochIndexAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<EpochIndex>({
-      method: "getEpochIndexAt",
+      method: 'getEpochIndexAt',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Returns the batch number at a given `block_number` (height)
+   *
+   * RPC method name: "getBatchAt"
+   *
+   * @param blockNumber
+   * @param options
+   * @returns The batch number at a given `block_number` (height)
    */
   public async getBatchAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
     return this.client.call<EpochIndex>({
-      method: "getBatchAt",
+      method: 'getBatchAt',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Returns the batch index at a given block number. The batch index is the number of a block relative
    * to the batch it is in. For example, the first block of any batch always has an batch index of 0.
+   *
+   * RPC method name: "getBatchIndexAt"
+   *
+   * @param blockNumber
+   * @param options
+   * @returns The batch index at a given block number.
    */
   public async getBatchIndexAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<EpochIndex>({
-      method: "getBatchIndexAt",
+      method: 'getBatchIndexAt',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the number (height) of the next election macro block after a given block number (height).
    *
-   * @param blockNumber The block number (height) to query.
+   * RPC method name: "getElectionBlockAfter"
+   *
+   * @param blockNumber
    * @returns The number (height) of the next election macro block after a given block number (height).
    */
   public async getElectionBlockAfter(
@@ -91,16 +118,19 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
-      method: "getElectionBlockAfter",
+      method: 'getElectionBlockAfter',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the block number (height) of the preceding election macro block before a given block number (height).
    * If the given block number is an election macro block, it returns the election macro block before it.
    *
-   * @param blockNumber The block number (height) to query.
+   * RPC method name: "getElectionBlockBefore"
+   *
+   * @param blockNumber
+   * @param options
    * @returns The block number (height) of the preceding election macro block before a given block number (height).
    */
   public async getElectionBlockBefore(
@@ -108,46 +138,54 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
-      method: "getElectionBlockBefore",
+      method: 'getElectionBlockBefore',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the block number (height) of the last election macro block at a given block number (height).
    * If the given block number is an election macro block, then it returns that block number.
    *
-   * @param blockNumber The block number (height) to query.
-   * @returns
+   * RPC method name: "getLastElectionBlock"
+   *
+   * @param blockNumber
+   * @param options
+   * @returns The block number (height) of the last election macro block at a given block number (height).
    */
   public async getLastElectionBlock(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
-      method: "getLastElectionBlock",
+      method: 'getLastElectionBlock',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
    *
+   * RPC method name: "getIsElectionBlockAt"
+   *
    * @param blockNumber The block number (height) to query.
+   * @parm options
    * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
    */
   public async getIsElectionBlockAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<Boolean>({
-      method: "getIsElectionBlockAt",
+    return this.client.call<boolean>({
+      method: 'getIsElectionBlockAt',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the block number (height) of the next macro block after a given block number (height).
+   *
+   * RPC method name: "getMacroBlockAfter"
    *
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the next macro block after a given block number (height).
@@ -157,13 +195,15 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
-      method: "getMacroBlockAfter",
+      method: 'getMacroBlockAfter',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the block number (height) of the preceding macro block before a given block number (height).
+   *
+   * RPC method name: "getMacroBlockBefore"
    *
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the preceding macro block before a given block number (height).
@@ -173,14 +213,16 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
-      method: "getMacroBlockBefore",
+      method: 'getMacroBlockBefore',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the block number (height) of the last macro block at a given block number (height).
    * If the given block number is a macro block, then it returns that block number.
+   *
+   * RPC method name: "getLastMacroBlock"
    *
    * @param blockNumber The block number (height) to query.
    * @returns The block number (height) of the last macro block at a given block number (height).
@@ -190,13 +232,15 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
-      method: "getLastMacroBlock",
+      method: 'getLastMacroBlock',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets a boolean expressing if the block at a given block number (height) is a macro block.
+   *
+   * RPC method name: "getIsMacroBlockAt"
    *
    * @param blockNumber The block number (height) to query.
    * @returns A boolean expressing if the block at a given block number (height) is a macro block.
@@ -205,95 +249,113 @@ export class PolicyClient {
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<Boolean>({
-      method: "getIsMacroBlockAt",
+    return this.client.call<boolean>({
+      method: 'getIsMacroBlockAt',
       params: [blockNumber],
-    }, options);
+    }, options)
   }
 
   /**
    * Gets the block number (height) of the next micro block after a given block number (height).
    *
-   * @param blockNumber The block number (height) to query.
+   * RPC method name: "getMicroBlockAfter"
+   *
+   * @param blockNumber
+   * @param options
    * @returns The block number (height) of the next micro block after a given block number (height).
    */
   public async getIsMicroBlockAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: "getIsMicroBlockAt", params: [blockNumber] };
-    return this.client.call<Boolean>(req, options);
+    const req = { method: 'getIsMicroBlockAt', params: [blockNumber] }
+    return this.client.call<boolean>(req, options)
   }
 
   /**
    * Gets the block number (height) of the first block of the given epoch (which is always a micro block).
    *
-   * @param epochIndex The epoch index to query.
+   * RPC method name: "getFirstBlockOf"
+   *
+   * @param epochIndex
+   * @param options
    * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
    */
-  public async getFirstBlockOf(
-    { epochIndex }: EpochIndexOption,
+  public async getFirstBlockOfEpoch(
+    epochIndex: EpochIndex,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: "getFirstBlockOf", params: [epochIndex] };
-    return this.client.call<BlockNumber>(req, options);
+    const req = { method: 'getFirstBlockOf', params: [epochIndex] }
+    return this.client.call<BlockNumber>(req, options)
   }
 
   /**
    * Gets the block number of the first block of the given batch (which is always a micro block).
    *
-   * @param batchIndex The batch index to query.
+   * RPC method name: "getFirstBlockOfBatch"
+   *
+   * @param batchIndex
+   * @param options
    * @returns The block number of the first block of the given batch (which is always a micro block).
    */
   public async getFirstBlockOfBatch(
-    { batchIndex }: BatchIndexOption,
+    batchIndex: BatchIndex,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: "getFirstBlockOfBatch", params: [batchIndex] };
-    return this.client.call<BlockNumber>(req, options);
+    const req = { method: 'getFirstBlockOfBatch', params: [batchIndex] }
+    return this.client.call<BlockNumber>(req, options)
   }
 
   /**
    * Gets the block number of the election macro block of the given epoch (which is always the last block).
    *
-   * @param epochIndex The epoch index to query.
+   * RPC method name: "getElectionBlockOf"
+   *
+   * @param epochIndex
+   * @param options
    * @returns The block number of the election macro block of the given epoch (which is always the last block).
    */
-  public async getElectionBlockOf(
-    { epochIndex }: EpochIndexOption,
+  public async getElectionBlockOfEpoch(
+    epochIndex: EpochIndex,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: "getElectionBlockOf", params: [epochIndex] };
-    return this.client.call<BlockNumber>(req, options);
+    const req = { method: 'getElectionBlockOf', params: [epochIndex] }
+    return this.client.call<BlockNumber>(req, options)
   }
 
   /**
    * Gets the block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
    *
-   * @param batchIndex The batch index to query.
+   * RPC method name: "getMacroBlockOf"
+   *
+   * @param batchIndex
+   * @param options
    * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
    */
-  public async getMacroBlockOf(
-    { batchIndex }: BatchIndexOption,
+  public async getMacroBlockOfBatch(
+    batchIndex: BatchIndex,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: "getMacroBlockOf", params: [batchIndex] };
-    return this.client.call<BlockNumber>(req, options);
+    const req = { method: 'getMacroBlockOf', params: [batchIndex] }
+    return this.client.call<BlockNumber>(req, options)
   }
 
   /**
    * Gets a boolean expressing if the batch at a given block number (height) is the first batch
    * of the epoch.
    *
-   * @param blockNumber The block number (height) to query.
+   * RPC method name: "getFirstBatchOfEpoch"
+   *
+   * @param blockNumber
+   * @param options
    * @returns A boolean expressing if the batch at a given block number (height) is the first batch
    */
   public async getFirstBatchOfEpoch(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: "getFirstBatchOfEpoch", params: [blockNumber] };
-    return this.client.call<BlockNumber>(req, options);
+    const req = { method: 'getFirstBatchOfEpoch', params: [blockNumber] }
+    return this.client.call<BlockNumber>(req, options)
   }
 
   /**
@@ -303,9 +365,12 @@ export class PolicyClient {
    * Where e is the exponential function, t is the time in milliseconds since the genesis block and
    * Genesis_supply is the supply at the genesis of the Nimiq 2.0 chain.
    *
-   * @param genesisSupply supply at genesis
-   * @param genesisTime timestamp of genesis block
-   * @param currentTime timestamp to calculate supply at
+   * RPC method name: "getSupplyAt"
+   *
+   * @param params
+   * @param params.genesisSupply supply at genesis
+   * @param params.genesisTime timestamp of genesis block
+   * @param params.currentTime timestamp to calculate supply at
    * @returns The supply at a given time (as Unix time) in Lunas (1 NIM = 100,000 Lunas).
    */
   public async getSupplyAt(
@@ -313,9 +378,9 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = {
-      method: "getSupplyAt",
+      method: 'getSupplyAt',
       params: [genesisSupply, genesisTime, currentTime],
-    };
-    return this.client.call<number>(req, options);
+    }
+    return this.client.call<number>(req, options)
   }
 }

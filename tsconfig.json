@@ -1,14 +1,14 @@
 {
   "compilerOptions": {
+    "target": "es2018",
+    "baseUrl": ".",
+    "rootDir": "src",
+    "moduleResolution": "node",
+    "strict": true,
     "declaration": true,
     "importHelpers": true,
     "outDir": "dist",
-    "rootDir": "src",
-    "strict": true,
-    "target": "es2018",
-    "esModuleInterop": true,
-    "baseUrl": ".",
-    "moduleResolution": "node",
+    "esModuleInterop": true
   },
   "include": [
     "src/**/*"

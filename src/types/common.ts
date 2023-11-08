@@ -192,12 +192,19 @@ export interface PenalizedSlot {
 // };
 
 export interface Inherent {
-  reward: {
+  reward?: {
     block_number: number
     block_time: number
     target: Address
     value: Coin
     hash: string
+  }
+  penalize?: {
+    block_number: number
+    block_time: number
+    slot: number
+    validator_address: Address
+    offense_event_block: number
   }
 }
 

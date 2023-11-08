@@ -22,8 +22,8 @@
     "dev": "unbuild --stub",
     "test": "vitest run",
     "build": "unbuild src/index.ts --format esm --dts",
-    "lint": "eslint . --ignore-path .gitignore dist pnpm-lock.yaml",
-    "lint:fix": "eslint --fix . --ignore-path .gitignore dist pnpm-lock.yaml",
+    "lint": "eslint . --ignore-pattern .gitignore dist pnpm-lock.yaml",
+    "lint:fix": "eslint --fix . --ignore-pattern .gitignore dist pnpm-lock.yaml",
     "ci": "pnpm lint && pnpm build",
     "release": "pnpm lint && pnpm build && changeset publish"
   },

@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.2.0
+
+### Minor Changes
+
+- Updated API endpoints
+
 ## 0.1.2
 
 ### Patch Changes

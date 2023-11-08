@@ -1,7 +1,7 @@
 {
   "name": "nimiq-rpc-client-ts",
   "type": "module",
-  "version": "0.1.2",
+  "version": "0.2.0",
   "private": false,
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",

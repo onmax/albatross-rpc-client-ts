@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.2.1
+
+### Patch Changes
+
+- 0d51a78: Updated Inherent type
+
 ## 0.2.0
 
 ### Minor Changes

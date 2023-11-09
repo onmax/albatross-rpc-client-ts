@@ -192,9 +192,9 @@ export interface PenalizedSlot {
 // };
 
 export interface BaseInherent {
-  block_number: number
-  block_time: number
-  validator_address: Address
+  blockNumber: number
+  blockTime: number
+  validatorAddress: Address
 }
 
 export interface InherentReward extends BaseInherent {
@@ -205,11 +205,11 @@ export interface InherentReward extends BaseInherent {
 
 export interface InherentPenalize extends BaseInherent {
   slot: number
-  offense_event_block: number // u32
+  offenseEventBlock: number // u32
 }
 
 export interface InherentJail extends BaseInherent {
-  offense_event_block: number // u32
+  offenseEventBlock: number // u32
 }
 
 export type Inherent = { reward: InherentReward } | { penalize: InherentPenalize } | { jail: InherentJail }

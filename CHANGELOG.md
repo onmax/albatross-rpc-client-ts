@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.2.2
+
+### Patch Changes
+
+- 55dbc3c: Updated Inherent
+
 ## 0.2.1
 
 ### Patch Changes

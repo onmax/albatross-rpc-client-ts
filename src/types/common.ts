@@ -1,5 +1,3 @@
-import type { AccountType, BlockType } from './enums'
-
 export type Address = `NQ${number} ${string}`
 export type Coin = number
 
@@ -13,6 +11,56 @@ export type GenesisSupply = number /* u64 */
 export type GenesisTime = number /* u64 */
 export type CurrentTime = number /* u64 */
 export type Hash = string
+
+export enum BlockType {
+  Micro = 'micro',
+  Macro = 'macro',
+}
+
+export enum LogType {
+  PayoutInherent = 'payout-inherent',
+  ParkInherent = 'park-inherent',
+  SlashInherent = 'slash-inherent',
+  RevertContractInherent = 'revert-contract-inherent',
+  PayFee = 'pay-fee',
+  Transfer = 'transfer',
+  HtlcCreate = 'htlc-create',
+  HtlcTimeoutResolve = 'htlc-timeout-resolve',
+  HtlcRegularTransfer = 'htlc-regular-transfer',
+  HtlcEarlyResolve = 'htlc-early-resolve',
+  VestingCreate = 'vesting-create',
+  CreateValidator = 'create-validator',
+  UpdateValidator = 'update-validator',
+  DeactivateValidator = 'deactivate-validator',
+  ReactivateValidator = 'reactivate-validator',
+  UnparkValidator = 'unpark-validator',
+  CreateStaker = 'create-staker',
+  Stake = 'stake',
+  StakerFeeDeduction = 'staker-fee-deduction',
+  SetInactiveStake = 'set-inactive-stake',
+  UpdateStaker = 'update-staker',
+  RetireValidator = 'retire-validator',
+  DeleteValidator = 'delete-validator',
+  Unstake = 'unstake',
+  PayoutReward = 'payout-reward',
+  Park = 'park',
+  Slash = 'slash',
+  RevertContract = 'revert-contract',
+  FailedTransaction = 'failed-transaction',
+  ValidatorFeeDeduction = 'validator-fee-deduction',
+}
+
+export enum AccountType {
+  Basic = 'basic',
+  Vesting = 'vesting',
+  HTLC = 'htlc',
+}
+
+export enum InherentType {
+  Reward = 'reward',
+  Jail = 'jail',
+  Penalize = 'penalize',
+}
 
 export interface PolicyConstants {
   stakingContractAddress: Address
@@ -29,13 +77,13 @@ export interface PolicyConstants {
 }
 
 export interface BasicAccount {
-  type: AccountType.BASIC
+  type: AccountType.Basic
   address: Address
   balance: Coin
 }
 
 export interface VestingAccount {
-  type: AccountType.VESTING
+  type: AccountType.Vesting
   address: Address
   balance: Coin
   owner: Address
@@ -78,7 +126,7 @@ export interface Transaction {
 export type RawTransaction = string
 
 export interface PartialMicroBlock {
-  type: BlockType.MICRO
+  type: BlockType.Micro
   hash: string
   size: number
   batch: number
@@ -113,7 +161,7 @@ export type MicroBlock = PartialMicroBlock & {
 }
 
 export interface PartialMacroBlock {
-  type: BlockType.MACRO
+  type: BlockType.Macro
   hash: string
   size: number
   batch: number
@@ -186,33 +234,34 @@ export interface PenalizedSlot {
   disabled: number[] // u32[]
 }
 
-// export type ParkedSet = {
-//   blockNumber: BlockNumber;
-//   validators: Address[];
-// };
-
-export interface BaseInherent {
+export interface InherentReward {
+  type: InherentType.Reward
   blockNumber: number
   blockTime: number
   validatorAddress: Address
-}
-
-export interface InherentReward extends BaseInherent {
   target: Address
   value: Coin
   hash: string
 }
 
-export interface InherentPenalize extends BaseInherent {
+export interface InherentPenalize {
+  type: InherentType.Penalize
+  blockNumber: number
+  blockTime: number
+  validatorAddress: Address
   slot: number
   offenseEventBlock: number // u32
 }
 
-export interface InherentJail extends BaseInherent {
+export interface InherentJail {
+  type: InherentType.Jail
+  blockNumber: number
+  blockTime: number
+  validatorAddress: Address
   offenseEventBlock: number // u32
 }
 
-export type Inherent = { reward: InherentReward } | { penalize: InherentPenalize } | { jail: InherentJail }
+export type Inherent = InherentReward | InherentPenalize | InherentJail
 
 export interface MempoolInfo {
   _0?: number // u32

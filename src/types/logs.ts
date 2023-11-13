@@ -1,5 +1,4 @@
-import type { Address, Coin } from './common'
-import type { LogType } from './enums'
+import type { Address, Coin, LogType } from './common'
 
 export interface PayFeeLog {
   type: LogType.PayFee

@@ -10,6 +10,7 @@ import type {
   EpochIndex,
   Hash,
   Inherent,
+  LogType,
   PartialBlock,
   PenalizedSlot,
   Slot,
@@ -17,7 +18,6 @@ import type {
   Transaction,
   Validator,
 } from '../types/common'
-import type { LogType } from '../types/enums'
 
 export interface GetBlockByHashParams { includeTransactions?: boolean }
 export interface GetBlockByBlockNumberParams { includeTransactions?: boolean }

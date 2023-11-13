@@ -1,7 +1,6 @@
 import type { FilterStreamFn, StreamOptions, Subscription, WebSocketClient } from '../client/web-socket'
 import { WS_DEFAULT_OPTIONS } from '../client/web-socket'
-import type { Address, Block, Hash, MacroBlock, MicroBlock, PartialBlock, Validator } from '../types/common'
-import type { LogType } from '../types/enums'
+import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, PartialBlock, Validator } from '../types/common'
 import type { BlockLog } from '../types/logs'
 
 export enum BlockSubscriptionType {

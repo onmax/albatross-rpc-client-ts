@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.3.0
+
+### Minor Changes
+
+- d836fdc: Updated Client and types
+
 ## 0.2.2
 
 ### Patch Changes

@@ -17,31 +17,13 @@ The development network is currently in a phase where we are giving RPC access t
 
 ### Usage
 
-```typescript
-function getClient() {
-    const secret = process.env.NIMIQ_SECRET || '';
-    const url = new URL(`https://seed1.v2.nimiq-testnet.com:8648/`);
-    url.searchParams.append('secret', secret);
-    return new Client(url)
-}
-
-// client has been reestructure so you can access all methods directly. You can access using:
-// [batch, block, epoch, transaction, inherent, account, validator, slots, mempool, stakes, staker, peers, constant, htlc, vesting, zeroKnowledgeProof, logs]
-// e.g.
-await getClient().block.current()
-await getClient().peer.list()
-```
-
-Check out the [client class file](./src/index.ts) for all available methods.
-
-#### Using the Nimiq RPC Client structure
-
-In the [`Rust RPC Client`](https://github.com/nimiq/core-rs-albatross/tree/albatross/rpc-server/src/dispatchers) things are structure differently and you can use that structure if you want prefer it.
+It is structured the same way as the [`Rust RPC Client`](https://github.com/nimiq/core-rs-albatross/tree/albatross/rpc-server/src/dispatchers)
 
 ```typescript
 // getClient() defined before
-getClient()._modules.blockchain.getBlockNumber()
-getClient()._modules.network.getPeerCount()
+getClient().blockchain.getBlockNumber()
+getClient().network.getPeerCount()
+// use auto-complete to see all available methods
 ```
 
 ## Need help?

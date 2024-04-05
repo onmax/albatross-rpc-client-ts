@@ -166,18 +166,18 @@ export class PolicyClient {
   /**
    * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
    *
-   * RPC method name: "getIsElectionBlockAt"
+   * RPC method name: "isElectionBlockAt"
    *
    * @param blockNumber The block number (height) to query.
    * @parm options
    * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
    */
-  public async getIsElectionBlockAt(
+  public async isElectionBlockAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<boolean>({
-      method: 'getIsElectionBlockAt',
+      method: 'isElectionBlockAt',
       params: [blockNumber],
     }, options)
   }
@@ -240,17 +240,17 @@ export class PolicyClient {
   /**
    * Gets a boolean expressing if the block at a given block number (height) is a macro block.
    *
-   * RPC method name: "getIsMacroBlockAt"
+   * RPC method name: "isMacroBlockAt"
    *
    * @param blockNumber The block number (height) to query.
    * @returns A boolean expressing if the block at a given block number (height) is a macro block.
    */
-  public async getIsMacroBlockAt(
+  public async isMacroBlockAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<boolean>({
-      method: 'getIsMacroBlockAt',
+      method: 'isMacroBlockAt',
       params: [blockNumber],
     }, options)
   }
@@ -264,11 +264,11 @@ export class PolicyClient {
    * @param options
    * @returns The block number (height) of the next micro block after a given block number (height).
    */
-  public async getIsMicroBlockAt(
+  public async isMicroBlockAt(
     blockNumber: BlockNumber,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: 'getIsMicroBlockAt', params: [blockNumber] }
+    const req = { method: 'isMicroBlockAt', params: [blockNumber] }
     return this.client.call<boolean>(req, options)
   }
 
@@ -286,6 +286,38 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getFirstBlockOf', params: [epochIndex] }
+    return this.client.call<BlockNumber>(req, options)
+  }
+
+  /**
+   * Gets the block number of the first block of the given reporting window (which is always a micro block).
+   * 
+   * RPC method name: "get_block_after_reporting_window"
+   * 
+   * @param blockNumber
+   * @returns The block number of the first block of the given reporting window (which is always a micro block).
+   */
+  public async getBlockAfterReportingWindow(
+    blockNumber: BlockNumber,
+    options = DEFAULT_OPTIONS,
+  ) {
+    const req = { method: 'getBlockAfterReportingWindow', params: [blockNumber] }
+    return this.client.call<BlockNumber>(req, options)
+  }
+
+  /**
+   * Gets the block number of the first block of the given jail (which is always a micro block).
+   * 
+   * RPC method name: "get_block_after_jail"
+   * 
+   * @param blockNumber
+   * @returns The block number of the first block of the given jail (which is always a micro block).
+   */
+  public async getBlockAfterJail(
+    blockNumber: BlockNumber,
+    options = DEFAULT_OPTIONS,
+  ) {
+    const req = { method: 'getBlockAfterJail', params: [blockNumber] }
     return this.client.call<BlockNumber>(req, options)
   }
 

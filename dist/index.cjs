@@ -531,8 +531,8 @@ const blockchainStreams = {
 };
 
 var BlockType = /* @__PURE__ */ ((BlockType2) => {
-  BlockType2["MICRO"] = "micro";
-  BlockType2["MACRO"] = "macro";
+  BlockType2["Micro"] = "micro";
+  BlockType2["Macro"] = "macro";
   return BlockType2;
 })(BlockType || {});
 var LogType = /* @__PURE__ */ ((LogType2) => {
@@ -555,25 +555,32 @@ var LogType = /* @__PURE__ */ ((LogType2) => {
   LogType2["CreateStaker"] = "create-staker";
   LogType2["Stake"] = "stake";
   LogType2["StakerFeeDeduction"] = "staker-fee-deduction";
-  LogType2["SetInactiveStake"] = "set-inactive-stake";
+  LogType2["SetActiveStake"] = "set-inactive-stake";
   LogType2["UpdateStaker"] = "update-staker";
   LogType2["RetireValidator"] = "retire-validator";
   LogType2["DeleteValidator"] = "delete-validator";
-  LogType2["Unstake"] = "unstake";
   LogType2["PayoutReward"] = "payout-reward";
   LogType2["Park"] = "park";
   LogType2["Slash"] = "slash";
   LogType2["RevertContract"] = "revert-contract";
   LogType2["FailedTransaction"] = "failed-transaction";
   LogType2["ValidatorFeeDeduction"] = "validator-fee-deduction";
+  LogType2["RetireStake"] = "retire-stake";
+  LogType2["RemoveStake"] = "remove-stake";
   return LogType2;
 })(LogType || {});
 var AccountType = /* @__PURE__ */ ((AccountType2) => {
-  AccountType2["BASIC"] = "basic";
-  AccountType2["VESTING"] = "vesting";
+  AccountType2["Basic"] = "basic";
+  AccountType2["Vesting"] = "vesting";
   AccountType2["HTLC"] = "htlc";
   return AccountType2;
 })(AccountType || {});
+var InherentType = /* @__PURE__ */ ((InherentType2) => {
+  InherentType2["Reward"] = "reward";
+  InherentType2["Jail"] = "jail";
+  InherentType2["Penalize"] = "penalize";
+  return InherentType2;
+})(InherentType || {});
 
 var __defProp$7 = Object.defineProperty;
 var __defNormalProp$7 = (obj, key, value) => key in obj ? __defProp$7(obj, key, { enumerable: true, configurable: true, writable: true, value }) : obj[key] = value;
@@ -630,6 +637,12 @@ class ConsensusClient {
    */
   getRawTransactionInfo({ rawTransaction }, options = DEFAULT_OPTIONS) {
     return this.client.call({ method: "getRawTransactionInfo", params: [rawTransaction] }, options);
+  }
+  /**
+   * Sends a raw transaction to the network
+   */
+  sendRawTransaction({ rawTransaction }, options = DEFAULT_OPTIONS) {
+    return this.client.call({ method: "sendRawTransaction", params: [rawTransaction] }, options);
   }
   /**
    * Creates a serialized transaction
@@ -782,7 +795,7 @@ class ConsensusClient {
    * method.
    */
   async createRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "createRedeemEarlyHtlcTransaction", params: [p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] };
+    const req = { method: "createRedeemEarlyHtlcTransaction", params: [p.contractAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
@@ -790,7 +803,7 @@ class ConsensusClient {
    * method.
    */
   async sendRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "sendRedeemEarlyHtlcTransaction", params: [p.wallet, p.htlcAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] };
+    const req = { method: "sendRedeemEarlyHtlcTransaction", params: [p.contractAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
@@ -801,14 +814,14 @@ class ConsensusClient {
     const hash = await this.sendRedeemEarlyHtlcTransaction(p, options);
     if (hash.error)
       return hash;
-    return await this.waitForConfirmation(hash.data, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context);
+    return await this.waitForConfirmation(hash.data, { addresses: [p.contractAddress] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized signature that can be used to redeem funds from a HTLC contract using
    * the `EarlyResolve` method.
    */
   async signRedeemEarlyHtlcTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "signRedeemEarlyHtlcTransaction", params: [p.wallet, p.htlcAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] };
+    const req = { method: "signRedeemEarlyHtlcTransaction", params: [p.contractAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
@@ -869,7 +882,7 @@ class ConsensusClient {
    * providing a sender wallet).
    */
   async createUpdateStakerTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "createUpdateStakerTransaction", params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.reactivateAllStake, p.fee, this.getValidityStartHeight(p)] };
+    const req = { method: "createUpdateStakerTransaction", params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.newInactiveBalance, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
@@ -878,7 +891,7 @@ class ConsensusClient {
    * providing a sender wallet).
    */
   async sendUpdateStakerTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "sendUpdateStakerTransaction", params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.reactivateAllStake, p.fee, this.getValidityStartHeight(p)] };
+    const req = { method: "sendUpdateStakerTransaction", params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.newInactiveBalance, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
@@ -893,59 +906,85 @@ class ConsensusClient {
     return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.UpdateStaker] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
-   * Returns a serialized `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+   * Returns a serialized `set_active_stake` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet).
    */
-  async createSetInactiveStakeTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "createSetInactiveStakeTransaction", params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] };
+  async createSetActiveStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    const req = { method: "createSetActiveStakeTransaction", params: [p.senderWallet, p.stakerWallet, p.newActiveBalance, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
-   * Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+   * Sends a `set_active_stake` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet).
    */
-  async sendSetInactiveStakeTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "sendSetInactiveStakeTransaction", params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] };
+  async sendSetActiveStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    const req = { method: "sendSetActiveStakeTransaction", params: [p.senderWallet, p.stakerWallet, p.newActiveBalance, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
-   * Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
+   * Sends a `set_active_stake` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
    * providing a sender wallet) and waits for confirmation.
    */
-  async sendSyncSetInactiveStakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
-    const hash = await this.sendSetInactiveStakeTransaction(p, options);
+  async sendSyncSetActiveStakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendSetActiveStakeTransaction(p, options);
     if (hash.error)
       return hash;
-    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.SetInactiveStake] }, options.waitForConfirmationTimeout, hash.context);
+    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.SetActiveStake] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
-   * Returns a serialized `unstake` transaction. The transaction fee will be paid from the funds
-   * being unstaked.
+   * Returns a serialized `retire_stake` transaction. You can pay the transaction fee from a basic
+   * account (by providing the sender wallet) or from the staker account's balance (by not
+   * providing a sender wallet). 
    */
-  async createUnstakeTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "createUnstakeTransaction", params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] };
+  async createRetireStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    const req = { method: "createRetireStakeTransaction", params: [p.senderWallet, p.stakerWallet, p.retireStake, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
-   * Sends a `unstake` transaction. The transaction fee will be paid from the funds
-   * being unstaked.
+   * Sends a `retire_stake` transaction. You can pay the transaction fee from a basic
+   * account (by providing the sender wallet) or from the staker account's balance (by not
+   * providing a sender wallet).
    */
-  async sendUnstakeTransaction(p, options = DEFAULT_OPTIONS) {
-    const req = { method: "sendUnstakeTransaction", params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] };
+  async sendRetireStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    const req = { method: "sendRetireStakeTransaction", params: [p.senderWallet, p.stakerWallet, p.retireStake, p.fee, this.getValidityStartHeight(p)] };
     return this.client.call(req, options);
   }
   /**
-   * Sends a `unstake` transaction. The transaction fee will be paid from the funds
-   * being unstaked and waits for confirmation.
+   * Sends a `retire_stake` transaction. You can pay the transaction fee from a basic
+   * account (by providing the sender wallet) or from the staker account's balance (by not
+   * providing a sender wallet) and waits for confirmation.
    */
-  async sendSyncUnstakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
-    const hash = await this.sendUnstakeTransaction(p, options);
+  async sendSyncRetireStakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRetireStakeTransaction(p, options);
     if (hash.error)
       return hash;
-    return await this.waitForConfirmation(hash.data, { addresses: [p.recipient], types: [LogType.Unstake] }, options.waitForConfirmationTimeout, hash.context);
+    return await this.waitForConfirmation(hash.data, { addresses: [p.senderWallet], types: [LogType.RetireStake] }, options.waitForConfirmationTimeout, hash.context);
+  }
+  /**
+   * Returns a serialized `remove_stake` transaction. 
+   */
+  async createRemoveStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    const req = { method: "createRemoveStakeTransaction", params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] };
+    return this.client.call(req, options);
+  }
+  /**
+   * Sends a `remove_stake` transaction.
+   */
+  async sendRemoveStakeTransaction(p, options = DEFAULT_OPTIONS) {
+    const req = { method: "sendRemoveStakeTransaction", params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] };
+    return this.client.call(req, options);
+  }
+  /**
+   * Sends a `remove_stake` transaction and waits for confirmation.
+   */
+  async sendSyncRemoveStakeTransaction(p, options = DEFAULT_OPTIONS_SEND_TX) {
+    const hash = await this.sendRemoveStakeTransaction(p, options);
+    if (hash.error)
+      return hash;
+    return await this.waitForConfirmation(hash.data, { addresses: [p.stakerWallet], types: [LogType.RemoveStake] }, options.waitForConfirmationTimeout, hash.context);
   }
   /**
    * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
@@ -1395,15 +1434,15 @@ class PolicyClient {
   /**
    * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
    *
-   * RPC method name: "getIsElectionBlockAt"
+   * RPC method name: "isElectionBlockAt"
    *
    * @param blockNumber The block number (height) to query.
    * @parm options
    * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
    */
-  async getIsElectionBlockAt(blockNumber, options = DEFAULT_OPTIONS) {
+  async isElectionBlockAt(blockNumber, options = DEFAULT_OPTIONS) {
     return this.client.call({
-      method: "getIsElectionBlockAt",
+      method: "isElectionBlockAt",
       params: [blockNumber]
     }, options);
   }
@@ -1453,14 +1492,14 @@ class PolicyClient {
   /**
    * Gets a boolean expressing if the block at a given block number (height) is a macro block.
    *
-   * RPC method name: "getIsMacroBlockAt"
+   * RPC method name: "isMacroBlockAt"
    *
    * @param blockNumber The block number (height) to query.
    * @returns A boolean expressing if the block at a given block number (height) is a macro block.
    */
-  async getIsMacroBlockAt(blockNumber, options = DEFAULT_OPTIONS) {
+  async isMacroBlockAt(blockNumber, options = DEFAULT_OPTIONS) {
     return this.client.call({
-      method: "getIsMacroBlockAt",
+      method: "isMacroBlockAt",
       params: [blockNumber]
     }, options);
   }
@@ -1473,8 +1512,8 @@ class PolicyClient {
    * @param options
    * @returns The block number (height) of the next micro block after a given block number (height).
    */
-  async getIsMicroBlockAt(blockNumber, options = DEFAULT_OPTIONS) {
-    const req = { method: "getIsMicroBlockAt", params: [blockNumber] };
+  async isMicroBlockAt(blockNumber, options = DEFAULT_OPTIONS) {
+    const req = { method: "isMicroBlockAt", params: [blockNumber] };
     return this.client.call(req, options);
   }
   /**
@@ -1488,6 +1527,30 @@ class PolicyClient {
    */
   async getFirstBlockOfEpoch(epochIndex, options = DEFAULT_OPTIONS) {
     const req = { method: "getFirstBlockOf", params: [epochIndex] };
+    return this.client.call(req, options);
+  }
+  /**
+   * Gets the block number of the first block of the given reporting window (which is always a micro block).
+   * 
+   * RPC method name: "get_block_after_reporting_window"
+   * 
+   * @param blockNumber
+   * @returns The block number of the first block of the given reporting window (which is always a micro block).
+   */
+  async getBlockAfterReportingWindow(blockNumber, options = DEFAULT_OPTIONS) {
+    const req = { method: "getBlockAfterReportingWindow", params: [blockNumber] };
+    return this.client.call(req, options);
+  }
+  /**
+   * Gets the block number of the first block of the given jail (which is always a micro block).
+   * 
+   * RPC method name: "get_block_after_jail"
+   * 
+   * @param blockNumber
+   * @returns The block number of the first block of the given jail (which is always a micro block).
+   */
+  async getBlockAfterJail(blockNumber, options = DEFAULT_OPTIONS) {
+    const req = { method: "getBlockAfterJail", params: [blockNumber] };
     return this.client.call(req, options);
   }
   /**
@@ -1607,6 +1670,18 @@ class ValidatorClient {
   async setAutomaticReactivation({ automaticReactivation }, options = DEFAULT_OPTIONS) {
     return this.client.call({ method: "setAutomaticReactivation", params: [automaticReactivation] }, options);
   }
+  /**
+   * Returns whether our validator is elected
+   */
+  async isElected(options = DEFAULT_OPTIONS) {
+    return this.client.call({ method: "isValidatorElected" }, options);
+  }
+  /**
+   * Returns whether our validator is synced
+   */
+  async isSynced(options = DEFAULT_OPTIONS) {
+    return this.client.call({ method: "isValidatorSynced" }, options);
+  }
 }
 
 const validator = {
@@ -1704,7 +1779,7 @@ var __publicField = (obj, key, value) => {
   __defNormalProp(obj, typeof key !== "symbol" ? key + "" : key, value);
   return value;
 };
-const _Client = class _Client {
+class NimiqRPCClient {
   /**
    * @param url Node URL [?secret=secret]
    * @param auth { username, password }
@@ -1712,791 +1787,32 @@ const _Client = class _Client {
   constructor(url, auth) {
     __publicField(this, "http");
     __publicField(this, "ws");
-    __publicField(this, "block");
-    __publicField(this, "batch");
-    __publicField(this, "epoch");
-    __publicField(this, "transaction");
-    __publicField(this, "inherent");
-    __publicField(this, "account");
-    __publicField(this, "validator");
-    __publicField(this, "slots");
+    __publicField(this, "blockchain");
+    __publicField(this, "blockchainStreams");
+    __publicField(this, "consensus");
     __publicField(this, "mempool");
-    __publicField(this, "stakes");
-    __publicField(this, "staker");
-    __publicField(this, "peers");
-    __publicField(this, "supply_at");
-    __publicField(this, "htlc");
-    __publicField(this, "vesting");
-    __publicField(this, "zeroKnowledgeProof");
-    __publicField(this, "logs");
-    __publicField(this, "modules");
+    __publicField(this, "network");
+    __publicField(this, "policy");
+    __publicField(this, "validator");
+    __publicField(this, "wallet");
+    __publicField(this, "zkpComponent");
     this.http = new HttpClient(url, auth);
     this.ws = new WebSocketClient(url, auth);
-    const blockchain = new BlockchainClient(this.http);
-    const blockchainStreams = new BlockchainStream(
+    this.blockchain = new BlockchainClient(this.http);
+    this.blockchainStreams = new BlockchainStream(
       this.ws
     );
-    const consensus = new ConsensusClient(
+    this.consensus = new ConsensusClient(
       this.http,
-      blockchain,
-      blockchainStreams
+      this.blockchain,
+      this.blockchainStreams
     );
-    const mempool = new MempoolClient(this.http);
-    const network = new NetworkClient(this.http);
-    const policy = new PolicyClient(this.http);
-    const validator_ = new ValidatorClient(this.http);
-    const wallet = new WalletClient(this.http);
-    const zkpComponent = new ZkpComponentClient(
-      this.http
-    );
-    this.modules = {
-      blockchain,
-      blockchainStreams,
-      consensus,
-      mempool,
-      network,
-      policy,
-      validator: validator_,
-      wallet,
-      zkpComponent
-    };
-    this.block = {
-      /**
-       * Returns the block number for the current head.
-       */
-      current: blockchain.getBlockNumber.bind(blockchain),
-      /**
-       * Tries to fetch a block given its hash. It has an option to include the transactions in
-       * the block, which defaults to false.
-       */
-      getByHash: blockchain.getBlockByHash.bind(blockchain),
-      /**
-       * Tries to fetch a block given its number. It has an option to include the transactions in
-       * the block, which defaults to false.
-       */
-      getByNumber: blockchain.getBlockByNumber.bind(blockchain),
-      /**
-       * Returns the block at the head of the main chain. It has an option to include the
-       * transactions in the block, which defaults to false.
-       */
-      latest: blockchain.getLatestBlock.bind(blockchain),
-      /**
-       * Returns the index of the block in its batch. Starting from 0.
-       */
-      batchIndex: policy.getBatchIndexAt.bind(policy),
-      /**
-       * Returns the index of the block in its epoch. Starting from 0.
-       */
-      epochIndex: policy.getEpochIndexAt.bind(policy),
-      /**
-       * Election blocks are the first blocks of each epoch
-       */
-      election: {
-        /**
-         * Gets the number (height) of the next election macro block after a given block
-         * number (height).
-         *
-         * @param blockNumber The block number (height) to query.
-         * @returns The number (height) of the next election macro block after a given
-         * block number (height).
-         */
-        after: policy.getElectionBlockAfter.bind(policy),
-        /**
-         * Gets the block number (height) of the preceding election macro block before
-         * a given block number (height). If the given block number is an election macro
-         * block, it returns the election macro block before it.
-         *
-         * @param blockNumber The block number (height) to query.
-         * @returns The block number (height) of the preceding election macro block before
-         * a given block number (height).
-         */
-        before: policy.getElectionBlockBefore.bind(policy),
-        /**
-         * Gets the block number (height) of the last election macro block at a given block
-         * number (height). If the given block number is an election macro block, then it
-         * returns that block number.
-         *
-         * @param blockNumber The block number (height) to query.
-         * @returns
-         */
-        last: policy.getLastElectionBlock.bind(policy),
-        /**
-         * Gets the block number of the election macro block of the given epoch (which is
-         * always the last block).
-         *
-         * @param epochIndex The epoch index to query.
-         * @returns The block number of the election macro block of the given epoch (which
-         * is always the last block).
-         */
-        getByEpoch: policy.getElectionBlockOfEpoch.bind(policy),
-        /**
-         * Subscribes to pre epoch validators events.
-         */
-        subscribe: blockchainStreams.subscribeForValidatorElectionByAddress.bind(blockchainStreams)
-      },
-      /**
-       * Gets a boolean expressing if the block at a given block number (height) is an election macro block.
-       *
-       * @param blockNumber The block number (height) to query.
-       * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
-       */
-      isElection: policy.getIsElectionBlockAt.bind(policy),
-      /**
-       * Macro blocks are the first blocks of each batch
-       */
-      macro: {
-        /**
-         * Gets the block number (height) of the next macro block after a given block number (height).
-         *
-         * @param blockNumber The block number (height) to query.
-         * @returns The block number (height) of the next macro block after a given block number (height).
-         */
-        after: policy.getMacroBlockAfter.bind(policy),
-        /**
-         * Gets the block number (height) of the preceding macro block before a given block number
-         * (height).
-         *
-         * @param blockNumber The block number (height) to query.
-         * @returns The block number (height) of the preceding macro block before a given block
-         * number (height).
-         */
-        before: policy.getMacroBlockBefore.bind(policy),
-        /**
-         * Gets the block number (height) of the last macro block at a given block number (height).
-         * If the given block number is a macro block, then it returns that block number.
-         *
-         * @param blockNumber The block number (height) to query.
-         * @returns The block number (height) of the last macro block at a given block number (height).
-         */
-        last: policy.getLastMacroBlock.bind(policy),
-        /**
-         * Gets the block number of the macro block (checkpoint or election) of the given batch
-         * (which
-         * is always the last block).
-         *
-         * @param batchIndex The batch index to query.
-         * @returns The block number of the macro block (checkpoint or election) of the given
-         * batch (which
-         * is always the last block).
-         */
-        getByBatch: policy.getMacroBlockOfBatch.bind(policy)
-      },
-      /**
-       * Gets a boolean expressing if the block at a given block number (height) is a macro block.
-       *
-       * @param blockNumber The block number (height) to query.
-       * @returns A boolean expressing if the block at a given block number (height) is a macro block.
-       */
-      isMacro: policy.getIsMacroBlockAt.bind(policy),
-      /**
-       * Gets the block number (height) of the next micro block after a given block number (height).
-       *
-       * @param blockNumber The block number (height) to query.
-       * @returns The block number (height) of the next micro block after a given block number (height).
-       */
-      isMicro: policy.getIsMicroBlockAt.bind(policy),
-      /**
-       * Subscribes to new block events.
-       */
-      subscribe: blockchainStreams.subscribeForBlocks.bind(blockchainStreams)
-    };
-    this.logs = {
-      /**
-       * Subscribes to log events related to a given list of addresses and of any of the log types
-       * provided. If addresses is empty it does not filter by address. If log_types is empty it
-       * won't filter by log types.
-       *
-       * Thus the behavior is to assume all addresses or log_types are to be provided if the
-       * corresponding vec is empty.
-       */
-      subscribe: blockchainStreams.subscribeForLogsByAddressesAndTypes.bind(
-        blockchainStreams
-      )
-    };
-    this.batch = {
-      /**
-       * Returns the batch number for the current head.
-       */
-      current: blockchain.getBatchNumber.bind(blockchain),
-      /**
-       * Gets the batch number at a given `block_number` (height)
-       *
-       * @param blockNumber The block number (height) to query.
-       * @param justIndex The batch index is the number of a block relative to the batch it is in.
-       * For example, the first block of any batch always has an epoch index of 0.
-       * @returns The epoch number at the given block number (height).
-       */
-      at: policy.getBatchAt.bind(policy),
-      /**
-       * Gets the block number (height) of the first block of the given epoch (which is always
-       * a micro block).
-       *
-       * @param epochIndex The epoch index to query.
-       * @returns The block number (height) of the first block of the given epoch (which is always
-       * a micro block).
-       */
-      firstBlock: policy.getFirstBlockOfBatch.bind(policy)
-    };
-    this.epoch = {
-      /**
-       * Returns the epoch number for the current head.
-       */
-      current: blockchain.getEpochNumber.bind(blockchain),
-      /**
-       * Gets the epoch number at a given `block_number` (height)
-       *
-       * @param blockNumber The block number (height) to query.
-       * @param justIndex The epoch index is the number of a block relative to the epoch it is in.
-       * For example, the first block of any epoch always has an epoch index of 0.
-       * @returns The epoch number at the given block number (height) or index
-       */
-      at: policy.getEpochAt.bind(policy),
-      /**
-       * Gets the block number (height) of the first block of the given epoch (which is always a micro block).
-       *
-       * @param epochIndex The epoch index to query.
-       * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
-       */
-      firstBlock: policy.getFirstBlockOfEpoch.bind(policy),
-      /**
-       * Gets a boolean expressing if the batch at a given block number (height) is the first batch
-       * of the epoch.
-       *
-       * @param blockNumber The block number (height) to query.
-       * @returns A boolean expressing if the batch at a given block number (height) is the first batch
-       */
-      firstBatch: policy.getFirstBatchOfEpoch.bind(policy)
-    };
-    this.slots = {
-      /**
-       * Returns the information for the slot owner at the given block height and offset. The
-       * offset is optional, it will default to getting the offset for the existing block
-       * at the given height.
-       */
-      at: blockchain.getSlotAt.bind(blockchain),
-      penalized: {
-        /**
-         * Returns information about the currently penalized slots. This includes slots that lost rewards
-         * and that were disabled.
-         */
-        current: blockchain.getCurrentPenalizedSlots.bind(blockchain),
-        /**
-         * Returns information about the penalized slots of the previous batch. This includes slots that
-         * lost rewards and that were disabled.
-         */
-        previous: blockchain.getPreviousPenalizedSlots.bind(blockchain)
-      }
-    };
-    this.transaction = {
-      /**
-       * Fetches the transactions given the address.
-       *
-       * It returns the latest transactions for a given address. All the transactions
-       * where the given address is listed as a recipient or as a sender are considered. Reward
-       * transactions are also returned. It has an option to specify the maximum number of transactions
-       * to fetch, it defaults to 500.
-       */
-      getByAddress: blockchain.getTransactionsByAddress.bind(blockchain),
-      /**
-       * Fetches the transactions given the batch number.
-       */
-      getByBatch: blockchain.getTransactionsByBatchNumber.bind(blockchain),
-      /**
-       * Fetches the transactions given the block number.
-       */
-      getByBlockNumber: blockchain.getTransactionsByBlockNumber.bind(
-        blockchain
-      ),
-      /**
-       * Fetches the transaction given the hash.
-       */
-      getByHash: blockchain.getTransactionByHash.bind(blockchain),
-      /**
-       * Pushes the given serialized transaction to the local mempool
-       *
-       * @param transaction Serialized transaction
-       * @returns Transaction hash
-       */
-      push: mempool.pushTransaction.bind(mempool),
-      /**
-       * @returns
-       */
-      minFeePerByte: mempool.getMinFeePerByte.bind(mempool),
-      /**
-       * Creates a serialized transaction
-       */
-      create: consensus.createTransaction.bind(consensus),
-      /**
-       * Sends a transaction
-       */
-      send: consensus.sendTransaction.bind(consensus),
-      /**
-       * Sends a transaction and waits for confirmation
-       */
-      sendSync: consensus.sendSyncTransaction.bind(consensus)
-    };
-    this.vesting = {
-      new: {
-        /**
-         * Returns a serialized transaction creating a new vesting contract
-         */
-        createTx: consensus.createNewVestingTransaction.bind(consensus),
-        /**
-         * Sends a transaction creating a new vesting contract to the network
-         */
-        sendTx: consensus.sendNewVestingTransaction.bind(consensus),
-        /**
-         * Sends a transaction creating a new vesting contract to the network and waits for confirmation
-         */
-        sendSyncTx: consensus.sendSyncNewVestingTransaction.bind(consensus)
-      },
-      redeem: {
-        /**
-         * Returns a serialized transaction redeeming a vesting contract
-         */
-        createTx: consensus.createRedeemVestingTransaction.bind(consensus),
-        /**
-         * Sends a transaction redeeming a vesting contract to the network
-         */
-        sendTx: consensus.sendRedeemVestingTransaction.bind(consensus),
-        /**
-         * Sends a transaction redeeming a vesting contract to the network and waits for confirmation
-         */
-        sendSyncTx: consensus.sendSyncRedeemVestingTransaction.bind(consensus)
-      }
-    };
-    this.htlc = {
-      new: {
-        /**
-         * Returns a serialized transaction creating a new HTLC contract
-         */
-        createTx: consensus.createNewHtlcTransaction.bind(consensus),
-        /**
-         * Creates a serialized transaction creating a new HTLC contract
-         */
-        sendTx: consensus.sendNewHtlcTransaction.bind(consensus),
-        /**
-         * Sends a transaction creating a new HTLC contract to the network and waits for confirmation
-         */
-        sendSyncTx: consensus.sendSyncNewHtlcTransaction.bind(consensus)
-      },
-      redeem: {
-        regular: {
-          /**
-           * Returns a serialized transaction redeeming a regular HTLC contract
-           */
-          createTx: consensus.createRedeemRegularHtlcTransaction.bind(
-            consensus
-          ),
-          /**
-           * Sends a transaction redeeming a regular HTLC contract to the network
-           */
-          sendTx: consensus.sendRedeemRegularHtlcTransaction.bind(consensus),
-          /**
-           * Sends a transaction redeeming a regular HTLC contract to the network and waits for confirmation
-           */
-          sendSyncTx: consensus.sendSyncRedeemRegularHtlcTransaction.bind(
-            consensus
-          )
-        },
-        timeoutTx: {
-          /**
-           * Returns a serialized transaction redeeming a timeout HTLC contract
-           */
-          createTx: consensus.createRedeemTimeoutHtlcTransaction.bind(
-            consensus
-          ),
-          /**
-           * Sends a transaction redeeming a timeout HTLC contract to the network
-           */
-          sendTx: consensus.sendRedeemTimeoutHtlcTransaction.bind(consensus),
-          /**
-           * Sends a transaction redeeming a timeout HTLC contract to the network and waits for confirmation
-           */
-          sendSyncTx: consensus.sendSyncRedeemTimeoutHtlcTransaction.bind(
-            consensus
-          )
-        },
-        earlyTx: {
-          /**
-           * Returns a serialized transaction redeeming an early HTLC contract
-           */
-          createTx: consensus.createRedeemEarlyHtlcTransaction.bind(consensus),
-          /**
-           * Sends a transaction redeeming an early HTLC contract to the network
-           */
-          sendTx: consensus.sendRedeemEarlyHtlcTransaction.bind(consensus),
-          /**
-           * Sends a transaction redeeming an early HTLC contract to the network and waits for confirmation
-           */
-          sendSyncTx: consensus.sendSyncRedeemEarlyHtlcTransaction.bind(
-            consensus
-          )
-        }
-      }
-    };
-    this.stakes = {
-      new: {
-        /**
-         * Returns a serialized transaction creating a new stake contract
-         */
-        createTx: consensus.createStakeTransaction.bind(consensus),
-        /**
-         * Sends a transaction creating a new stake contract to the network
-         */
-        sendTx: consensus.sendStakeTransaction.bind(consensus),
-        /**
-         * Sends a transaction creating a new stake contract to the network and waits for confirmation
-         */
-        sendSyncTx: consensus.sendSyncStakeTransaction.bind(consensus)
-      }
-    };
-    this.staker = {
-      /**
-       * Fetches the stakers given the batch number.
-       */
-      fromValidator: blockchain.getValidatorByAddress.bind(blockchain),
-      /**
-       * Fetches the staker given the address.
-       */
-      getByAddress: blockchain.getStakerByAddress.bind(blockchain),
-      new: {
-        /**
-         * Creates a new staker transaction
-         */
-        createTx: consensus.createNewStakerTransaction.bind(consensus),
-        /**
-         * Sends a new staker transaction
-         */
-        sendTx: consensus.sendNewStakerTransaction.bind(consensus),
-        /**
-         * Sends a new staker transaction and waits for confirmation
-         */
-        sendSyncTx: consensus.sendSyncNewStakerTransaction.bind(consensus)
-      },
-      update: {
-        /**
-         * Creates a new staker transaction
-         */
-        createTx: consensus.createUpdateStakerTransaction.bind(consensus),
-        /**
-         * Sends a new staker transaction
-         */
-        sendTx: consensus.sendUpdateStakerTransaction.bind(consensus),
-        /**
-         * Sends a new staker transaction and waits for confirmation
-         */
-        sendSyncTx: consensus.sendSyncUpdateStakerTransaction.bind(consensus)
-      }
-    };
-    this.inherent = {
-      /**
-       * Fetches the inherents given the batch number.
-       */
-      getByBatch: blockchain.getInherentsByBatchNumber.bind(blockchain),
-      /**
-       * Fetches the inherents given the block number.
-       */
-      getByBlock: blockchain.getInherentsByBlockNumber.bind(blockchain)
-    };
-    this.account = {
-      /**
-       * Tries to fetch the account at the given address.
-       */
-      getByAddress: blockchain.getAccountByAddress.bind(blockchain),
-      /**
-       * Fetches the account given the address.
-       */
-      importRawKey: wallet.importRawKey.bind(wallet),
-      /**
-       * Fetches the account given the address.
-       */
-      new: wallet.createAccount.bind(wallet),
-      /**
-       * Returns a boolean indicating whether the account is imported or not.
-       */
-      isImported: wallet.isAccountImported.bind(wallet),
-      /**
-       * Returns a list of all accounts.
-       */
-      list: wallet.listAccounts.bind(wallet),
-      /**
-       * Locks the account at the given address.
-       */
-      lock: wallet.lockAccount.bind(wallet),
-      /**
-       * Unlocks the account at the given address.
-       */
-      unlock: wallet.unlockAccount.bind(wallet),
-      /**
-       * Returns a boolean indicating whether the account is locked or not.
-       */
-      isLocked: wallet.isAccountLocked.bind(wallet),
-      /**
-       * Signs the given data with the account at the given address.
-       */
-      sign: wallet.sign.bind(wallet),
-      /**
-       * Verifies the given signature with the account at the given address.
-       */
-      verify: wallet.verifySignature.bind(wallet)
-    };
-    this.validator = {
-      /**
-       * Tries to fetch a validator information given its address. It has an option to include a map
-       * containing the addresses and stakes of all the stakers that are delegating to the validator.
-       */
-      byAddress: blockchain.getValidatorByAddress.bind(blockchain),
-      /**
-       * Updates the configuration setting to automatically reactivate our validator
-       */
-      setAutomaticReactivation: validator_.setAutomaticReactivation.bind(
-        validator_
-      ),
-      /**
-       * Returns the information of the validator running on the node
-       */
-      selfNode: {
-        /**
-         * Returns our validator address.
-         */
-        address: validator_.getAddress.bind(blockchain),
-        /**
-         * Returns our validator signing key.
-         */
-        signingKey: validator_.getSigningKey.bind(blockchain),
-        /**
-         * Returns our validator voting key.
-         */
-        votingKey: validator_.getVotingKey.bind(blockchain)
-      },
-      /**
-       * Returns a collection of the currently active validator's addresses and balances.
-       */
-      activeList: blockchain.getActiveValidators.bind(blockchain),
-      action: {
-        new: {
-          /**
-           * Returns a serialized `new_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee and the validator deposit.
-           * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
-           * have a double Option. So we use the following work-around for the signal data:
-           * "" = Set the signal data field to None.
-           * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
-           */
-          createTx: consensus.createNewValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `new_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee and the validator deposit.
-           * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
-           * have a double Option. So we use the following work-around for the signal data:
-           * "" = Set the signal data field to None.
-           * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
-           */
-          sendTx: consensus.sendNewValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `new_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee and the validator deposit
-           * and waits for confirmation.
-           * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
-           * have a double Option. So we use the following work-around for the signal data:
-           * "" = Set the signal data field to None.
-           * "0x29a4b..." = Set the signal data field to Some(0x29a4b...).
-           */
-          sendSyncTx: consensus.sendSyncNewValidatorTransaction.bind(consensus)
-        },
-        update: {
-          /**
-           * Returns a serialized `update_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
-           * have a double Option. So we use the following work-around for the signal data:
-           * null = No change in the signal data field.
-           * "" = Change the signal data field to None.
-           * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
-           */
-          createTx: consensus.createUpdateValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `update_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
-           * have a double Option. So we use the following work-around for the signal data:
-           * null = No change in the signal data field.
-           * "" = Change the signal data field to None.
-           * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
-           */
-          sendTx: consensus.sendUpdateValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `update_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee and waits for confirmation.
-           * Since JSON doesn't have a primitive for Option (it just has the null primitive), we can't
-           * have a double Option. So we use the following work-around for the signal data:
-           * null = No change in the signal data field.
-           * "" = Change the signal data field to None.
-           * "0x29a4b..." = Change the signal data field to Some(0x29a4b...).
-           */
-          sendSyncTx: consensus.sendSyncUpdateValidatorTransaction.bind(
-            consensus
-          )
-        },
-        deactivate: {
-          /**
-           * Returns a serialized `inactivate_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           */
-          createTx: consensus.createDeactivateValidatorTransaction.bind(
-            consensus
-          ),
-          /**
-           * Sends a `inactivate_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           */
-          sendTx: consensus.sendDeactivateValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `inactivate_validator` transaction and waits for confirmation.
-           * You need to provide the address of a basic account (the sender wallet)
-           * to pay the transaction fee.
-           */
-          sendSyncTx: consensus.sendSyncDeactivateValidatorTransaction.bind(
-            consensus
-          )
-        },
-        reactivate: {
-          /**
-           * Returns a serialized `reactivate_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           */
-          createTx: consensus.createReactivateValidatorTransaction.bind(
-            consensus
-          ),
-          /**
-           * Sends a `reactivate_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           */
-          sendTx: consensus.sendReactivateValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `reactivate_validator` transaction and waits for confirmation.
-           * You need to provide the address of a basic account (the sender wallet)
-           * to pay the transaction fee.
-           */
-          sendSyncTx: consensus.sendSyncReactivateValidatorTransaction.bind(
-            consensus
-          )
-        },
-        unpark: {
-          /**
-           * Returns a serialized `set_inactive_stake` transaction. You can pay the transaction fee from a basic
-           * account (by providing the sender wallet) or from the staker account's balance (by not
-           * providing a sender wallet).
-           */
-          createTx: consensus.createSetInactiveStakeTransaction.bind(consensus),
-          /**
-           * Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
-           * account (by providing the sender wallet) or from the staker account's balance (by not
-           * providing a sender wallet).
-           */
-          sendTx: consensus.sendSetInactiveStakeTransaction.bind(consensus),
-          /**
-           *  Sends a `set_inactive_stake` transaction. You can pay the transaction fee from a basic
-           * account (by providing the sender wallet) or from the staker account's balance (by not
-           * providing a sender wallet) and waits for confirmation.
-           */
-          sendSyncTx: consensus.sendSyncSetInactiveStakeTransaction.bind(
-            consensus
-          )
-        },
-        retire: {
-          /**
-           * Returns a serialized `retire_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           */
-          createTx: consensus.createRetireValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `retire_validator` transaction. You need to provide the address of a basic
-           * account (the sender wallet) to pay the transaction fee.
-           */
-          sendTx: consensus.sendRetireValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `retire_validator` transaction and waits for confirmation.
-           * You need to provide the address of a basic account (the sender wallet)
-           * to pay the transaction fee.
-           */
-          sendSyncTx: consensus.sendSyncRetireValidatorTransaction.bind(
-            consensus
-          )
-        },
-        delete: {
-          /**
-           * Returns a serialized `delete_validator` transaction. The transaction fee will be paid from the
-           * validator deposit that is being returned.
-           * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
-           * Failed delete validator transactions can diminish the validator deposit
-           */
-          createTx: consensus.createDeleteValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `delete_validator` transaction. The transaction fee will be paid from the
-           * validator deposit that is being returned.
-           * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
-           * Failed delete validator transactions can diminish the validator deposit
-           */
-          sendTx: consensus.sendDeleteValidatorTransaction.bind(consensus),
-          /**
-           * Sends a `delete_validator` transaction and waits for confirmation.
-           * The transaction fee will be paid from the validator deposit that is being returned.
-           * Note in order for this transaction to be accepted fee + value should be equal to the validator deposit, which is not a fixed value:
-           * Failed delete validator transactions can diminish the validator deposit
-           */
-          sendSyncTx: consensus.sendSyncDeleteValidatorTransaction.bind(
-            consensus
-          )
-        }
-      }
-    };
-    this.mempool = {
-      /**
-       * @returns
-       */
-      info: mempool.mempool.bind(mempool),
-      /**
-       * Content of the mempool
-       *
-       * @param includeTransactions
-       * @returns
-       */
-      content: mempool.mempoolContent.bind(mempool)
-    };
-    this.peers = {
-      /**
-       * The peer ID for our local peer.
-       */
-      id: network.getPeerId.bind(network),
-      /**
-       * Returns the number of peers.
-       */
-      count: network.getPeerCount.bind(network),
-      /**
-       * Returns a list with the IDs of all our peers.
-       */
-      peers: network.getPeerList.bind(network),
-      /**
-       * Returns a boolean specifying if we have established consensus with the network
-       */
-      consensusEstablished: consensus.isConsensusEstablished.bind(network)
-    };
-    this.supply_at = policy.getSupplyAt.bind(policy);
-    this.zeroKnowledgeProof = {
-      /**
-       * Returns the latest header number, block number and proof
-       * @returns
-       */
-      state: zkpComponent.getZkpState.bind(zkpComponent)
-    };
-  }
-  async init() {
-    const result = await this.modules.policy.getPolicyConstants();
-    if (result.error)
-      return result.error;
-    _Client.policy = result.data;
+    this.mempool = new MempoolClient(this.http);
+    this.network = new NetworkClient(this.http);
+    this.policy = new PolicyClient(this.http);
+    this.validator = new ValidatorClient(this.http);
+    this.wallet = new WalletClient(this.http);
+    this.zkpComponent = new ZkpComponentClient(this.http);
   }
   /**
    * Make a raw call to the Albatross Node.
@@ -2521,26 +1837,22 @@ const _Client = class _Client {
   async subscribe(request, userOptions) {
     return this.ws.subscribe(request, userOptions);
   }
-};
-/**
- * Policy constants. Make sure to call `await client.init()` before using them.
- */
-__publicField(_Client, "policy");
-let Client = _Client;
+}
 
 exports.AccountType = AccountType;
 exports.BlockType = BlockType;
 exports.BlockchainClient = blockchain;
 exports.BlockchainStream = blockchainStreams;
-exports.Client = Client;
 exports.ConsensusClient = consensus;
 exports.DEFAULT_OPTIONS = DEFAULT_OPTIONS;
 exports.DEFAULT_OPTIONS_SEND_TX = DEFAULT_OPTIONS_SEND_TX;
 exports.DEFAULT_TIMEOUT_CONFIRMATION = DEFAULT_TIMEOUT_CONFIRMATION;
 exports.HttpClient = HttpClient;
+exports.InherentType = InherentType;
 exports.LogType = LogType;
 exports.MempoolClient = mempool;
 exports.NetworkClient = network;
+exports.NimiqRPCClient = NimiqRPCClient;
 exports.PolicyClient = policy;
 exports.ValidatorClient = validator;
 exports.WS_DEFAULT_OPTIONS = WS_DEFAULT_OPTIONS;

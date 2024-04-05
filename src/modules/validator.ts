@@ -38,4 +38,18 @@ export class ValidatorClient {
   public async setAutomaticReactivation({ automaticReactivation }: SetAutomaticReactivationParams, options = DEFAULT_OPTIONS) {
     return this.client.call<null>({ method: 'setAutomaticReactivation', params: [automaticReactivation] }, options)
   }
+
+  /**
+   * Returns whether our validator is elected
+   */
+  public async isElected(options = DEFAULT_OPTIONS) {
+    return this.client.call<boolean>({ method: 'isValidatorElected' }, options)
+  }
+
+  /**
+   * Returns whether our validator is synced
+   */
+  public async isSynced(options = DEFAULT_OPTIONS) {
+    return this.client.call<boolean>({ method: 'isValidatorSynced' }, options)
+  }
 }

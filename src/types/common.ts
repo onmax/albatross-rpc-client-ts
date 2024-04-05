@@ -17,6 +17,7 @@ export enum BlockType {
   Macro = 'macro',
 }
 
+// TODO Review this enum https://github.com/nimiq/core-rs-albatross/blob/albatross/rpc-interface/src/types.rs#L1002
 export enum LogType {
   PayoutInherent = 'payout-inherent',
   ParkInherent = 'park-inherent',
@@ -37,17 +38,18 @@ export enum LogType {
   CreateStaker = 'create-staker',
   Stake = 'stake',
   StakerFeeDeduction = 'staker-fee-deduction',
-  SetInactiveStake = 'set-inactive-stake',
+  SetActiveStake = 'set-inactive-stake',
   UpdateStaker = 'update-staker',
   RetireValidator = 'retire-validator',
   DeleteValidator = 'delete-validator',
-  Unstake = 'unstake',
   PayoutReward = 'payout-reward',
   Park = 'park',
   Slash = 'slash',
   RevertContract = 'revert-contract',
   FailedTransaction = 'failed-transaction',
   ValidatorFeeDeduction = 'validator-fee-deduction',
+  RetireStake = 'retire-stake',
+  RemoveStake = 'remove-stake',
 }
 
 export enum AccountType {
@@ -74,6 +76,10 @@ export interface PolicyConstants {
   blocksPerEpoch: number
   validatorDeposit: number
   totalSupply: number
+  minimumStake: number
+  jailEpochs: number
+  genesisBlockNumber: number
+  blockSeparationTime: number
 }
 
 export interface BasicAccount {

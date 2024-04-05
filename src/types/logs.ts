@@ -77,8 +77,8 @@ export interface ReactivateValidatorLog {
   validatorAddress: Address
 }
 
-export interface SetInactiveStakeLog {
-  type: LogType.SetInactiveStake
+export interface SetActiveStakeLog {
+  type: LogType.SetActiveStake
   validatorAddress: Address
 }
 
@@ -120,13 +120,6 @@ export interface DeleteValidatorLog {
   rewardAddress: Address
 }
 
-export interface UnstakeLog {
-  type: LogType.Unstake
-  stakerAddress: Address
-  validatorAddress: Address | null
-  value: Coin
-}
-
 export interface PayoutRewardLog {
   type: LogType.PayoutReward
   to: Address
@@ -159,7 +152,7 @@ export interface FailedTransactionLog {
   failureReason: string
 }
 
-export type Log = PayFeeLog | TransferLog | HtlcCreateLog | HTLCTimeoutResolve | HTLCRegularTransfer | VestingCreateLog | CreateValidatorLog | UpdateValidatorLog | ValidatorFeeDeductionLog | DeactivateValidatorLog | ReactivateValidatorLog | SetInactiveStakeLog | CreateStakerLog | StakeLog | StakerFeeDeductionLog | UpdateStakerLog | RetireValidatorLog | DeleteValidatorLog | UnstakeLog | PayoutRewardLog | ParkLog | SlashLog | RevertContractLog | FailedTransactionLog
+export type Log = PayFeeLog | TransferLog | HtlcCreateLog | HTLCTimeoutResolve | HTLCRegularTransfer | VestingCreateLog | CreateValidatorLog | UpdateValidatorLog | ValidatorFeeDeductionLog | DeactivateValidatorLog | ReactivateValidatorLog | SetActiveStakeLog | CreateStakerLog | StakeLog | StakerFeeDeductionLog | UpdateStakerLog | RetireValidatorLog | DeleteValidatorLog | PayoutRewardLog | ParkLog | SlashLog | RevertContractLog | FailedTransactionLog
 
 export interface TransactionLog {
   hash: string

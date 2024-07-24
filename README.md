@@ -12,8 +12,11 @@ npm install nimiq-rpc-client-ts
 
 #### NIMIQ_SECRET
 
+<!--
 The development network is currently in a phase where we are giving RPC access to interested developers. Its main purpose is to invite all developers to exercise and test the Nimiq 2.0 RPC functionality (to see how it fits for their app use cases), and we invite them to file and report any issues through our GitHub repository. Using the TOKEN that will be given after requesting developer access from a team member through our social media channels.
+-->
 
+The development network is currently in a phase where we request developers to set up their own nodes. 
 
 ### Usage
 

@@ -1,12 +1,10 @@
 'use strict';
 
 const node_buffer = require('node:buffer');
-const fetch = require('node-fetch');
 const WebSocket = require('ws');
 
 function _interopDefaultCompat (e) { return e && typeof e === 'object' && 'default' in e ? e.default : e; }
 
-const fetch__default = /*#__PURE__*/_interopDefaultCompat(fetch);
 const WebSocket__default = /*#__PURE__*/_interopDefaultCompat(WebSocket);
 
 var __defProp$b = Object.defineProperty;
@@ -57,7 +55,7 @@ const _HttpClient = class _HttpClient {
       url: this.url.href,
       timestamp: Date.now()
     };
-    const response = await fetch__default(context.url, {
+    const response = await fetch(context.url, {
       method: "POST",
       headers: context.headers,
       body: JSON.stringify(context.body),

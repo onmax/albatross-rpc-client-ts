@@ -1,5 +1,4 @@
 import { Buffer, Blob } from 'node:buffer';
-import fetch from 'node-fetch';
 import WebSocket from 'ws';
 
 var __defProp$b = Object.defineProperty;

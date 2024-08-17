@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import type { Auth } from '../types/common'
 
 export interface HttpOptions {
@@ -64,16 +63,16 @@ export class HttpClient {
       this.url = new URL(`${url.href}?secret=${auth.secret}`)
     }
     else if (auth && 'username' in auth && auth.username && 'password' in auth && auth.password) {
-      const authorization = Buffer.from(`${auth.username}:${auth.password}`).toString('base64')
+      const authorization = btoa(`${auth.username}:${auth.password}`)
       Object.assign(this.headers, { Authorization: `Basic ${authorization}` })
     }
   }
 
   async call<
-        Data,
-        Metadata = undefined,
-    >(
-    request: { method: string; params?: any[]; withMetadata?: boolean },
+    Data,
+    Metadata = undefined,
+  >(
+    request: { method: string, params?: any[], withMetadata?: boolean },
         options: HttpOptions = DEFAULT_OPTIONS,
   ): Promise<CallResult<Data, Metadata>> {
     const { method, params: requestParams, withMetadata } = request

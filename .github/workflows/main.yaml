@@ -11,16 +11,12 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: pnpm/action-setup@v2
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v3
+      - uses: actions/setup-node@v4
         with:
-          version: 8
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16.x
+          node-version: 18
           cache: pnpm
 
-      - run: pnpm install --frozen-lockfile
+      - run: pnpm install --no-frozen-lockfile
       - run: pnpm run ci
-        env:
-          NIMIQ_SECRET: ${{ secrets.NIMIQ_SECRET }}

@@ -1,6 +1,6 @@
-import { Blob, Buffer } from 'node:buffer'
+import type { Auth, BlockchainState } from 'src/types/common'
+import type { ErrorEvent, MessageEvent } from 'ws'
 import WebSocket from 'ws'
-import type { Auth, BlockchainState } from '../types/common'
 
 export interface ErrorStreamReturn {
   code: number
@@ -12,7 +12,7 @@ export interface Subscription<Data> {
   close: () => void
 
   context: {
-    headers: WebSocket.ClientOptions['headers']
+    headers: { [key: string]: string }
     body: {
       method: string
       params: any[]
@@ -67,15 +67,15 @@ export class WebSocketClient {
       this.url = new URL(`${url.href}?secret=${auth.secret}`)
     }
     else if (auth && 'username' in auth && auth.username && 'password' in auth && auth.password) {
-      const authorization = Buffer.from(`${auth.username}:${auth.password}`).toString('base64')
+      const authorization = btoa(`${auth.username}:${auth.password}`)
       Object.assign(this.headers, { Authorization: `Basic ${authorization}` })
     }
   }
 
   async subscribe<
-        Data,
-        Request extends { method: string; params?: any[]; withMetadata?: boolean },
-    >(
+    Data,
+    Request extends { method: string, params?: any[], withMetadata?: boolean },
+  >(
     request: Request,
     userOptions: StreamOptions<Data>,
   ): Promise<Subscription<Data>> {
@@ -99,15 +99,16 @@ export class WebSocketClient {
 
     const args: Subscription<Data> = {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
-        ws.onerror = (error: WebSocket.ErrorEvent) => {
-          callback({ data: undefined, metadata: undefined, error: { code: 1000, message: error.message } })
+        ws.onerror = (error: ErrorEvent) => {
+          const errorEvent = error as WebSocket.ErrorEvent
+          callback({ data: undefined, metadata: undefined, error: { code: 1000, message: errorEvent.message } })
         }
-        ws.onmessage = async (event: WebSocket.MessageEvent) => {
+        ws.onmessage = async (event: MessageEvent) => {
           let payloadStr: string
           if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer())
           }
-          else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
+          else if (event.data instanceof ArrayBuffer) {
             payloadStr = this.textDecoder.decode(event.data)
           }
           else {
@@ -124,12 +125,12 @@ export class WebSocketClient {
           catch (e) {
             return {
               code: 1002,
-              message: `Unexpected payload: ${payloadStr}`,
+              message: `Unexpected payload: ${payloadStr}. Error: ${JSON.stringify(e)}`,
             }
           }
 
           if ('error' in payload) {
-            callback({ data: undefined, metadata: undefined, error: payload as { code: number; message: string } })
+            callback({ data: undefined, metadata: undefined, error: payload as { code: number, message: string } })
             return
           }
 
@@ -164,14 +165,15 @@ export class WebSocketClient {
 
     let hasOpened = false
     return new Promise((resolve) => {
-      ws.onerror = (error: WebSocket.ErrorEvent) => {
+      ws.onerror = (error: ErrorEvent) => {
+        const errorEvent = error as WebSocket.ErrorEvent
         if (hasOpened)
           return
 
         resolve({
           ...args,
           next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
-            callback({ data: undefined, metadata: undefined, error: { code: 1000, message: error.message } })
+            callback({ data: undefined, metadata: undefined, error: { code: 1000, message: errorEvent.message } })
           },
         })
       }

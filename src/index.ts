@@ -8,7 +8,7 @@ import {
   WebSocketClient,
 } from './client/web-socket'
 import * as Modules from './modules'
-import type { Auth, PolicyConstants } from './types/common'
+import type { Auth } from './types/common'
 
 export class NimiqRPCClient {
   public http: HttpClient
@@ -60,7 +60,7 @@ export class NimiqRPCClient {
    * @returns A promise that resolves with the result of the call, which includes data and optionally metadata.
    */
   async call<Data, Metadata = undefined>(
-    request: { method: string; params?: any[]; withMetadata?: boolean },
+    request: { method: string, params?: any[], withMetadata?: boolean },
     options: HttpOptions = DEFAULT_OPTIONS,
   ): Promise<CallResult<Data, Metadata>> {
     return this.http.call<Data, Metadata>(request, options)
@@ -75,7 +75,7 @@ export class NimiqRPCClient {
    */
   async subscribe<
     Data,
-    Request extends { method: string; params?: any[]; withMetadata?: boolean },
+    Request extends { method: string, params?: any[], withMetadata?: boolean },
   >(
     request: Request,
     userOptions: StreamOptions<Data>,

@@ -98,9 +98,7 @@ export class BlockchainClient {
     >({
       method: 'getBlockByNumber',
       params: [blockNumber, p?.includeTransactions],
-    },
-    options,
-    )
+    }, options)
   }
 
   /**
@@ -114,9 +112,7 @@ export class BlockchainClient {
     const req = { method: 'getLatestBlock', params: [p.includeTransactions] }
     return this.client.call<
       T['includeTransactions'] extends true ? Block : PartialBlock
-    >(req,
-      options,
-    )
+    >(req, options)
   }
 
   /**
@@ -182,7 +178,10 @@ export class BlockchainClient {
    */
   public async getTransactionsByAddress<
     T extends GetTransactionsByAddressParams,
-  >(address: Address, p?: T, options = DEFAULT_OPTIONS) {
+  >(address: Address,
+    p?: T,
+options = DEFAULT_OPTIONS,
+  ) {
     const req = {
       method: p?.justHashes
         ? 'getTransactionHashesByAddress'
@@ -191,9 +190,7 @@ export class BlockchainClient {
     }
     return this.client.call<
       T['justHashes'] extends true ? Transaction[] : Hash[]
-    >(req,
-      options,
-    )
+    >(req, options)
   }
 
   /**
@@ -240,9 +237,7 @@ export class BlockchainClient {
     return this.client.call<
       Account,
       T['withMetadata'] extends true ? BlockchainState : undefined
-    >(req,
-      options,
-    )
+    >(req, options)
   }
 
   /**
@@ -267,9 +262,7 @@ export class BlockchainClient {
     return this.client.call<
       Validator[],
       T['withMetadata'] extends true ? BlockchainState : undefined
-    >(req,
-      options,
-    )
+    >(req, options)
   }
 
   public async getCurrentPenalizedSlots<T extends { withMetadata: boolean }>(
@@ -290,9 +283,7 @@ export class BlockchainClient {
     return this.client.call<
       PenalizedSlot[],
       T['withMetadata'] extends true ? BlockchainState : undefined
-    >(req,
-      options,
-    )
+    >(req, options)
   }
 
   /**

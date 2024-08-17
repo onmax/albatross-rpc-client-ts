@@ -2,11 +2,11 @@ import type { HttpClient } from '../client/http'
 import { DEFAULT_OPTIONS } from '../client/http'
 import type { Address, Signature, WalletAccount } from '../types/common'
 
-export interface ImportKeyParams { keyData: string; passphrase?: string }
-export interface UnlockAccountParams { passphrase?: string; duration?: number }
+export interface ImportKeyParams { keyData: string, passphrase?: string }
+export interface UnlockAccountParams { passphrase?: string, duration?: number }
 export interface CreateAccountParams { passphrase?: string }
-export interface SignParams { message: string; address: Address; passphrase: string; isHex: boolean }
-export interface VerifySignatureParams { message: string; publicKey: string; signature: Signature; isHex: boolean }
+export interface SignParams { message: string, address: Address, passphrase: string, isHex: boolean }
+export interface VerifySignatureParams { message: string, publicKey: string, signature: Signature, isHex: boolean }
 
 export class WalletClient {
   private client: HttpClient

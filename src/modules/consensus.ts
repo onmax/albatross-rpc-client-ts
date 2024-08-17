@@ -6,27 +6,27 @@ import type { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from
 import type { BlockchainStream } from './blockchain-streams'
 
 export interface RawTransactionInfoParams { rawTransaction: string }
-export type TransactionParams = { wallet: Address; recipient: Address; value: Coin; fee: Coin; data?: string } & ValidityStartHeight
-export type VestingTxParams = { wallet: Address; owner: Address; startTime: number; timeStep: number; numSteps: number; value: Coin; fee: Coin } & ValidityStartHeight
-export type RedeemVestingTxParams = { wallet: Address; contractAddress: Address; recipient: Address; value: Coin; fee: Coin } & ValidityStartHeight
-export type HtlcTransactionParams = { wallet: Address; htlcSender: Address; htlcRecipient: Address; hashRoot: string; hashCount: number; timeout: number; value: Coin; fee: Coin } & ValidityStartHeight
-export type RedeemRegularHtlcTxParams = { wallet: Address; contractAddress: Address; recipient: Address; preImage: string; hashRoot: string; hashCount: number; value: Coin; fee: Coin } & ValidityStartHeight
-export type RedeemTimeoutHtlcTxParams = { wallet: Address; contractAddress: Address; recipient: Address; value: Coin; fee: Coin } & ValidityStartHeight
-export type RedeemEarlyHtlcTxParams = { contractAddress: Address; recipient: Address; htlcSenderSignature: string; htlcRecipientSignature: string; value: Coin; fee: Coin } & ValidityStartHeight
-export type CreateStakeTxParams = { senderWallet: Address; stakerWallet: string; delegation: Address | undefined; value: Coin; fee: Coin } & ValidityStartHeight
-export type UpdateStakeTxParams = { senderWallet: Address; stakerWallet: string; newDelegation: Address | undefined; newInactiveBalance: boolean; fee: Coin } & ValidityStartHeight
-export type StakeTxParams = { senderWallet: Address; stakerWallet: string; value: Coin; fee: Coin } & ValidityStartHeight
-export type SetActiveStakeTxParams = { senderWallet: Address; stakerWallet: string; newActiveBalance: Coin; fee: Coin } & ValidityStartHeight
-export type CreateRetireStakeTxParams = { senderWallet: Address; stakerWallet: string; retireStake: Coin; fee: Coin } & ValidityStartHeight
-export type RemoveStakeTxParams = { stakerWallet: Address; recipient: Address; value: Coin; fee: Coin } & ValidityStartHeight
-export type NewValidatorTxParams = { senderWallet: Address; validator: Address; signingSecretKey: string; votingSecretKey: string; rewardAddress: Address; signalData: string; fee: Coin } & ValidityStartHeight
-export type UpdateValidatorTxParams = { senderWallet: Address; validator: Address; newSigningSecretKey: string; newVotingSecretKey: string; newRewardAddress: Address; newSignalData: string; fee: Coin } & ValidityStartHeight
-export type DeactiveValidatorTxParams = { senderWallet: Address; validator: Address; signingSecretKey: string; fee: Coin } & ValidityStartHeight
-export type ReactivateValidatorTxParams = { senderWallet: Address; validator: Address; signingSecretKey: string; fee: Coin } & ValidityStartHeight
-export type RetireValidatorTxParams = { senderWallet: Address; validator: Address; fee: Coin } & ValidityStartHeight
-export type DeleteValidatorTxParams = { validator: Address; recipient: Address; fee: Coin; value: Coin } & ValidityStartHeight
+export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string } & ValidityStartHeight
+export type VestingTxParams = { wallet: Address, owner: Address, startTime: number, timeStep: number, numSteps: number, value: Coin, fee: Coin } & ValidityStartHeight
+export type RedeemVestingTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight
+export type HtlcTransactionParams = { wallet: Address, htlcSender: Address, htlcRecipient: Address, hashRoot: string, hashCount: number, timeout: number, value: Coin, fee: Coin } & ValidityStartHeight
+export type RedeemRegularHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, preImage: string, hashRoot: string, hashCount: number, value: Coin, fee: Coin } & ValidityStartHeight
+export type RedeemTimeoutHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight
+export type RedeemEarlyHtlcTxParams = { contractAddress: Address, recipient: Address, htlcSenderSignature: string, htlcRecipientSignature: string, value: Coin, fee: Coin } & ValidityStartHeight
+export type CreateStakeTxParams = { senderWallet: Address, stakerWallet: string, delegation: Address | undefined, value: Coin, fee: Coin } & ValidityStartHeight
+export type UpdateStakeTxParams = { senderWallet: Address, stakerWallet: string, newDelegation: Address | undefined, newInactiveBalance: boolean, fee: Coin } & ValidityStartHeight
+export type StakeTxParams = { senderWallet: Address, stakerWallet: string, value: Coin, fee: Coin } & ValidityStartHeight
+export type SetActiveStakeTxParams = { senderWallet: Address, stakerWallet: string, newActiveBalance: Coin, fee: Coin } & ValidityStartHeight
+export type CreateRetireStakeTxParams = { senderWallet: Address, stakerWallet: string, retireStake: Coin, fee: Coin } & ValidityStartHeight
+export type RemoveStakeTxParams = { stakerWallet: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight
+export type NewValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight
+export type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin } & ValidityStartHeight
+export type DeactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight
+export type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight
+export type RetireValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin } & ValidityStartHeight
+export type DeleteValidatorTxParams = { validator: Address, recipient: Address, fee: Coin, value: Coin } & ValidityStartHeight
 
-export interface TxLog { tx: Transaction; log?: BlockLog; hash: Hash }
+export interface TxLog { tx: Transaction, log?: BlockLog, hash: Hash }
 
 export class ConsensusClient {
   private client: HttpClient
@@ -355,6 +355,7 @@ export class ConsensusClient {
       return hash
     return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.Stake] }, options.waitForConfirmationTimeout, hash.context)
   }
+
   /**
    * Returns a serialized `update_staker` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
@@ -422,7 +423,7 @@ export class ConsensusClient {
   /**
    * Returns a serialized `retire_stake` transaction. You can pay the transaction fee from a basic
    * account (by providing the sender wallet) or from the staker account's balance (by not
-   * providing a sender wallet). 
+   * providing a sender wallet).
    */
   public async createRetireStakeTransaction(p: CreateRetireStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'createRetireStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.retireStake, p.fee, this.getValidityStartHeight(p)] }
@@ -452,7 +453,7 @@ export class ConsensusClient {
   }
 
   /**
-   * Returns a serialized `remove_stake` transaction. 
+   * Returns a serialized `remove_stake` transaction.
    */
   public async createRemoveStakeTransaction(p: RemoveStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'createRemoveStakeTransaction', params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }

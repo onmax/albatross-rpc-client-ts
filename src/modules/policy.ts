@@ -291,9 +291,9 @@ export class PolicyClient {
 
   /**
    * Gets the block number of the first block of the given reporting window (which is always a micro block).
-   * 
+   *
    * RPC method name: "get_block_after_reporting_window"
-   * 
+   *
    * @param blockNumber
    * @returns The block number of the first block of the given reporting window (which is always a micro block).
    */
@@ -307,9 +307,9 @@ export class PolicyClient {
 
   /**
    * Gets the block number of the first block of the given jail (which is always a micro block).
-   * 
+   *
    * RPC method name: "get_block_after_jail"
-   * 
+   *
    * @param blockNumber
    * @returns The block number of the first block of the given jail (which is always a micro block).
    */

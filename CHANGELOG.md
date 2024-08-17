@@ -1,5 +1,11 @@
 # nimiq-rpc-client-ts
 
+## 0.4.0
+
+### Minor Changes
+
+- Updated dependencies and removed node dependencies
+
 ## 0.3.2
 
 ### Patch Changes

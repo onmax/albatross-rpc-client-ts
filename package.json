@@ -30,12 +30,10 @@
     "release": "pnpm lint && pnpm build && changeset publish"
   },
   "dependencies": {
-    "ws": "^8.18.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^2.26.0",
     "@changesets/cli": "^2.27.7",
-    "@types/ws": "^8.5.12",
     "add": "^2.0.6",
     "dotenv": "^16.4.5",
     "eslint": "^9.9.0",

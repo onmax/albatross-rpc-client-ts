@@ -3,7 +3,7 @@ import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION 
 import { type Address, type Coin, type Hash, LogType, type RawTransaction, type Transaction, type ValidityStartHeight } from '../types/common'
 import type { BlockLog, TransactionLog } from '../types/logs'
 import type { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from './blockchain'
-import type { BlockchainStream } from './blockchain-streams'
+// import type { BlockchainStream } from './blockchain-streams'
 
 export interface RawTransactionInfoParams { rawTransaction: string }
 export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string } & ValidityStartHeight
@@ -31,46 +31,46 @@ export interface TxLog { tx: Transaction, log?: BlockLog, hash: Hash }
 export class ConsensusClient {
   private client: HttpClient
   private blockchainClient: BlockchainClient
-  private blockchainStream: BlockchainStream
+  // private blockchainStream: BlockchainStream
 
-  constructor(client: HttpClient, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream) {
+  constructor(client: HttpClient, blockchainClient: BlockchainClient) {
     this.client = client
     this.blockchainClient = blockchainClient
-    this.blockchainStream = blockchainStream
+    // this.blockchainStream = blockchainStream
   }
 
   private getValidityStartHeight(p: ValidityStartHeight): string {
     return 'relativeValidityStartHeight' in p ? `+${p.relativeValidityStartHeight}` : `${p.absoluteValidityStartHeight}`
   }
 
-  private async waitForConfirmation(hash: string, params: SubscribeForLogsByAddressesAndTypesParams, waitForConfirmationTimeout: number = DEFAULT_TIMEOUT_CONFIRMATION, context: Context) {
-    const { next, close } = await this.blockchainStream.subscribeForLogsByAddressesAndTypes(params)
+  // private async waitForConfirmation(hash: string, params: SubscribeForLogsByAddressesAndTypesParams, waitForConfirmationTimeout: number = DEFAULT_TIMEOUT_CONFIRMATION, context: Context) {
+  //   const { next, close } = await this.blockchainStream.subscribeForLogsByAddressesAndTypes(params)
 
-    return new Promise((resolve) => {
-      const timeoutFn = setTimeout(async () => {
-        close()
-        const tx = await this.blockchainClient.getTransactionByHash(hash)
-        if (tx.error)
-          resolve({ context, error: { code: -32300, message: `Timeout waiting for confirmation of transaction ${hash}` }, data: undefined })
-        else
-          resolve({ context, error: undefined, data: { log: undefined, hash, tx: tx.data! } as TxLog })
-      }, waitForConfirmationTimeout)
+  //   return new Promise((resolve) => {
+  //     const timeoutFn = setTimeout(async () => {
+  //       close()
+  //       const tx = await this.blockchainClient.getTransactionByHash(hash)
+  //       if (tx.error)
+  //         resolve({ context, error: { code: -32300, message: `Timeout waiting for confirmation of transaction ${hash}` }, data: undefined })
+  //       else
+  //         resolve({ context, error: undefined, data: { log: undefined, hash, tx: tx.data! } as TxLog })
+  //     }, waitForConfirmationTimeout)
 
-      next(async (log) => {
-        if (log.error)
-          return
-        if (log.data.transactions.some((tx: TransactionLog) => tx.hash === hash)) {
-          clearTimeout(timeoutFn)
-          close()
-          const tx = await this.blockchainClient.getTransactionByHash(hash)
-          if (tx.error)
-            resolve({ context, error: { code: -32300, message: `Error getting transaction ${hash}` }, data: undefined })
-          else
-            resolve({ context, error: undefined, data: { log: undefined, hash, tx: tx.data! } as TxLog })
-        }
-      })
-    })
-  }
+  //     next(async (log) => {
+  //       if (log.error)
+  //         return
+  //       if (log.data.transactions.some((tx: TransactionLog) => tx.hash === hash)) {
+  //         clearTimeout(timeoutFn)
+  //         close()
+  //         const tx = await this.blockchainClient.getTransactionByHash(hash)
+  //         if (tx.error)
+  //           resolve({ context, error: { code: -32300, message: `Error getting transaction ${hash}` }, data: undefined })
+  //         else
+  //           resolve({ context, error: undefined, data: { log: undefined, hash, tx: tx.data! } as TxLog })
+  //       }
+  //     })
+  //   })
+  // }
 
   /**
    * Returns a boolean specifying if we have established consensus with the network
@@ -124,7 +124,7 @@ export class ConsensusClient {
     const hash = await this.sendTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet, p.recipient], types: [LogType.Transfer] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet, p.recipient], types: [LogType.Transfer] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -150,7 +150,7 @@ export class ConsensusClient {
     const hash = await this.sendNewVestingTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -176,7 +176,7 @@ export class ConsensusClient {
     const hash = await this.sendRedeemVestingTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -202,7 +202,7 @@ export class ConsensusClient {
     const hash = await this.sendNewHtlcTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -228,7 +228,7 @@ export class ConsensusClient {
     const hash = await this.sendRedeemRegularHtlcTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -257,7 +257,7 @@ export class ConsensusClient {
     const hash = await this.sendRedeemTimeoutHtlcTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.wallet] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -286,7 +286,7 @@ export class ConsensusClient {
     const hash = await this.sendRedeemEarlyHtlcTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.contractAddress] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.contractAddress] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -324,7 +324,7 @@ export class ConsensusClient {
     const hash = await this.sendNewStakerTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.CreateStaker] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.CreateStaker] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -353,7 +353,7 @@ export class ConsensusClient {
     const hash = await this.sendStakeTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.Stake] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.Stake] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -385,7 +385,7 @@ export class ConsensusClient {
     const hash = await this.sendUpdateStakerTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.UpdateStaker] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.UpdateStaker] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -417,7 +417,7 @@ export class ConsensusClient {
     const hash = await this.sendSetActiveStakeTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.SetActiveStake] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.SetActiveStake] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -449,7 +449,7 @@ export class ConsensusClient {
     const hash = await this.sendRetireStakeTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.RetireStake] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.RetireStake] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -475,7 +475,7 @@ export class ConsensusClient {
     const hash = await this.sendRemoveStakeTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.stakerWallet], types: [LogType.RemoveStake] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.stakerWallet], types: [LogType.RemoveStake] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -517,7 +517,7 @@ export class ConsensusClient {
     const hash = await this.sendNewValidatorTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.CreateValidator] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.senderWallet], types: [LogType.CreateValidator] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -561,7 +561,7 @@ export class ConsensusClient {
     const hash = await this.sendUpdateValidatorTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.UpdateValidator] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.UpdateValidator] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -591,7 +591,7 @@ export class ConsensusClient {
     const hash = await this.sendDeactivateValidatorTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.DeactivateValidator] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.DeactivateValidator] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -621,7 +621,7 @@ export class ConsensusClient {
     const hash = await this.sendReactivateValidatorTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.ReactivateValidator] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.ReactivateValidator] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -651,7 +651,7 @@ export class ConsensusClient {
     const hash = await this.sendRetireValidatorTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.RetireValidator] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.RetireValidator] }, options.waitForConfirmationTimeout, hash.context)
   }
 
   /**
@@ -686,6 +686,6 @@ export class ConsensusClient {
     const hash = await this.sendDeleteValidatorTransaction(p, options)
     if (hash.error)
       return hash
-    return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.DeleteValidator] }, options.waitForConfirmationTimeout, hash.context)
+    // return await this.waitForConfirmation(hash.data!, { addresses: [p.validator], types: [LogType.DeleteValidator] }, options.waitForConfirmationTimeout, hash.context)
   }
 }

@@ -1,8 +1,8 @@
-import type { Context, HttpClient, SendTxCallOptions } from '../client/http'
-import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX, DEFAULT_TIMEOUT_CONFIRMATION } from '../client/http'
-import { type Address, type Coin, type Hash, LogType, type RawTransaction, type Transaction, type ValidityStartHeight } from '../types/common'
-import type { BlockLog, TransactionLog } from '../types/logs'
-import type { BlockchainClient, SubscribeForLogsByAddressesAndTypesParams } from './blockchain'
+import type { HttpClient, SendTxCallOptions } from '../client/http'
+import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX } from '../client/http'
+import type { Address, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from '../types/common'
+import type { BlockLog } from '../types/logs'
+import type { BlockchainClient } from './blockchain'
 // import type { BlockchainStream } from './blockchain-streams'
 
 export interface RawTransactionInfoParams { rawTransaction: string }

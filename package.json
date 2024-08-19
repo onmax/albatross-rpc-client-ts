@@ -29,8 +29,6 @@
     "ci": "pnpm lint && pnpm build",
     "release": "pnpm lint && pnpm build && changeset publish"
   },
-  "dependencies": {
-  },
   "devDependencies": {
     "@antfu/eslint-config": "^2.26.0",
     "@changesets/cli": "^2.27.7",
@@ -38,6 +36,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.9.0",
     "lint-staged": "^15.2.9",
+    "pkg-pr-new": "^0.0.20",
     "simple-git": "^3.25.0",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.6.3",

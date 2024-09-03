@@ -101,10 +101,14 @@ export class WebSocketClient {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
         ws.onerror = (error: ErrorEvent) => {
           const errorEvent = error as WebSocket.ErrorEvent
+          console.log('error', errorEvent)
           callback({ data: undefined, metadata: undefined, error: { code: 1000, message: errorEvent.message } })
         }
         ws.onmessage = async (event: MessageEvent) => {
           let payloadStr: string
+          console.log(event.data)
+          console.log(event.data instanceof ArrayBuffer)
+          console.log(event.data instanceof Blob)
           if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer())
           }

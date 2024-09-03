@@ -1,7 +1,23 @@
 import { Buffer } from 'node:buffer'
 import type { Auth, BlockchainState } from 'src/types/common'
-import type { ErrorEvent, MessageEvent } from 'isomorphic-ws'
-import WebSocket from 'isomorphic-ws'
+
+async function getWs(url: string) {
+  let ws
+  if (typeof WebSocket !== 'undefined') {
+    ws = new WebSocket(url)
+  }
+  else if (typeof globalThis !== 'undefined' && globalThis.WebSocket) {
+    ws = new globalThis.WebSocket(url)
+  }
+  else if (typeof window !== 'undefined' && window.WebSocket) {
+    ws = new window.WebSocket(url)
+  }
+  else {
+    const { WebSocket: Ws } = await import('ws')
+    ws = new Ws(url)
+  }
+  return ws
+}
 
 export interface ErrorStreamReturn {
   code: number
@@ -13,7 +29,6 @@ export interface Subscription<Data> {
   close: () => void
 
   context: {
-    headers: { [key: string]: string }
     body: {
       method: string
       params: any[]
@@ -55,10 +70,12 @@ export interface StreamOptions {
 export class WebSocketClient {
   private url: URL
   private id: number = 0
-  private headers = { Authorization: '' }
   private textDecoder: TextDecoder
 
-  constructor(url: URL, auth?: Auth) {
+  constructor(url: URL | string, auth?: Auth) {
+    if (typeof url === 'string') {
+      url = new URL(url)
+    }
     const wsUrl = new URL(url.href.replace(/^http/, 'ws'))
     wsUrl.pathname = '/ws'
     this.url = wsUrl
@@ -66,10 +83,6 @@ export class WebSocketClient {
 
     if (auth && 'secret' in auth && auth.secret) {
       this.url = new URL(`${url.href}?secret=${auth.secret}`)
-    }
-    else if (auth && 'username' in auth && auth.username && 'password' in auth && auth.password) {
-      const authorization = btoa(`${auth.username}:${auth.password}`)
-      Object.assign(this.headers, { Authorization: `Basic ${authorization}` })
     }
   }
 
@@ -80,7 +93,7 @@ export class WebSocketClient {
     request: Request,
     userOptions: StreamOptions,
   ): Promise<Subscription<Data>> {
-    const ws = new WebSocket(this.url.href, { headers: this.headers })
+    const ws = await getWs(this.url.href)
     let subscriptionId: number
 
     const requestBody = {
@@ -100,9 +113,8 @@ export class WebSocketClient {
 
     const args: Subscription<Data> = {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
-        ws.onerror = (error: ErrorEvent) => {
-          const errorEvent = error as WebSocket.ErrorEvent
-          callback({ data: undefined, metadata: undefined, error: { code: 1000, message: errorEvent.message } })
+        ws.onerror = (error: any) => {
+          callback({ data: undefined, metadata: undefined, error: { code: 1000, message: JSON.stringify(error) } })
         }
         ws.onmessage = async (event: MessageEvent) => {
           let payloadStr = ''
@@ -153,7 +165,6 @@ export class WebSocketClient {
       },
       getSubscriptionId: () => subscriptionId,
       context: {
-        headers: this.headers,
         body: requestBody,
         url: this.url.toString(),
         timestamp: Date.now(),
@@ -162,15 +173,14 @@ export class WebSocketClient {
 
     let hasOpened = false
     return new Promise((resolve) => {
-      ws.onerror = (error: ErrorEvent) => {
-        const errorEvent = error as WebSocket.ErrorEvent
+      ws.onerror = (error: any) => {
         if (hasOpened)
           return
 
         resolve({
           ...args,
           next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
-            callback({ data: undefined, metadata: undefined, error: { code: 1000, message: errorEvent.message } })
+            callback({ data: undefined, metadata: undefined, error: { code: 1000, message: JSON.stringify(error) } })
           },
         })
       }

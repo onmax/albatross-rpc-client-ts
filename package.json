@@ -30,7 +30,6 @@
     "release": "pnpm lint && pnpm build && changeset publish"
   },
   "dependencies": {
-    "isomorphic-ws": "^5.0.0",
     "ws": "^8.18.0"
   },
   "devDependencies": {

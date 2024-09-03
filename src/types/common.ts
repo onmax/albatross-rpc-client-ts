@@ -323,7 +323,7 @@ export enum BlockSubscriptionType {
   Election = 'election',
 }
 
-export enum RetrieveBlock {
+export enum RetrieveType {
   Full = 'full',
   Partial = 'partial',
   Hash = 'hash',

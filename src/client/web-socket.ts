@@ -28,7 +28,7 @@ export interface Subscription<Data> {
   getSubscriptionId: () => number
 }
 
-export const WS_DEFAULT_OPTIONS: StreamOptions<any> = {
+export const WS_DEFAULT_OPTIONS: StreamOptions = {
   once: false,
   filter: () => true,
 } as const
@@ -43,11 +43,11 @@ export type MaybeStreamResponse<Data> = {
   metadata?: BlockchainState
 }
 
-export type FilterStreamFn<Data = any> = (data: Data) => boolean
+export type FilterStreamFn = (data: any) => boolean
 
-export interface StreamOptions<Data> {
+export interface StreamOptions {
   once: boolean
-  filter?: FilterStreamFn<Data>
+  filter?: FilterStreamFn
   // timeout: number, TODO
 }
 
@@ -77,7 +77,7 @@ export class WebSocketClient {
     Request extends { method: string, params?: any[], withMetadata?: boolean },
   >(
     request: Request,
-    userOptions: StreamOptions<Data>,
+    userOptions: StreamOptions,
   ): Promise<Subscription<Data>> {
     const ws = new WebSocket(this.url.href, { headers: this.headers })
     let subscriptionId: number

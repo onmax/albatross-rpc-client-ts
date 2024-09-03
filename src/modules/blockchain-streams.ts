@@ -1,79 +1,95 @@
 import type { FilterStreamFn, StreamOptions, Subscription, WebSocketClient } from '../client/web-socket'
 import { WS_DEFAULT_OPTIONS } from '../client/web-socket'
-import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, PartialBlock, Validator } from '../types/common'
-import { BlockSubscriptionType, RetrieveBlock } from '../types/common'
+import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, Validator } from '../types/common'
+import { BlockSubscriptionType, RetrieveType } from '../types/common'
 import type { BlockLog } from '../types/logs'
 
-export interface SubscribeForHeadBlockParams { retrieve: RetrieveBlock.Full | RetrieveBlock.Partial, blockType?: BlockSubscriptionType }
-export interface SubscribeForHeadHashParams { retrieve: RetrieveBlock.Hash, blockType?: undefined }
-export interface SubscribeForValidatorElectionByAddressParams { address: Address, withMetadata?: boolean }
-export interface SubscribeForLogsByAddressesAndTypesParams { addresses?: Address[], types?: LogType[], withMetadata?: boolean }
+export interface BlockParams { retrieve: RetrieveType.Full | RetrieveType.Partial }
+export interface BlockHashParams { retrieve: RetrieveType.Hash }
+export interface ValidatorElectionParams { address: Address, withMetadata?: boolean }
+export interface LogsParams { addresses?: Address[], types?: LogType[], withMetadata?: boolean }
+
+function getBlockType(block: any): BlockSubscriptionType {
+  if (!block)
+    throw new Error('Block is undefined')
+  if (!('isElectionBlock' in block))
+    return BlockSubscriptionType.Micro
+  if (block.isElectionBlock)
+    return BlockSubscriptionType.Election
+  return BlockSubscriptionType.Macro
+}
+
+const isMicro: FilterStreamFn = b => getBlockType(b) === BlockSubscriptionType.Micro
+const isMacro: FilterStreamFn = b => getBlockType(b) === BlockSubscriptionType.Macro
+const isElection: FilterStreamFn = b => getBlockType(b) === BlockSubscriptionType.Election
 
 export class BlockchainStream {
   ws: WebSocketClient
-
   constructor(ws: WebSocketClient) {
     this.ws = ws
   }
 
   /**
-   * Subscribes to new block events.
+   * Subscribes to block hash events.
    */
-  public async subscribeForBlocks<
-    T extends (SubscribeForHeadBlockParams | SubscribeForHeadHashParams),
-    O extends StreamOptions<T extends SubscribeForHeadBlockParams ? Block | PartialBlock : Hash>,
-  >(
-    params: T,
-    userOptions?: Partial<O>,
-  ) {
-    if (params.retrieve === RetrieveBlock.Hash) {
-      const options: StreamOptions<Hash> = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions<Hash> }
-      return this.ws.subscribe({ method: 'subscribeForHeadBlockHash' }, options) as Promise<Subscription<Hash>>
-    }
+  public async subscribeForBlockHashes<T = Hash>(
+    params: BlockHashParams,
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    const options: StreamOptions = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions }
+    return this.ws.subscribe({ method: 'subscribeForHeadBlockHash' }, options) as Promise<Subscription<T>>
+  }
 
-    let filter: FilterStreamFn
-    if (params.blockType === BlockSubscriptionType.Macro)
-      filter = (block => 'isElectionBlock' in block) as FilterStreamFn<MacroBlock>
-    else if (params.blockType === BlockSubscriptionType.Election)
-      filter = (block => 'isElectionBlock' in block) as FilterStreamFn<MacroBlock>
-    else if (params.blockType === BlockSubscriptionType.Micro)
-      filter = (block => !('isElectionBlock' in block)) as FilterStreamFn<MicroBlock>
-    else
-      filter = WS_DEFAULT_OPTIONS.filter as FilterStreamFn
+  /**
+   * Subscribes to election blocks.
+   */
+  public async subscribeForElectionBlocks<T = Block>(
+    params: BlockParams,
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isElection }
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
+  }
 
-    const optionsMacro = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter }
-    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveBlock.Full] }, optionsMacro) as Promise<Subscription<
-      T['blockType'] extends BlockSubscriptionType.Macro ? (T['retrieve'] extends RetrieveBlock.Full ? MacroBlock : PartialBlock)
-        : T['blockType'] extends BlockSubscriptionType.Micro ? (T['retrieve'] extends RetrieveBlock.Full ? MicroBlock : PartialBlock)
-          : T['retrieve'] extends RetrieveBlock.Full ? Block : PartialBlock
-    >>
+  /**
+   * Subscribes to micro blocks.
+   */
+  public async subscribeForMicroBlocks<T = MicroBlock>(
+    params: BlockParams,
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isMicro }
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
+  }
+
+  /**
+   * Subscribes to macro blocks.
+   */
+  public async subscribeForMacroBlocks<T = MacroBlock>(
+    params: BlockParams,
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isMacro }
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
   /**
    * Subscribes to pre epoch validators events.
    */
-  public async subscribeForValidatorElectionByAddress<
-    T extends SubscribeForValidatorElectionByAddressParams,
-    O extends StreamOptions<Validator>,
-  >(p: T,
-    userOptions?: Partial<O>,
-  ):
-    Promise<Subscription<Validator>> {
-    return this.ws.subscribe({ method: 'subscribeForValidatorElectionByAddress', params: [p.address], withMetadata: p?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+  public async subscribeForValidatorElectionByAddress<T = Validator>(
+    params: ValidatorElectionParams,
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    return this.ws.subscribe({ method: 'subscribeForValidatorElectionByAddress', params: [params.address], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
   }
 
   /**
-   * Subscribes to log events related to a given list of addresses and of any of the log types provided.
-   * If addresses is empty it does not filter by address. If log_types is empty it won't filter by log types.
-   * Thus the behavior is to assume all addresses or log_types are to be provided if the corresponding vec is empty.
+   * Subscribes to log events related to a given list of addresses and log types.
    */
-  public async subscribeForLogsByAddressesAndTypes<
-    T extends SubscribeForLogsByAddressesAndTypesParams,
-    O extends StreamOptions<BlockLog>,
-  >(p: T,
-    userOptions?: Partial<O>,
-  ):
-    Promise<Subscription<BlockLog>> {
-    return this.ws.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [p?.addresses || [], p?.types || []], withMetadata: p?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+  public async subscribeForLogsByAddressesAndTypes<T = BlockLog>(
+    params: LogsParams,
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    return this.ws.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [params?.addresses || [], params?.types || []], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
   }
 }

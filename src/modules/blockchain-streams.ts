@@ -5,7 +5,7 @@ import { BlockSubscriptionType, RetrieveBlock } from '../types/common'
 import type { BlockLog } from '../types/logs'
 
 export interface SubscribeForHeadBlockParams { retrieve: RetrieveBlock.Full | RetrieveBlock.Partial, blockType?: BlockSubscriptionType }
-export interface SubscribeForHeadHashParams { retrieve: RetrieveBlock.Hash }
+export interface SubscribeForHeadHashParams { retrieve: RetrieveBlock.Hash, blockType?: undefined }
 export interface SubscribeForValidatorElectionByAddressParams { address: Address, withMetadata?: boolean }
 export interface SubscribeForLogsByAddressesAndTypesParams { addresses?: Address[], types?: LogType[], withMetadata?: boolean }
 
@@ -22,7 +22,8 @@ export class BlockchainStream {
   public async subscribeForBlocks<
     T extends (SubscribeForHeadBlockParams | SubscribeForHeadHashParams),
     O extends StreamOptions<T extends SubscribeForHeadBlockParams ? Block | PartialBlock : Hash>,
-  >(params: T,
+  >(
+    params: T,
     userOptions?: Partial<O>,
   ) {
     if (params.retrieve === RetrieveBlock.Hash) {
@@ -41,7 +42,11 @@ export class BlockchainStream {
       filter = WS_DEFAULT_OPTIONS.filter as FilterStreamFn
 
     const optionsMacro = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter }
-    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveBlock.Full] }, optionsMacro)
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveBlock.Full] }, optionsMacro) as Promise<Subscription<
+      T['blockType'] extends BlockSubscriptionType.Macro ? (T['retrieve'] extends RetrieveBlock.Full ? MacroBlock : PartialBlock)
+        : T['blockType'] extends BlockSubscriptionType.Micro ? (T['retrieve'] extends RetrieveBlock.Full ? MicroBlock : PartialBlock)
+          : T['retrieve'] extends RetrieveBlock.Full ? Block : PartialBlock
+    >>
   }
 
   /**

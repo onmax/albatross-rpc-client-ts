@@ -1,21 +1,21 @@
 import type { CallResult, HttpOptions } from './client/http'
 import { DEFAULT_OPTIONS, HttpClient } from './client/http'
-import type {
-  StreamOptions,
-  Subscription,
-} from './client/web-socket'
-import {
-  WebSocketClient,
-} from './client/web-socket'
+// import type {
+//   StreamOptions,
+//   Subscription,
+// } from './client/web-socket'
+// import {
+//   WebSocketClient,
+// } from './client/web-socket'
 import * as Modules from './modules'
 import type { Auth } from './types/common'
 
 export class NimiqRPCClient {
   public http: HttpClient
-  public ws: WebSocketClient
+  // public ws: WebSocketClient
 
   public blockchain
-  public blockchainStreams
+  // public blockchainStreams
   public consensus
   public mempool
   public network
@@ -30,16 +30,16 @@ export class NimiqRPCClient {
    */
   constructor(url: URL, auth?: Auth) {
     this.http = new HttpClient(url, auth)
-    this.ws = new WebSocketClient(url, auth)
+    // this.ws = new WebSocketClient(url, auth)
 
     this.blockchain = new Modules.BlockchainClient.BlockchainClient(this.http)
-    this.blockchainStreams = new Modules.BlockchainStream.BlockchainStream(
-      this.ws,
-    )
+    // this.blockchainStreams = new Modules.BlockchainStream.BlockchainStream(
+    //   this.ws,
+    // )
     this.consensus = new Modules.ConsensusClient.ConsensusClient(
       this.http,
       this.blockchain,
-      this.blockchainStreams,
+      // this.blockchainStreams,
     )
     this.mempool = new Modules.MempoolClient.MempoolClient(this.http)
     this.network = new Modules.NetworkClient.NetworkClient(this.http)
@@ -73,18 +73,18 @@ export class NimiqRPCClient {
    * @param userOptions
    * @returns A promise that resolves with a Subscription object.
    */
-  async subscribe<
-    Data,
-    Request extends { method: string, params?: any[], withMetadata?: boolean },
-  >(
-    request: Request,
-    userOptions: StreamOptions<Data>,
-  ): Promise<Subscription<Data>> {
-    return this.ws.subscribe<Data, Request>(request, userOptions)
-  }
+  // async subscribe<
+  //   Data,
+  //   Request extends { method: string, params?: any[], withMetadata?: boolean },
+  // >(
+  //   request: Request,
+  //   userOptions: StreamOptions<Data>,
+  // ): Promise<Subscription<Data>> {
+  //   return this.ws.subscribe<Data, Request>(request, userOptions)
+  // }
 }
 export * from './client/http'
-export * from './client/web-socket'
+// export * from './client/web-socket'
 export * from './modules'
 export * from './types/common'
 export * from './types/logs'

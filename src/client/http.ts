@@ -79,7 +79,7 @@ export class HttpClient {
     const { timeout } = options
 
     let controller: AbortController | undefined
-    let timeoutId: NodeJS.Timeout | undefined
+    let timeoutId: any | undefined
 
     if (timeout !== false) {
       controller = new AbortController()

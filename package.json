@@ -1,7 +1,7 @@
 {
   "name": "nimiq-rpc-client-ts",
   "type": "module",
-  "version": "0.4.0",
+  "version": "0.4.1",
   "private": false,
   "packageManager": "pnpm@9.7.1",
   "description": "A Nimiq RPC client for TypeScript",
@@ -40,6 +40,7 @@
     "dotenv": "^16.4.5",
     "eslint": "^9.9.0",
     "lint-staged": "^15.2.9",
+    "pkg-pr-new": "^0.0.20",
     "simple-git": "^3.25.0",
     "simple-git-hooks": "^2.11.1",
     "tslib": "^2.6.3",

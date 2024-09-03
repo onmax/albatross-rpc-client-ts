@@ -123,6 +123,7 @@ export class WebSocketClient {
           }
           catch (e) {
             callback({ data: undefined, metadata: undefined, error: { code: 1002, message: `Unexpected payload: ${payloadStr}. Error: ${JSON.stringify(e)}` } })
+            return
           }
 
           if ('error' in payload) {

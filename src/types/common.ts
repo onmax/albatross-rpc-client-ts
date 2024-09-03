@@ -1,4 +1,4 @@
-export type Address = `NQ${number} ${string}`
+export type Address = string
 export type Coin = number
 
 export type BlockNumber = number /* u32 */
@@ -11,11 +11,6 @@ export type GenesisSupply = number /* u64 */
 export type GenesisTime = number /* u64 */
 export type CurrentTime = number /* u64 */
 export type Hash = string
-
-export enum BlockType {
-  Micro = 'micro',
-  Macro = 'macro',
-}
 
 // TODO Review this enum https://github.com/nimiq/core-rs-albatross/blob/albatross/rpc-interface/src/types.rs#L1002
 export enum LogType {
@@ -315,4 +310,21 @@ export type Auth = {
   password: string
 } | {
   secret: string
+}
+
+export enum BlockType {
+  Micro = 'micro',
+  Macro = 'macro',
+}
+
+export enum BlockSubscriptionType {
+  Macro = 'macro',
+  Micro = 'micro',
+  Election = 'election',
+}
+
+export enum RetrieveBlock {
+  Full = 'full',
+  Partial = 'partial',
+  Hash = 'hash',
 }

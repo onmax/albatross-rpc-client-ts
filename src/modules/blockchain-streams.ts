@@ -1,22 +1,11 @@
 import type { FilterStreamFn, StreamOptions, Subscription, WebSocketClient } from '../client/web-socket'
 import { WS_DEFAULT_OPTIONS } from '../client/web-socket'
 import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, PartialBlock, Validator } from '../types/common'
+import { BlockSubscriptionType, RetrieveBlock } from '../types/common'
 import type { BlockLog } from '../types/logs'
 
-export enum BlockSubscriptionType {
-  MACRO = 'MACRO',
-  MICRO = 'MICRO',
-  ELECTION = 'ELECTION',
-}
-
-export enum RetrieveBlock {
-  FULL = 'FULL',
-  PARTIAL = 'PARTIAL',
-  HASH = 'HASH',
-}
-
-export interface SubscribeForHeadBlockParams { retrieve: RetrieveBlock.FULL | RetrieveBlock.PARTIAL, blockType?: BlockSubscriptionType }
-export interface SubscribeForHeadHashParams { retrieve: RetrieveBlock.HASH }
+export interface SubscribeForHeadBlockParams { retrieve: RetrieveBlock.Full | RetrieveBlock.Partial, blockType?: BlockSubscriptionType }
+export interface SubscribeForHeadHashParams { retrieve: RetrieveBlock.Hash }
 export interface SubscribeForValidatorElectionByAddressParams { address: Address, withMetadata?: boolean }
 export interface SubscribeForLogsByAddressesAndTypesParams { addresses?: Address[], types?: LogType[], withMetadata?: boolean }
 
@@ -36,23 +25,23 @@ export class BlockchainStream {
   >(params: T,
     userOptions?: Partial<O>,
   ) {
-    if (params.retrieve === RetrieveBlock.HASH) {
+    if (params.retrieve === RetrieveBlock.Hash) {
       const options: StreamOptions<Hash> = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions<Hash> }
       return this.ws.subscribe({ method: 'subscribeForHeadBlockHash' }, options) as Promise<Subscription<Hash>>
     }
 
     let filter: FilterStreamFn
-    if (params.blockType === BlockSubscriptionType.MACRO)
+    if (params.blockType === BlockSubscriptionType.Macro)
       filter = (block => 'isElectionBlock' in block) as FilterStreamFn<MacroBlock>
-    else if (params.blockType === BlockSubscriptionType.ELECTION)
+    else if (params.blockType === BlockSubscriptionType.Election)
       filter = (block => 'isElectionBlock' in block) as FilterStreamFn<MacroBlock>
-    else if (params.blockType === BlockSubscriptionType.MICRO)
+    else if (params.blockType === BlockSubscriptionType.Micro)
       filter = (block => !('isElectionBlock' in block)) as FilterStreamFn<MicroBlock>
     else
       filter = WS_DEFAULT_OPTIONS.filter as FilterStreamFn
 
     const optionsMacro = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter }
-    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveBlock.FULL] }, optionsMacro)
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveBlock.Full] }, optionsMacro)
   }
 
   /**

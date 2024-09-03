@@ -56,7 +56,7 @@ describe('test for blockchain module', async () => {
 // describe('test for subscriptions', async () => {
 //   const client = await getClient()
 //   it('subscribe to new full blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.FULL })
+//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Full })
 //     next(data => {
 //       console.log({data})
 //       expect(data).toHaveProperty('transactions')
@@ -64,22 +64,22 @@ describe('test for blockchain module', async () => {
 //     close()
 //   })
 //   it('subscribe to new partial blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.PARTIAL })
+//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Partial })
 //     next(data => expect(data).toHaveProperty('hash'))
 //     close()
 //   })
 //   it('subscribe to new partial blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.PARTIAL, blockType: BlockSubscriptionType.ELECTION })
+//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Partial, blockType: BlockSubscriptionType.Election })
 //     next(data => expect(data).toHaveProperty('hash'))
 //     close()
 //   })
 //   it('subscribe to new partial blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.PARTIAL })
+//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Partial })
 //     next(data => expect(data).not.toHaveProperty('transactions'))
 //     close()
 //   })
 //   it('subscribe to new hashes blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.HASH })
+//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Hash })
 //     next(data => expect(data).toBeInstanceOf(String))
 //     close()
 //   })

@@ -73,7 +73,7 @@ export class NimiqRPCClient {
     Request extends { method: string, params?: any[], withMetadata?: boolean },
   >(
     request: Request,
-    userOptions: StreamOptions<Data>,
+    userOptions: StreamOptions,
   ): Promise<Subscription<Data>> {
     return this.ws.subscribe<Data, Request>(request, userOptions)
   }

@@ -1,3 +1,4 @@
+import { Buffer } from 'node:buffer'
 import type { Auth, BlockchainState } from 'src/types/common'
 import type { ErrorEvent, MessageEvent } from 'ws'
 import WebSocket from 'ws'
@@ -101,25 +102,19 @@ export class WebSocketClient {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
         ws.onerror = (error: ErrorEvent) => {
           const errorEvent = error as WebSocket.ErrorEvent
-          console.log('error', errorEvent)
           callback({ data: undefined, metadata: undefined, error: { code: 1000, message: errorEvent.message } })
         }
         ws.onmessage = async (event: MessageEvent) => {
-          let payloadStr: string
-          console.log(event.data)
-          console.log(event.data instanceof ArrayBuffer)
-          console.log(event.data instanceof Blob)
+          let payloadStr = ''
           if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer())
           }
-          else if (event.data instanceof ArrayBuffer) {
+          else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
             payloadStr = this.textDecoder.decode(event.data)
           }
-          else {
-            return {
-              code: 1001,
-              message: 'Unexpected data type',
-            }
+
+          if (!payloadStr) {
+            callback({ data: undefined, metadata: undefined, error: { code: 1001, message: 'Unexpected data type' } })
           }
 
           let payload
@@ -127,10 +122,7 @@ export class WebSocketClient {
             payload = JSON.parse(payloadStr) as any
           }
           catch (e) {
-            return {
-              code: 1002,
-              message: `Unexpected payload: ${payloadStr}. Error: ${JSON.stringify(e)}`,
-            }
+            callback({ data: undefined, metadata: undefined, error: { code: 1002, message: `Unexpected payload: ${payloadStr}. Error: ${JSON.stringify(e)}` } })
           }
 
           if ('error' in payload) {

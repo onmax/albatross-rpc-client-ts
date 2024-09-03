@@ -3,7 +3,7 @@ import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX } from '../client/http'
 import type { Address, Coin, Hash, RawTransaction, Transaction, ValidityStartHeight } from '../types/common'
 import type { BlockLog } from '../types/logs'
 import type { BlockchainClient } from './blockchain'
-// import type { BlockchainStream } from './blockchain-streams'
+import type { BlockchainStream } from './blockchain-streams'
 
 export interface RawTransactionInfoParams { rawTransaction: string }
 export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string } & ValidityStartHeight
@@ -31,12 +31,12 @@ export interface TxLog { tx: Transaction, log?: BlockLog, hash: Hash }
 export class ConsensusClient {
   private client: HttpClient
   private blockchainClient: BlockchainClient
-  // private blockchainStream: BlockchainStream
+  private blockchainStream: BlockchainStream
 
-  constructor(client: HttpClient, blockchainClient: BlockchainClient) {
+  constructor(client: HttpClient, blockchainClient: BlockchainClient, blockchainStream: BlockchainStream) {
     this.client = client
     this.blockchainClient = blockchainClient
-    // this.blockchainStream = blockchainStream
+    this.blockchainStream = blockchainStream
   }
 
   private getValidityStartHeight(p: ValidityStartHeight): string {

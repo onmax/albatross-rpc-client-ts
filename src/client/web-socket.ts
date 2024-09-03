@@ -1,7 +1,7 @@
 import { Buffer } from 'node:buffer'
 import type { Auth, BlockchainState } from 'src/types/common'
-import type { ErrorEvent, MessageEvent } from 'ws'
-import WebSocket from 'ws'
+import type { ErrorEvent, MessageEvent } from 'isomorphic-ws'
+import WebSocket from 'isomorphic-ws'
 
 export interface ErrorStreamReturn {
   code: number

@@ -4,8 +4,7 @@ import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, Validator }
 import { BlockSubscriptionType, RetrieveType } from '../types/common'
 import type { BlockLog } from '../types/logs'
 
-export interface BlockParams { retrieve: RetrieveType.Full | RetrieveType.Partial }
-export interface BlockHashParams { retrieve: RetrieveType.Hash }
+export interface BlockParams { retrieve?: RetrieveType.Full | RetrieveType.Partial }
 export interface ValidatorElectionParams { address: Address, withMetadata?: boolean }
 export interface LogsParams { addresses?: Address[], types?: LogType[], withMetadata?: boolean }
 
@@ -33,7 +32,6 @@ export class BlockchainStream {
    * Subscribes to block hash events.
    */
   public async subscribeForBlockHashes<T = Hash>(
-    params: BlockHashParams,
     userOptions?: Partial<StreamOptions>,
   ): Promise<Subscription<T>> {
     const options: StreamOptions = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions }
@@ -44,33 +42,36 @@ export class BlockchainStream {
    * Subscribes to election blocks.
    */
   public async subscribeForElectionBlocks<T = Block>(
-    params: BlockParams,
+    params: BlockParams = {},
     userOptions?: Partial<StreamOptions>,
   ): Promise<Subscription<T>> {
+    const { retrieve = RetrieveType.Full } = params
     const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isElection }
-    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
   /**
    * Subscribes to micro blocks.
    */
   public async subscribeForMicroBlocks<T = MicroBlock>(
-    params: BlockParams,
+    params: BlockParams = {},
     userOptions?: Partial<StreamOptions>,
   ): Promise<Subscription<T>> {
+    const { retrieve = RetrieveType.Full } = params
     const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isMicro }
-    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
   /**
    * Subscribes to macro blocks.
    */
   public async subscribeForMacroBlocks<T = MacroBlock>(
-    params: BlockParams,
+    params: BlockParams = {},
     userOptions?: Partial<StreamOptions>,
   ): Promise<Subscription<T>> {
+    const { retrieve = RetrieveType.Full } = params || {}
     const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isMacro }
-    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [params.retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
   /**
@@ -87,9 +88,10 @@ export class BlockchainStream {
    * Subscribes to log events related to a given list of addresses and log types.
    */
   public async subscribeForLogsByAddressesAndTypes<T = BlockLog>(
-    params: LogsParams,
+    params: LogsParams = {},
     userOptions?: Partial<StreamOptions>,
   ): Promise<Subscription<T>> {
-    return this.ws.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [params?.addresses || [], params?.types || []], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+    const { addresses = [], types = [] } = params
+    return this.ws.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [addresses, types], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
   }
 }

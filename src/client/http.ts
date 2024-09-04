@@ -53,14 +53,14 @@ export class HttpClient {
   private static id: number = 0
   private headers: HeadersInit = { 'Content-Type': 'application/json', 'Authorization': '' }
 
-  constructor(url: URL, auth?: Auth) {
+  constructor(url: URL | string, auth?: Auth) {
     if (!url)
       throw new Error('URL is required')
 
-    this.url = url
+    this.url = typeof url === 'string' ? new URL(url) : url
 
     if (auth && 'secret' in auth && auth.secret) {
-      this.url = new URL(`${url.href}?secret=${auth.secret}`)
+      this.url = new URL(`${this.url.href}?secret=${auth.secret}`)
     }
     else if (auth && 'username' in auth && auth.username && 'password' in auth && auth.password) {
       const authorization = btoa(`${auth.username}:${auth.password}`)

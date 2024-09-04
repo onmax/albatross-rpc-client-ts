@@ -23,7 +23,7 @@ export class NimiqRPCClient {
    * @param url Node URL [?secret=secret]
    * @param auth { username, password }
    */
-  constructor(url: URL, auth?: Auth) {
+  constructor(url: URL | string, auth?: Auth) {
     this.http = new HttpClient(url, auth)
     this.ws = new WebSocketClient(url, auth)
 

@@ -75,6 +75,17 @@ export class BlockchainStream {
   }
 
   /**
+   * Subscribes to all blocks.
+   */
+  public async subscribeForBlocks<T = Block>(
+    params: BlockParams = {},
+    userOptions?: Partial<StreamOptions>,
+  ): Promise<Subscription<T>> {
+    const { retrieve = RetrieveType.Full } = params
+    return this.ws.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+  }
+
+  /**
    * Subscribes to pre epoch validators events.
    */
   public async subscribeForValidatorElectionByAddress<T = Validator>(

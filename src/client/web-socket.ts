@@ -94,7 +94,7 @@ export class WebSocketClient {
     userOptions: StreamOptions,
   ): Promise<Subscription<Data>> {
     const ws = await getWs(this.url.href)
-    let subscriptionId: number
+    let subscriptionId: number = -1
 
     const requestBody = {
       method: request.method,
@@ -114,19 +114,40 @@ export class WebSocketClient {
     const args: Subscription<Data> = {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
         ws.onerror = (error: any) => {
-          callback({ data: undefined, metadata: undefined, error: { code: 1000, message: JSON.stringify(error) } })
+          callback({
+            data: undefined,
+            metadata: undefined,
+            error: { code: 1000, message: JSON.stringify(error) },
+          })
         }
+
         ws.onmessage = async (event: MessageEvent) => {
           let payloadStr = ''
           if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer())
           }
-          else if (event.data instanceof ArrayBuffer || event.data instanceof Buffer) {
+          else if (
+            event.data instanceof ArrayBuffer
+            || event.data instanceof Buffer
+          ) {
             payloadStr = this.textDecoder.decode(event.data)
+          }
+          else if (typeof event.data === 'string') {
+            payloadStr = event.data
           }
 
           if (!payloadStr) {
-            callback({ data: undefined, metadata: undefined, error: { code: 1001, message: 'Unexpected data type' } })
+            callback({
+              data: undefined,
+              metadata: undefined,
+              error: {
+                code: 1001,
+                message: `Unexpected payload(${typeof event.data}): ${JSON.stringify(
+                  event.data,
+                )}`,
+              },
+            })
+            return
           }
 
           let payload
@@ -134,12 +155,25 @@ export class WebSocketClient {
             payload = JSON.parse(payloadStr) as any
           }
           catch (e) {
-            callback({ data: undefined, metadata: undefined, error: { code: 1002, message: `Unexpected payload: ${payloadStr}. Error: ${JSON.stringify(e)}` } })
+            callback({
+              data: undefined,
+              metadata: undefined,
+              error: {
+                code: 1002,
+                message: `Unexpected payload(${typeof payloadStr}): ${payloadStr}. Error: ${JSON.stringify(
+                  e,
+                )}`,
+              },
+            })
             return
           }
 
           if ('error' in payload) {
-            callback({ data: undefined, metadata: undefined, error: payload as { code: number, message: string } })
+            callback({
+              data: undefined,
+              metadata: undefined,
+              error: payload as { code: number, message: string },
+            })
             return
           }
 
@@ -148,11 +182,17 @@ export class WebSocketClient {
             return
           }
 
-          const data: Data = (withMetadata ? (payload.params.result as Data) : payload.params.result.data)
-          if (filter && !filter(data))
-            return
+          const data: Data = withMetadata
+            ? (payload.params.result as Data)
+            : payload.params.result.data
 
-          const metadata = withMetadata ? (payload.params.result.metadata as BlockchainState) : undefined
+          if (filter && !filter(data)) {
+            return
+          }
+
+          const metadata = withMetadata
+            ? (payload.params.result.metadata as BlockchainState)
+            : undefined
 
           callback({ data, metadata, error: undefined } as MaybeStreamResponse<Data>)
 
@@ -180,7 +220,11 @@ export class WebSocketClient {
         resolve({
           ...args,
           next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
-            callback({ data: undefined, metadata: undefined, error: { code: 1000, message: JSON.stringify(error) } })
+            callback({
+              data: undefined,
+              metadata: undefined,
+              error: { code: 1000, message: JSON.stringify(error) },
+            })
           },
         })
       }

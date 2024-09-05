@@ -1,3 +1,5 @@
+import type { Transaction } from './transaction'
+
 export type Address = string
 export type Coin = number
 
@@ -108,22 +110,7 @@ export interface HtlcAccount {
 
 export type Account = BasicAccount | VestingAccount | HtlcAccount
 
-export interface Transaction {
-  hash: string
-  blockNumber: number
-  timestamp: number
-  confirmations: number
-  from: Address
-  to: Address
-  value: Coin
-  fee: Coin
-  data: string
-  flags: number
-  validityStartHeight: number
-  proof: string
-  executionResult: boolean
-}
-
+export * from './transaction'
 export type RawTransaction = string
 
 export interface PartialMicroBlock {

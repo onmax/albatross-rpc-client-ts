@@ -98,11 +98,11 @@ export interface Transaction {
   toType: number // Corresponds to u8
   value: Coin
   fee: Coin
-  senderData: Uint8Array // Corresponds to Vec<u8>
-  recipientData: Uint8Array // Corresponds to Vec<u8>
+  senderData: string // Corresponds to Vec<u8>
+  recipientData: string // Corresponds to Vec<u8>
   flags: number // Corresponds to u8
   validityStartHeight: number // Corresponds to u32
-  proof: Uint8Array // Corresponds to Vec<u8>
+  proof: string // Corresponds to Vec<u8>
   networkId: number // Corresponds to u8
 }
 

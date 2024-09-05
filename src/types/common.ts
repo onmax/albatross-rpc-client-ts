@@ -1,58 +1,28 @@
-import type { Transaction } from './transaction'
-
 export type Address = string
 export type Coin = number
+export type Hash = string
+export type BlockNumber = number
+export type EpochIndex = number
+export type BatchIndex = number
+export type GenesisSupply = number
+export type GenesisTime = number
+export type CurrentTime = number
 
-export type BlockNumber = number /* u32 */
 export type ValidityStartHeight =
   | { relativeValidityStartHeight: number }
   | { absoluteValidityStartHeight: number }
-export type EpochIndex = number /* u32 */
-export type BatchIndex = number /* u32 */
-export type GenesisSupply = number /* u64 */
-export type GenesisTime = number /* u64 */
-export type CurrentTime = number /* u64 */
-export type Hash = string
 
-// TODO Review this enum https://github.com/nimiq/core-rs-albatross/blob/albatross/rpc-interface/src/types.rs#L1002
-export enum LogType {
-  PayoutInherent = 'payout-inherent',
-  ParkInherent = 'park-inherent',
-  SlashInherent = 'slash-inherent',
-  RevertContractInherent = 'revert-contract-inherent',
-  PayFee = 'pay-fee',
-  Transfer = 'transfer',
-  HtlcCreate = 'htlc-create',
-  HtlcTimeoutResolve = 'htlc-timeout-resolve',
-  HtlcRegularTransfer = 'htlc-regular-transfer',
-  HtlcEarlyResolve = 'htlc-early-resolve',
-  VestingCreate = 'vesting-create',
-  CreateValidator = 'create-validator',
-  UpdateValidator = 'update-validator',
-  DeactivateValidator = 'deactivate-validator',
-  ReactivateValidator = 'reactivate-validator',
-  UnparkValidator = 'unpark-validator',
-  CreateStaker = 'create-staker',
-  Stake = 'stake',
-  StakerFeeDeduction = 'staker-fee-deduction',
-  SetActiveStake = 'set-inactive-stake',
-  UpdateStaker = 'update-staker',
-  RetireValidator = 'retire-validator',
-  DeleteValidator = 'delete-validator',
-  PayoutReward = 'payout-reward',
-  Park = 'park',
-  Slash = 'slash',
-  RevertContract = 'revert-contract',
-  FailedTransaction = 'failed-transaction',
-  ValidatorFeeDeduction = 'validator-fee-deduction',
-  RetireStake = 'retire-stake',
-  RemoveStake = 'remove-stake',
+export enum HashAlgorithm {
+  Blake2b = 1,
+  Sha256 = 3,
+  Sha512 = 4,
 }
 
 export enum AccountType {
   Basic = 'basic',
   Vesting = 'vesting',
   HTLC = 'htlc',
+  Staking = 'staking',
 }
 
 export enum InherentType {
@@ -72,8 +42,8 @@ export interface PolicyConstants {
   batchesPerEpoch: number
   blocksPerEpoch: number
   validatorDeposit: number
-  totalSupply: number
   minimumStake: number
+  totalSupply: number
   jailEpochs: number
   genesisBlockNumber: number
   blockSeparationTime: number
@@ -108,88 +78,33 @@ export interface HtlcAccount {
   totalAmount: Coin
 }
 
-export type Account = BasicAccount | VestingAccount | HtlcAccount
+export interface StakingAccount {
+  type: AccountType.Staking
+  address: Address
+  balance: Coin
+}
 
-export * from './transaction'
-export type RawTransaction = string
-
-export interface PartialMicroBlock {
-  type: BlockType.Micro
+export type Account = BasicAccount | VestingAccount | HtlcAccount | StakingAccount
+export interface Transaction {
   hash: string
-  size: number
-  batch: number
-  version: number
-  number: number
-  timestamp: number
-  parentHash: string
-  seed: string
-  extraData: string
-  stateHash: string
-  bodyHash: string
-  historyHash: string
-  producer: {
-    slotNumber: number
-    validator: Address
-    publicKey: string
-  }
-  justification: {
-    micro: string
-  } | {
-    skip: {
-      sig: {
-        signature: { signature: string }
-        signers: number[]
-      }
-    }
-  }
+  blockNumber?: number // Optional, corresponds to Option<u32>
+  timestamp?: bigint // Optional, corresponds to Option<u64>
+  confirmations?: number // Optional, corresponds to Option<u32>
+  size: number // Corresponds to usize
+  relatedAddresses: Set<Address> // Corresponds to BTreeSet<Address>
+  from: Address
+  fromType: number // Corresponds to u8
+  to: Address
+  toType: number // Corresponds to u8
+  value: Coin
+  fee: Coin
+  senderData: Uint8Array // Corresponds to Vec<u8>
+  recipientData: Uint8Array // Corresponds to Vec<u8>
+  flags: number // Corresponds to u8
+  validityStartHeight: number // Corresponds to u32
+  proof: Uint8Array // Corresponds to Vec<u8>
+  networkId: number // Corresponds to u8
 }
-
-export type MicroBlock = PartialMicroBlock & {
-  transactions: Transaction[]
-}
-
-export interface PartialMacroBlock {
-  type: BlockType.Macro
-  hash: string
-  size: number
-  batch: number
-  epoch: number
-  version: number
-  number: number
-  timestamp: number
-  parentHash: string
-  seed: string
-  extraData: string
-  stateHash: string
-  bodyHash: string
-  historyHash: string
-  parentElectionHash: string
-}
-
-export type MacroBlock = PartialMacroBlock & {
-  isElectionBlock: false
-  transactions: Transaction[]
-  lostRewardSet: number[]
-  disabledSet: number[]
-  justification: {
-    round: number
-    sig: {
-      signature: { signature: string }
-      signers: number[]
-    }
-  }
-}
-
-export type ElectionMacroBlock = PartialMacroBlock & {
-  isElectionBlock: true
-  transactions: Transaction[]
-  interlink: string[]
-  slots: Slot[]
-  nextBatchInitialPunishedSet: number[]
-}
-
-export type PartialBlock = PartialMicroBlock | PartialMacroBlock
-export type Block = MicroBlock | MacroBlock | ElectionMacroBlock
 
 export interface Staker {
   address: Address
@@ -197,6 +112,7 @@ export interface Staker {
   delegation?: Address
   inactiveBalance: Coin
   inactiveFrom: number | null
+  retiredBalance: Coin
 }
 
 export interface Validator {
@@ -204,22 +120,24 @@ export interface Validator {
   signingKey: string
   votingKey: string
   rewardAddress: Address
+  signalData?: string
   balance: Coin
   numStakers: number
   retired: boolean
+  inactivityFlag?: number
+  jailedFrom?: number
 }
 
 export interface Slot {
-  firstSlotNumber: number // u16
-  numSlots: number // u16
+  firstSlotNumber: number
+  numSlots: number
   validator: Address
   publicKey: string
 }
 
-export interface PenalizedSlot {
-  blockNumber: BlockNumber // u32
-  lostRewards: number[] // u32[]
-  disabled: number[] // u32[]
+export interface PenalizedSlots {
+  blockNumber: number
+  disabled: number[]
 }
 
 export interface InherentReward {
@@ -237,8 +155,7 @@ export interface InherentPenalize {
   blockNumber: number
   blockTime: number
   validatorAddress: Address
-  slot: number
-  offenseEventBlock: number // u32
+  offenseEventBlock: number
 }
 
 export interface InherentJail {
@@ -246,28 +163,28 @@ export interface InherentJail {
   blockNumber: number
   blockTime: number
   validatorAddress: Address
-  offenseEventBlock: number // u32
+  offenseEventBlock: number
 }
 
 export type Inherent = InherentReward | InherentPenalize | InherentJail
 
 export interface MempoolInfo {
-  _0?: number // u32
-  _1?: number // u32
-  _2?: number // u32
-  _5?: number // u32
-  _10?: number // u32
-  _20?: number // u32
-  _50?: number // u32
-  _100?: number // u32
-  _200?: number // u32
-  _500?: number // u32
-  _1000?: number // u32
-  _2000?: number // u32
-  _5000?: number // u32
-  _10000?: number // u32
-  total: number // u32
-  buckets: number[] // u32[]
+  _0?: number
+  _1?: number
+  _2?: number
+  _5?: number
+  _10?: number
+  _20?: number
+  _50?: number
+  _100?: number
+  _200?: number
+  _500?: number
+  _1000?: number
+  _2000?: number
+  _5000?: number
+  _10000?: number
+  total: number
+  buckets: number[]
 }
 
 export interface WalletAccount {
@@ -282,14 +199,13 @@ export interface Signature {
 }
 
 export interface ZKPState {
-  latestHeaderHash: Hash
-  latestBlockNumber: BlockNumber
+  latestBlock: Block
   latestProof?: string
 }
 
 export interface BlockchainState {
-  blockNumber: BlockNumber
-  blockHash: Hash
+  blockNumber: number
+  blockHash: string
 }
 
 export type Auth = {
@@ -315,3 +231,72 @@ export enum RetrieveType {
   Partial = 'partial',
   Hash = 'hash',
 }
+
+// Block types
+export interface PartialBlock {
+  hash: string
+  size: number
+  batch: number
+  version: number
+  number: number
+  timestamp: number
+  parentHash: string
+  seed: string
+  extraData: string
+  stateHash: string
+  bodyHash: string
+  historyHash: string
+}
+
+export interface PartialMicroBlock extends PartialBlock {
+  type: BlockType.Micro
+  producer: {
+    slotNumber: number
+    validator: Address
+    publicKey: string
+  }
+  justification: {
+    micro: string
+  } | {
+    skip: {
+      sig: {
+        signature: { signature: string }
+        signers: number[]
+      }
+    }
+  }
+}
+
+export interface MicroBlock extends PartialMicroBlock {
+  transactions: Transaction[]
+}
+
+export interface PartialMacroBlock extends PartialBlock {
+  type: BlockType.Macro
+  epoch: number
+  parentElectionHash: string
+}
+
+export interface MacroBlock extends PartialMacroBlock {
+  isElectionBlock: false
+  transactions: Transaction[]
+  lostRewardSet: number[]
+  disabledSet: number[]
+  justification: {
+    round: number
+    sig: {
+      signature: { signature: string }
+      signers: number[]
+    }
+  }
+}
+
+export interface ElectionMacroBlock extends PartialMacroBlock {
+  isElectionBlock: true
+  transactions: Transaction[]
+  interlink: string[]
+  slots: Slot[]
+  nextBatchInitialPunishedSet: number[]
+}
+
+export type Block = MicroBlock | MacroBlock | ElectionMacroBlock

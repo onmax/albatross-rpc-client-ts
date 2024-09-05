@@ -1,5 +1,5 @@
 import { Buffer } from 'node:buffer'
-import type { Auth, BlockchainState } from 'src/types/common'
+import type { Auth, BlockchainState } from '../types/'
 
 async function getWs(url: string) {
   let ws

@@ -1,6 +1,6 @@
 import type { HttpClient } from '../client/http'
 import { DEFAULT_OPTIONS } from '../client/http'
-import type { Address } from '../types/common'
+import type { Address } from '../types/'
 
 export interface SetAutomaticReactivationParams { automaticReactivation: boolean }
 

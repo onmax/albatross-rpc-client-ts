@@ -1,4 +1,4 @@
-import type { Auth } from '../types/common'
+import type { Auth } from '../types/'
 
 export interface HttpOptions {
   timeout?: number | false // in ms

@@ -3,21 +3,17 @@ import { DEFAULT_OPTIONS } from '../client/http'
 import type {
   Account,
   Address,
-  BatchIndex,
   Block,
-  BlockNumber,
   BlockchainState,
-  EpochIndex,
-  Hash,
   Inherent,
   LogType,
   PartialBlock,
-  PenalizedSlot,
+  PenalizedSlots,
   Slot,
   Staker,
   Transaction,
   Validator,
-} from '../types/common'
+} from '../types/'
 
 export interface GetBlockByHashParams { includeTransactions?: boolean }
 export interface GetBlockByBlockNumberParams { includeTransactions?: boolean }
@@ -52,28 +48,28 @@ export class BlockchainClient {
    * Returns the block number for the current head.
    */
   public async getBlockNumber(options = DEFAULT_OPTIONS) {
-    return this.client.call<BlockNumber>({ method: 'getBlockNumber' }, options)
+    return this.client.call<number>({ method: 'getBlockNumber' }, options)
   }
 
   /**
    * Returns the batch number for the current head.
    */
   public async getBatchNumber(options = DEFAULT_OPTIONS) {
-    return this.client.call<BatchIndex>({ method: 'getBatchNumber' }, options)
+    return this.client.call<number>({ method: 'getBatchNumber' }, options)
   }
 
   /**
    * Returns the epoch number for the current head.
    */
   public async getEpochNumber(options = DEFAULT_OPTIONS) {
-    return this.client.call<EpochIndex>({ method: 'getEpochNumber' }, options)
+    return this.client.call<number>({ method: 'getEpochNumber' }, options)
   }
 
   /**
    * Tries to fetch a block given its hash. It has an option to include the transactions in the block, which defaults to false.
    */
   public async getBlockByHash<T extends GetBlockByHashParams>(
-    hash: Hash,
+    hash: string,
     p?: T,
     options = DEFAULT_OPTIONS,
   ) {
@@ -89,7 +85,7 @@ export class BlockchainClient {
    * Tries to fetch a block given its number. It has an option to include the transactions in the block, which defaults to false.
    */
   public async getBlockByNumber<T extends GetBlockByBlockNumberParams>(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     p?: T,
     options = DEFAULT_OPTIONS,
   ) {
@@ -121,7 +117,7 @@ export class BlockchainClient {
    * at the given height.
    */
   public async getSlotAt<T extends GetSlotAtBlockParams>(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     p?: T,
     options = DEFAULT_OPTIONS,
   ) {
@@ -135,7 +131,7 @@ export class BlockchainClient {
   /**
    * Fetches the transaction(s) given the hash.
    */
-  public async getTransactionByHash(hash: Hash, options = DEFAULT_OPTIONS) {
+  public async getTransactionByHash(hash: string, options = DEFAULT_OPTIONS) {
     return this.client.call<Transaction>({
       method: 'getTransactionByHash',
       params: [hash],
@@ -146,7 +142,7 @@ export class BlockchainClient {
    * Fetches the transaction(s) given the block number.
    */
   public async getTransactionsByBlockNumber(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<Transaction[]>({
@@ -159,7 +155,7 @@ export class BlockchainClient {
    * Fetches the transaction(s) given the batch number.
    */
   public async getTransactionsByBatchNumber(
-    batchIndex: BatchIndex,
+    batchIndex: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<Transaction[]>({
@@ -189,7 +185,7 @@ options = DEFAULT_OPTIONS,
       params: [address, p?.max],
     }
     return this.client.call<
-      T['justHashes'] extends true ? Transaction[] : Hash[]
+      T['justHashes'] extends true ? Transaction[] : string[]
     >(req, options)
   }
 
@@ -198,7 +194,7 @@ options = DEFAULT_OPTIONS,
    * that this only considers blocks in the main chain.
    */
   public async getInherentsByBlockNumber(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<Inherent[]>({
@@ -212,7 +208,7 @@ options = DEFAULT_OPTIONS,
    * that this only considers blocks in the main chain.
    */
   public async getInherentsByBatchNumber(
-    batchIndex: BatchIndex,
+    batchIndex: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<Inherent[]>({
@@ -269,7 +265,7 @@ options = DEFAULT_OPTIONS,
     { withMetadata }: T = { withMetadata: false } as T,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<PenalizedSlot[]>({
+    return this.client.call<PenalizedSlots[]>({
       method: 'getCurrentPenalizedSlots',
       withMetadata,
     }, options)
@@ -281,7 +277,7 @@ options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getPreviousPenalizedSlots', withMetadata }
     return this.client.call<
-      PenalizedSlot[],
+      PenalizedSlots[],
       T['withMetadata'] extends true ? BlockchainState : undefined
     >(req, options)
   }

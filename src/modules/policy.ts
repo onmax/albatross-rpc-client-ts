@@ -1,11 +1,10 @@
 import type { HttpClient } from '../client/http'
 import { DEFAULT_OPTIONS } from '../client/http'
 import type {
-  BatchIndex,
   BlockNumber,
   EpochIndex,
   PolicyConstants,
-} from '../types/common'
+} from '../types/'
 
 export interface SupplyAtParams {
   genesisSupply: number
@@ -42,7 +41,7 @@ export class PolicyClient {
    * @param blockNumber
    * @param options
    */
-  public async getEpochAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+  public async getEpochAt(blockNumber: number, options = DEFAULT_OPTIONS) {
     return this.client.call<EpochIndex>({
       method: 'getEpochAt',
       params: [blockNumber],
@@ -60,7 +59,7 @@ export class PolicyClient {
    * @returns The epoch index at a given block number.
    */
   public async getEpochIndexAt(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<EpochIndex>({
@@ -78,7 +77,7 @@ export class PolicyClient {
    * @param options
    * @returns The batch number at a given `block_number` (height)
    */
-  public async getBatchAt(blockNumber: BlockNumber, options = DEFAULT_OPTIONS) {
+  public async getBatchAt(blockNumber: number, options = DEFAULT_OPTIONS) {
     return this.client.call<EpochIndex>({
       method: 'getBatchAt',
       params: [blockNumber],
@@ -96,7 +95,7 @@ export class PolicyClient {
    * @returns The batch index at a given block number.
    */
   public async getBatchIndexAt(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<EpochIndex>({
@@ -114,7 +113,7 @@ export class PolicyClient {
    * @returns The number (height) of the next election macro block after a given block number (height).
    */
   public async getElectionBlockAfter(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
@@ -134,7 +133,7 @@ export class PolicyClient {
    * @returns The block number (height) of the preceding election macro block before a given block number (height).
    */
   public async getElectionBlockBefore(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
@@ -154,7 +153,7 @@ export class PolicyClient {
    * @returns The block number (height) of the last election macro block at a given block number (height).
    */
   public async getLastElectionBlock(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
@@ -173,7 +172,7 @@ export class PolicyClient {
    * @returns A boolean expressing if the block at a given block number (height) is an election macro block.
    */
   public async isElectionBlockAt(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<boolean>({
@@ -191,7 +190,7 @@ export class PolicyClient {
    * @returns The block number (height) of the next macro block after a given block number (height).
    */
   public async getMacroBlockAfter(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
@@ -209,7 +208,7 @@ export class PolicyClient {
    * @returns The block number (height) of the preceding macro block before a given block number (height).
    */
   public async getMacroBlockBefore(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
@@ -228,7 +227,7 @@ export class PolicyClient {
    * @returns The block number (height) of the last macro block at a given block number (height).
    */
   public async getLastMacroBlock(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<BlockNumber>({
@@ -246,7 +245,7 @@ export class PolicyClient {
    * @returns A boolean expressing if the block at a given block number (height) is a macro block.
    */
   public async isMacroBlockAt(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<boolean>({
@@ -265,7 +264,7 @@ export class PolicyClient {
    * @returns The block number (height) of the next micro block after a given block number (height).
    */
   public async isMicroBlockAt(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'isMicroBlockAt', params: [blockNumber] }
@@ -298,7 +297,7 @@ export class PolicyClient {
    * @returns The block number of the first block of the given reporting window (which is always a micro block).
    */
   public async getBlockAfterReportingWindow(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getBlockAfterReportingWindow', params: [blockNumber] }
@@ -314,7 +313,7 @@ export class PolicyClient {
    * @returns The block number of the first block of the given jail (which is always a micro block).
    */
   public async getBlockAfterJail(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getBlockAfterJail', params: [blockNumber] }
@@ -331,7 +330,7 @@ export class PolicyClient {
    * @returns The block number of the first block of the given batch (which is always a micro block).
    */
   public async getFirstBlockOfBatch(
-    batchIndex: BatchIndex,
+    batchIndex: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getFirstBlockOfBatch', params: [batchIndex] }
@@ -365,7 +364,7 @@ export class PolicyClient {
    * @returns The block number of the macro block (checkpoint or election) of the given batch (which is always the last block).
    */
   public async getMacroBlockOfBatch(
-    batchIndex: BatchIndex,
+    batchIndex: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getMacroBlockOf', params: [batchIndex] }
@@ -383,7 +382,7 @@ export class PolicyClient {
    * @returns A boolean expressing if the batch at a given block number (height) is the first batch
    */
   public async getFirstBatchOfEpoch(
-    blockNumber: BlockNumber,
+    blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getFirstBatchOfEpoch', params: [blockNumber] }

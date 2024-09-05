@@ -3,7 +3,7 @@ import { DEFAULT_OPTIONS, HttpClient } from './client/http'
 import type { StreamOptions, Subscription } from './client/web-socket'
 import { WebSocketClient } from './client/web-socket'
 import * as Modules from './modules'
-import type { Auth } from './types/common'
+import type { Auth } from './types/'
 
 export class NimiqRPCClient {
   public http: HttpClient
@@ -81,5 +81,5 @@ export class NimiqRPCClient {
 export * from './client/http'
 export * from './client/web-socket'
 export * from './modules'
-export * from './types/common'
+export * from './types/'
 export * from './types/logs'

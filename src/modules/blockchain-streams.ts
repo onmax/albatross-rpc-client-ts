@@ -1,7 +1,7 @@
 import type { FilterStreamFn, StreamOptions, Subscription, WebSocketClient } from '../client/web-socket'
 import { WS_DEFAULT_OPTIONS } from '../client/web-socket'
-import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, Validator } from '../types/common'
-import { BlockSubscriptionType, RetrieveType } from '../types/common'
+import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, Validator } from '../types/'
+import { BlockSubscriptionType, RetrieveType } from '../types/'
 import type { BlockLog } from '../types/logs'
 
 export interface BlockParams { retrieve?: RetrieveType.Full | RetrieveType.Partial }

@@ -3,12 +3,11 @@ import { DEFAULT_OPTIONS } from '../client/http'
 import type {
   Hash,
   MempoolInfo,
-  RawTransaction,
   Transaction,
-} from '../types/common'
+} from '../types/'
 
 export interface PushTransactionParams {
-  transaction: RawTransaction
+  transaction: string
   withHighPriority?: boolean
 }
 export interface MempoolContentParams { includeTransactions: boolean }
@@ -45,7 +44,7 @@ export class MempoolClient {
    *
    * @param params
    * @param params.includeTransactions
-   * @returns includeTransactions ? Transaction[] : Hash[]
+   * @returns includeTransactions ? Transaction[] : string[]
    */
   public mempoolContent(
     { includeTransactions }: MempoolContentParams = {
@@ -87,7 +86,7 @@ export class MempoolClient {
    * @returns Transaction
    */
   public getTransactionFromMempool(
-    hash: Hash,
+    hash: string,
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<Transaction>({

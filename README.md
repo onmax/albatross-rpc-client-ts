@@ -23,10 +23,17 @@ The development network is currently in a phase where we request developers to s
 It is structured the same way as the [`Rust RPC Client`](https://github.com/nimiq/core-rs-albatross/tree/albatross/rpc-server/src/dispatchers)
 
 ```typescript
-// getClient() defined before
-getClient().blockchain.getBlockNumber()
-getClient().network.getPeerCount()
-// use auto-complete to see all available methods
+import { NimiqRPCClient } from 'nimiq-rpc-client-ts'
+
+const url = "NODE_URL"
+const client = new NimiqRPCClient(new URL(url))
+const { data: currentEpoch, error: errorCurrentEpoch } = await client.blockchain.getEpochNumber()
+if (errorCurrentEpoch || !currentEpoch)
+    throw new Error(errorCurrentEpoch?.message || 'No current epoch')
+
+client.blockchain.getBlockNumber()
+client.network.getPeerCount()
+// use auto-complete to see all available methods, or checkout the class https://github.com/onmax/albatross-rpc-client-ts/blob/main/src/index.ts#L26
 ```
 
 ## Need help?

@@ -44,7 +44,7 @@ If you have a custom method in your RPC server, or the library is out of date, y
 interface ResponseType {
   myResult: string
 }
-const { data, error } = await client.http.call<ResponseType>({ method: 'myAwesomeCustomMethod', params: ["FirstParameter", "secondParameter] }, { /* some http options */ })
+const { data, error } = await client.http.call<ResponseType>({ method: 'myAwesomeCustomMethod', params: ["FirstParameter", "secondParameter"] }, { /* some http options */ })
 //     ?^ ResponseType | undefined  ?^ Use http for custom HTTP methods or `ws` for custom WS
 ```
 

@@ -1,5 +1,5 @@
-import { Buffer } from 'node:buffer'
 import type { Auth, BlockchainState } from '../types/'
+import { Buffer } from 'node:buffer'
 
 async function getWs(url: string) {
   let ws
@@ -46,7 +46,6 @@ export interface Subscription<Data> {
 
 export const WS_DEFAULT_OPTIONS: StreamOptions = {
   once: false,
-  filter: () => true,
 } as const
 
 export type MaybeStreamResponse<Data> = {
@@ -59,11 +58,8 @@ export type MaybeStreamResponse<Data> = {
   metadata?: BlockchainState
 }
 
-export type FilterStreamFn = (data: any) => boolean
-
 export interface StreamOptions {
   once: boolean
-  filter?: FilterStreamFn
   // timeout: number, TODO
 }
 
@@ -108,7 +104,7 @@ export class WebSocketClient {
       ...userOptions,
     }
 
-    const { once, filter } = options
+    const { once } = options
     const withMetadata = 'withMetadata' in request ? request.withMetadata : false
 
     const args: Subscription<Data> = {
@@ -185,10 +181,6 @@ export class WebSocketClient {
           const data: Data = withMetadata
             ? (payload.params.result as Data)
             : payload.params.result.data
-
-          if (filter && !filter(data)) {
-            return
-          }
 
           const metadata = withMetadata
             ? (payload.params.result.metadata as BlockchainState)

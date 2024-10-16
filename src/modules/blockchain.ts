@@ -1,5 +1,4 @@
 import type { HttpClient } from '../client/http'
-import { DEFAULT_OPTIONS } from '../client/http'
 import type {
   Account,
   Address,
@@ -7,13 +6,13 @@ import type {
   BlockchainState,
   Inherent,
   LogType,
-  PartialBlock,
   PenalizedSlots,
   Slot,
   Staker,
   Transaction,
   Validator,
 } from '../types/'
+import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface GetBlockByHashParams { includeBody?: boolean }
 export interface GetBlockByBlockNumberParams { includeBody?: boolean }
@@ -73,9 +72,7 @@ export class BlockchainClient {
     p?: T,
   options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<
-      T['includeBody'] extends true ? Block : PartialBlock
-    >(
+    return this.client.call<Block>(
       { method: 'getBlockByHash', params: [hash, p?.includeBody] },
       options,
     )
@@ -89,9 +86,7 @@ export class BlockchainClient {
     p?: T,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<
-      T['includeBody'] extends true ? Block : PartialBlock
-    >({
+    return this.client.call<Block>({
       method: 'getBlockByNumber',
       params: [blockNumber, p?.includeBody],
     }, options)
@@ -106,9 +101,7 @@ export class BlockchainClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getLatestBlock', params: [p.includeBody] }
-    return this.client.call<
-      T['includeBody'] extends true ? Block : PartialBlock
-    >(req, options)
+    return this.client.call<Block>(req, options)
   }
 
   /**

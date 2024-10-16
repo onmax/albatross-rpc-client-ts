@@ -1,10 +1,10 @@
 import type { HttpClient } from '../client/http'
-import { DEFAULT_OPTIONS } from '../client/http'
 import type {
   BlockNumber,
   EpochIndex,
   PolicyConstants,
 } from '../types/'
+import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface SupplyAtParams {
   genesisSupply: number

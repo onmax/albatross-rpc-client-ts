@@ -15,9 +15,9 @@ import type {
   Validator,
 } from '../types/'
 
-export interface GetBlockByHashParams { includeTransactions?: boolean }
-export interface GetBlockByBlockNumberParams { includeTransactions?: boolean }
-export interface GetLatestBlockParams { includeTransactions?: boolean }
+export interface GetBlockByHashParams { includeBody?: boolean }
+export interface GetBlockByBlockNumberParams { includeBody?: boolean }
+export interface GetLatestBlockParams { includeBody?: boolean }
 export interface GetSlotAtBlockParams {
   offsetOpt?: number
   withMetadata?: boolean
@@ -71,12 +71,12 @@ export class BlockchainClient {
   public async getBlockByHash<T extends GetBlockByHashParams>(
     hash: string,
     p?: T,
-    options = DEFAULT_OPTIONS,
+  options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<
-      T['includeTransactions'] extends true ? Block : PartialBlock
+      T['includeBody'] extends true ? Block : PartialBlock
     >(
-      { method: 'getBlockByHash', params: [hash, p?.includeTransactions] },
+      { method: 'getBlockByHash', params: [hash, p?.includeBody] },
       options,
     )
   }
@@ -90,10 +90,10 @@ export class BlockchainClient {
     options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<
-      T['includeTransactions'] extends true ? Block : PartialBlock
+      T['includeBody'] extends true ? Block : PartialBlock
     >({
       method: 'getBlockByNumber',
-      params: [blockNumber, p?.includeTransactions],
+      params: [blockNumber, p?.includeBody],
     }, options)
   }
 
@@ -102,12 +102,12 @@ export class BlockchainClient {
    * transactions in the block, which defaults to false.
    */
   public async getLatestBlock<T extends GetLatestBlockParams>(
-    p = { includeTransactions: false } as T,
+    p = { includeBody: false } as T,
     options = DEFAULT_OPTIONS,
   ) {
-    const req = { method: 'getLatestBlock', params: [p.includeTransactions] }
+    const req = { method: 'getLatestBlock', params: [p.includeBody] }
     return this.client.call<
-      T['includeTransactions'] extends true ? Block : PartialBlock
+      T['includeBody'] extends true ? Block : PartialBlock
     >(req, options)
   }
 

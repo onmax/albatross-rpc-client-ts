@@ -28,7 +28,7 @@ export class ZkpComponentClient {
       return {
         error,
         data: {
-          latestHeaderHash: data!['latest-header-number'],
+          latestHeaderNumber: data!['latest-header-number'],
           latestBlockNumber: data!['latest-block-number'],
           latestProof: data!['latest-proof'],
         },

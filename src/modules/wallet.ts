@@ -24,7 +24,7 @@ export class WalletClient {
   }
 
   public async listAccounts(options = DEFAULT_OPTIONS) {
-    return this.client.call<boolean>({ method: 'listAccounts' }, options)
+    return this.client.call<string[]>({ method: 'listAccounts' }, options)
   }
 
   public async lockAccount(address: Address, options = DEFAULT_OPTIONS) {
@@ -39,8 +39,8 @@ export class WalletClient {
     return this.client.call<boolean>({ method: 'unlockAccount', params: [address, passphrase, duration] }, options)
   }
 
-  public async isAccountLocked(address: Address, options = DEFAULT_OPTIONS) {
-    return this.client.call<boolean>({ method: 'isAccountLocked', params: [address] }, options)
+  public async isAccountUnlocked(address: Address, options = DEFAULT_OPTIONS) {
+    return this.client.call<boolean>({ method: 'isAccountUnlocked', params: [address] }, options)
   }
 
   public async sign({ message, address, passphrase, isHex }: SignParams, options = DEFAULT_OPTIONS) {

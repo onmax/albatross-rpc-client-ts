@@ -36,6 +36,18 @@ client.network.getPeerCount()
 // use auto-complete to see all available methods, or checkout the class https://github.com/onmax/albatross-rpc-client-ts/blob/main/src/index.ts#L26
 ```
 
+## Call custom method
+
+If you have a custom method in your RPC server, or the library is out of date, you can always make a `raw` request:
+
+```ts
+interface ResponseType {
+  myResult: string
+}
+const { data, error } = await client.http.call<ResponseType>({ method: 'myAwesomeCustomMethod', params: ["FirstParameter", "secondParameter] }, { /* some http options */ })
+//     ?^ ResponseType | undefined  ?^ Use http for custom HTTP methods or `ws` for custom WS
+```
+
 ## Need help?
 
 Check the tests for examples on how to use the client [here](./src/index.test.ts).

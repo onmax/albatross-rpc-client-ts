@@ -220,23 +220,13 @@ export enum BlockType {
   Macro = 'macro',
 }
 
-export enum BlockSubscriptionType {
-  Macro = 'macro',
-  Micro = 'micro',
-  Election = 'election',
-}
-
-export enum RetrieveType {
-  Full = 'full',
-  Partial = 'partial',
-  Hash = 'hash',
-}
-
 // Block types
-export interface PartialBlock {
+export interface Block {
   hash: string
   size: number
   batch: number
+  epoch: number
+  network: string
   version: number
   number: number
   timestamp: number
@@ -244,59 +234,8 @@ export interface PartialBlock {
   seed: string
   extraData: string
   stateHash: string
-  bodyHash: string
+  bodyHash?: string
   historyHash: string
+  transactions?: Transaction[]
+  additionalFields: any
 }
-
-export interface PartialMicroBlock extends PartialBlock {
-  type: BlockType.Micro
-  producer: {
-    slotNumber: number
-    validator: Address
-    publicKey: string
-  }
-  justification: {
-    micro: string
-  } | {
-    skip: {
-      sig: {
-        signature: { signature: string }
-        signers: number[]
-      }
-    }
-  }
-}
-
-export interface MicroBlock extends PartialMicroBlock {
-  transactions: Transaction[]
-}
-
-export interface PartialMacroBlock extends PartialBlock {
-  type: BlockType.Macro
-  epoch: number
-  parentElectionHash: string
-}
-
-export interface MacroBlock extends PartialMacroBlock {
-  isElectionBlock: false
-  transactions: Transaction[]
-  lostRewardSet: number[]
-  disabledSet: number[]
-  justification: {
-    round: number
-    sig: {
-      signature: { signature: string }
-      signers: number[]
-    }
-  }
-}
-
-export interface ElectionMacroBlock extends PartialMacroBlock {
-  isElectionBlock: true
-  transactions: Transaction[]
-  interlink: string[]
-  slots: Slot[]
-  nextBatchInitialPunishedSet: number[]
-}
-
-export type Block = MicroBlock | MacroBlock | ElectionMacroBlock

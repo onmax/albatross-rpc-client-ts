@@ -1,9 +1,9 @@
 import type { CallResult, HttpOptions } from './client/http'
-import { DEFAULT_OPTIONS, HttpClient } from './client/http'
 import type { StreamOptions, Subscription } from './client/web-socket'
+import type { Auth } from './types/'
+import { DEFAULT_OPTIONS, HttpClient } from './client/http'
 import { WebSocketClient } from './client/web-socket'
 import * as Modules from './modules'
-import type { Auth } from './types/'
 
 export class NimiqRPCClient {
   public http: HttpClient

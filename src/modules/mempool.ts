@@ -1,10 +1,10 @@
 import type { HttpClient } from '../client/http'
-import { DEFAULT_OPTIONS } from '../client/http'
 import type {
   Hash,
   MempoolInfo,
   Transaction,
 } from '../types/'
+import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface PushTransactionParams {
   transaction: string

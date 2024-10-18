@@ -1,6 +1,6 @@
 import type { HttpClient } from '../client/http'
-import { DEFAULT_OPTIONS } from '../client/http'
 import type { Address, Signature, WalletAccount } from '../types/'
+import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface ImportKeyParams { keyData: string, passphrase?: string }
 export interface UnlockAccountParams { passphrase?: string, duration?: number }

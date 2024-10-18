@@ -1,6 +1,6 @@
 import type { HttpClient } from '../client/http'
-import { DEFAULT_OPTIONS } from '../client/http'
 import type { BlockNumber } from '../types/'
+import { DEFAULT_OPTIONS } from '../client/http'
 
 interface ZKPStateKebab {
   'latest-header-number': string

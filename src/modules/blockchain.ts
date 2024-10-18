@@ -24,6 +24,7 @@ export interface GetSlotAtBlockParams {
 }
 export interface GetTransactionsByAddressParams {
   max?: number
+  startAt?: string
   justHashes?: boolean
 }
 export interface GetAccountByAddressParams { withMetadata?: boolean }
@@ -71,7 +72,7 @@ export class BlockchainClient {
   public async getBlockByHash<T extends GetBlockByHashParams>(
     hash: string,
     p?: T,
-  options = DEFAULT_OPTIONS,
+    options = DEFAULT_OPTIONS,
   ) {
     return this.client.call<
       T['includeBody'] extends true ? Block : PartialBlock
@@ -174,15 +175,16 @@ export class BlockchainClient {
    */
   public async getTransactionsByAddress<
     T extends GetTransactionsByAddressParams,
-  >(address: Address,
+  >(
+    address: Address,
     p?: T,
-options = DEFAULT_OPTIONS,
+    options = DEFAULT_OPTIONS,
   ) {
     const req = {
       method: p?.justHashes
         ? 'getTransactionHashesByAddress'
         : 'getTransactionsByAddress',
-      params: [address, p?.max],
+      params: [address, p?.max, p?.startAt],
     }
     return this.client.call<
       T['justHashes'] extends true ? Transaction[] : string[]

@@ -52,7 +52,11 @@ export class MempoolClient {
     },
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<(Hash | Transaction)[]>({
+    return this.client.call<
+      MempoolContentParams['includeTransactions'] extends true
+        ? Transaction[]
+        : Hash[]
+    >({
       method: 'mempoolContent',
       params: [includeTransactions],
     }, options)

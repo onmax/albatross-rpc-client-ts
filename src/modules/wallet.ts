@@ -50,4 +50,8 @@ export class WalletClient {
   public async verifySignature({ message, publicKey, signature, isHex }: VerifySignatureParams, options = DEFAULT_OPTIONS) {
     return this.client.call<boolean>({ method: 'verifySignature', params: [message, publicKey, signature, isHex] }, options)
   }
+
+  public async removeAccount(address: Address, options = DEFAULT_OPTIONS) {
+    return this.client.call<boolean>({ method: 'removeAccount', params: [address] }, options)
+  }
 }

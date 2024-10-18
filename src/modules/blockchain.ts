@@ -23,8 +23,8 @@ export interface GetSlotAtBlockParams {
   withMetadata?: boolean
 }
 export interface GetTransactionsByAddressParams {
-  max?: number
-  startAt?: string
+  max: number
+  startAt: string
   justHashes?: boolean
 }
 export interface GetAccountByAddressParams { withMetadata?: boolean }
@@ -177,14 +177,14 @@ export class BlockchainClient {
     T extends GetTransactionsByAddressParams,
   >(
     address: Address,
-    p?: T,
+    p: T,
     options = DEFAULT_OPTIONS,
   ) {
     const req = {
       method: p?.justHashes
         ? 'getTransactionHashesByAddress'
         : 'getTransactionsByAddress',
-      params: [address, p?.max, p?.startAt],
+      params: [address, p.max, p.startAt],
     }
     return this.client.call<
       T['justHashes'] extends true ? Transaction[] : string[]

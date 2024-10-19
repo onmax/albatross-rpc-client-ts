@@ -48,6 +48,15 @@ const { data, error } = await client.call<ResponseType>({ method: 'myAwesomeCust
 //     ?^ ResponseType | undefined  ?^ Use call for custom HTTP methods or `subscribe` for custom WS
 ```
 
+## Common Issues
+
+### Declare a username and password required to access the JSON-RPC server.
+
+Here are some ways you can try to fix this:
+
+1. Make sure you have a 'username' and 'password' set in your RPC config. Use this [config](https://github.com/nimiq/core-rs-albatross/blob/albatross/lib/src/config/config_file/client.example.toml) as a reference.
+2. You are trying to access via `https` but have not configured `tls` correctly.
+
 ## Need help?
 
 Check the tests for examples on how to use the client [here](./src/index.test.ts).

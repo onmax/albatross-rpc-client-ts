@@ -237,6 +237,8 @@ export interface PartialBlock {
   hash: string
   size: number
   batch: number
+  epoch: number
+  network: string
   version: number
   number: number
   timestamp: number

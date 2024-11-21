@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer'
 import type { Auth, BlockchainState } from '../types/'
 
 async function getWs(url: string) {
@@ -122,6 +121,9 @@ export class WebSocketClient {
         }
 
         ws.onmessage = async (event: MessageEvent) => {
+          // eslint-disable-next-line node/prefer-global/buffer
+          const Buffer = typeof window === 'undefined' ? (await import('node:buffer')).Buffer : window.Buffer
+
           let payloadStr = ''
           if (event.data instanceof Blob) {
             payloadStr = this.textDecoder.decode(await event.data.arrayBuffer())

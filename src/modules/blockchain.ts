@@ -222,7 +222,7 @@ export class BlockchainClient {
   /**
    * Tries to fetch the account at the given address.
    */
-  public async getAccountByAddress<T extends { withMetadata: boolean }>(
+  public async getAccountByAddress<T extends { withMetadata?: boolean }>(
     address: Address,
     { withMetadata }: T,
     options = DEFAULT_OPTIONS,
@@ -252,7 +252,7 @@ export class BlockchainClient {
   /**
    * Returns a collection of the currently active validator's addresses and balances.
    */
-  public async getActiveValidators<T extends { withMetadata: boolean }>(
+  public async getActiveValidators<T extends { withMetadata?: boolean }>(
     { withMetadata }: T = { withMetadata: false } as T,
     options = DEFAULT_OPTIONS,
   ) {
@@ -263,7 +263,7 @@ export class BlockchainClient {
     >(req, options)
   }
 
-  public async getCurrentPenalizedSlots<T extends { withMetadata: boolean }>(
+  public async getCurrentPenalizedSlots<T extends { withMetadata?: boolean }>(
     { withMetadata }: T = { withMetadata: false } as T,
     options = DEFAULT_OPTIONS,
   ) {
@@ -273,7 +273,7 @@ export class BlockchainClient {
     }, options)
   }
 
-  public async getPreviousPenalizedSlots<T extends { withMetadata: boolean }>(
+  public async getPreviousPenalizedSlots<T extends { withMetadata?: boolean }>(
     { withMetadata }: T = { withMetadata: false } as T,
     options = DEFAULT_OPTIONS,
   ) {

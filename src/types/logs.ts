@@ -3,30 +3,29 @@ import type { Address, Coin } from './common'
 export enum LogType {
   PayFee = 'pay-fee',
   Transfer = 'transfer',
-  HTLCCreate = 'htlc-create',
-  HTLCTimeoutResolve = 'htlc-timeout-resolve',
-  HTLCRegularTransfer = 'htlc-regular-transfer',
-  HTLCEarlyResolve = 'htlc-early-resolve',
+  HtlcCreate = 'htlc-create',
+  HtlcTimeoutResolve = 'htlc-timeout-resolve',
+  HtlcRegularTransfer = 'htlc-regular-transfer',
+  HtlcEarlyResolve = 'htlc-early-resolve',
   VestingCreate = 'vesting-create',
   CreateValidator = 'create-validator',
   UpdateValidator = 'update-validator',
   ValidatorFeeDeduction = 'validator-fee-deduction',
   DeactivateValidator = 'deactivate-validator',
-  JailValidator = 'jail-validator',
   ReactivateValidator = 'reactivate-validator',
-  CreateStaker = 'create-staker',
-  Stake = 'stake',
-  StakerFeeDeduction = 'staker-fee-deduction',
-  UpdateStaker = 'update-staker',
   RetireValidator = 'retire-validator',
   DeleteValidator = 'delete-validator',
+  CreateStaker = 'create-staker',
+  Stake = 'stake',
+  UpdateStaker = 'update-staker',
   SetActiveStake = 'set-active-stake',
   RetireStake = 'retire-stake',
   RemoveStake = 'remove-stake',
   DeleteStaker = 'delete-staker',
+  StakerFeeDeduction = 'staker-fee-deduction',
   PayoutReward = 'payout-reward',
   Penalize = 'penalize',
-  Jail = 'jail',
+  JailValidator = 'jail-validator',
   RevertContract = 'revert-contract',
   FailedTransaction = 'failed-transaction',
 }
@@ -45,8 +44,8 @@ export interface TransferLog {
   data?: Uint8Array
 }
 
-export interface HTLCCreateLog {
-  type: LogType.HTLCCreate
+export interface HtlcCreateLog {
+  type: LogType.HtlcCreate
   contractAddress: Address
   sender: Address
   recipient: Address
@@ -56,20 +55,20 @@ export interface HTLCCreateLog {
   totalAmount: Coin
 }
 
-export interface HTLCTimeoutResolveLog {
-  type: LogType.HTLCTimeoutResolve
+export interface HtlcTimeoutResolveLog {
+  type: LogType.HtlcTimeoutResolve
   contractAddress: Address
 }
 
-export interface HTLCRegularTransferLog {
-  type: LogType.HTLCRegularTransfer
+export interface HtlcRegularTransferLog {
+  type: LogType.HtlcRegularTransfer
   contractAddress: Address
   preImage: string
   hashDepth: number
 }
 
-export interface HTLCEarlyResolveLog {
-  type: LogType.HTLCEarlyResolve
+export interface HtlcEarlyResolveLog {
+  type: LogType.HtlcEarlyResolve
   contractAddress: Address
 }
 
@@ -77,10 +76,10 @@ export interface VestingCreateLog {
   type: LogType.VestingCreate
   contractAddress: Address
   owner: Address
-  startTime: bigint
-  timeStep: bigint
-  stepAmount: Coin
-  totalAmount: Coin
+  vestingStartTime: bigint
+  vestingTimeStep: bigint
+  vestingStepAmount: Coin
+  vestingTotalAmount: Coin
 }
 
 export interface CreateValidatorLog {
@@ -108,15 +107,20 @@ export interface DeactivateValidatorLog {
   inactiveFrom: number
 }
 
-export interface JailValidatorLog {
-  type: LogType.JailValidator
-  validatorAddress: Address
-  jailedFrom: number
-}
-
 export interface ReactivateValidatorLog {
   type: LogType.ReactivateValidator
   validatorAddress: Address
+}
+
+export interface RetireValidatorLog {
+  type: LogType.RetireValidator
+  validatorAddress: Address
+}
+
+export interface DeleteValidatorLog {
+  type: LogType.DeleteValidator
+  validatorAddress: Address
+  rewardAddress: Address
 }
 
 export interface CreateStakerLog {
@@ -133,12 +137,6 @@ export interface StakeLog {
   value: Coin
 }
 
-export interface StakerFeeDeductionLog {
-  type: LogType.StakerFeeDeduction
-  stakerAddress: Address
-  fee: Coin
-}
-
 export interface UpdateStakerLog {
   type: LogType.UpdateStaker
   stakerAddress: Address
@@ -146,17 +144,6 @@ export interface UpdateStakerLog {
   newValidatorAddress: Address | null
   activeBalance: Coin
   inactiveFrom: number | null
-}
-
-export interface RetireValidatorLog {
-  type: LogType.RetireValidator
-  validatorAddress: Address
-}
-
-export interface DeleteValidatorLog {
-  type: LogType.DeleteValidator
-  validatorAddress: Address
-  rewardAddress: Address
 }
 
 export interface SetActiveStakeLog {
@@ -190,6 +177,12 @@ export interface DeleteStakerLog {
   validatorAddress: Address | null
 }
 
+export interface StakerFeeDeductionLog {
+  type: LogType.StakerFeeDeduction
+  stakerAddress: Address
+  fee: Coin
+}
+
 export interface PayoutRewardLog {
   type: LogType.PayoutReward
   to: Address
@@ -204,11 +197,10 @@ export interface PenalizeLog {
   newlyDeactivated: boolean
 }
 
-export interface JailLog {
-  type: LogType.Jail
+export interface JailValidatorLog {
+  type: LogType.JailValidator
   validatorAddress: Address
-  eventBlock: number
-  newlyJailed: boolean
+  jailedFrom: number
 }
 
 export interface RevertContractLog {
@@ -226,30 +218,29 @@ export interface FailedTransactionLog {
 export type Log =
   | PayFeeLog
   | TransferLog
-  | HTLCCreateLog
-  | HTLCTimeoutResolveLog
-  | HTLCRegularTransferLog
-  | HTLCEarlyResolveLog
+  | HtlcCreateLog
+  | HtlcTimeoutResolveLog
+  | HtlcRegularTransferLog
+  | HtlcEarlyResolveLog
   | VestingCreateLog
   | CreateValidatorLog
   | UpdateValidatorLog
   | ValidatorFeeDeductionLog
   | DeactivateValidatorLog
-  | JailValidatorLog
   | ReactivateValidatorLog
-  | CreateStakerLog
-  | StakeLog
-  | StakerFeeDeductionLog
-  | UpdateStakerLog
   | RetireValidatorLog
   | DeleteValidatorLog
+  | CreateStakerLog
+  | StakeLog
+  | UpdateStakerLog
   | SetActiveStakeLog
   | RetireStakeLog
   | RemoveStakeLog
   | DeleteStakerLog
+  | StakerFeeDeductionLog
   | PayoutRewardLog
   | PenalizeLog
-  | JailLog
+  | JailValidatorLog
   | RevertContractLog
   | FailedTransactionLog
 
@@ -261,10 +252,7 @@ export interface TransactionLog {
 
 export interface BlockLog {
   inherentLogs: Log[]
-  blockHash: string
-  blockNumber: number
   txLogs: TransactionLog[]
-  totalTxSize: bigint
 }
 
 export interface AppliedBlockLog extends BlockLog {
@@ -277,3 +265,16 @@ export interface RevertedBlockLog extends BlockLog {
 }
 
 export type BlockLogType = AppliedBlockLog | RevertedBlockLog
+
+export interface BlockchainState {
+  blockNumber: number
+  blockHash: string
+}
+
+export interface RPCData<T, M> {
+  data: T
+  metadata: M
+}
+
+// Example usage of RPCData with BlockLogType and BlockchainState
+export type BlockLogResponse = RPCData<BlockLogType, BlockchainState>

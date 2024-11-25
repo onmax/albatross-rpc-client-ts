@@ -122,9 +122,25 @@ export interface Validator {
   rewardAddress: Address
   signalData?: string
   balance: Coin
+
+  /**
+   * The total amount of stakers in the valiator
+   */
   numStakers: number
+
+  /**
+   * Wether the validator has been retired
+   */
   retired: boolean
+
+  /**
+   * The block in which the validator was inactive from
+   */
   inactivityFlag?: number
+
+  /**
+   * The block in which the validator was jailed from
+   */
   jailedFrom?: number
 }
 

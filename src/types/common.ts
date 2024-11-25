@@ -246,6 +246,38 @@ export enum RetrieveType {
   Hash = 'hash',
 }
 
+enum NetworkId {
+  Test = 1,
+  Dev = 2,
+  Bounty = 3,
+  Dummy = 4,
+  Main = 42,
+
+  TestAlbatross = 5,
+  DevAlbatross = 6,
+  UnitAlbatross = 7,
+  MainAlbatross = 24,
+}
+
+export interface ForkProof {
+  blockNumber: number
+  hashes: [string, string]
+}
+
+export interface DoubleProposalProof {
+  blockNumber: number
+  hashes: [string, string]
+}
+
+export interface DoubleVoteProof {
+  blockNumber: number
+}
+
+export type EquivocationProof =
+  | { type: 'Fork', proof: ForkProof }
+  | { type: 'DoubleProposal', proof: DoubleProposalProof }
+  | { type: 'DoubleVote', proof: DoubleVoteProof }
+
 // Block types
 export interface PartialBlock {
   hash: string
@@ -258,8 +290,10 @@ export interface PartialBlock {
   seed: string
   extraData: string
   stateHash: string
-  bodyHash: string
+  bodyHash?: string
   historyHash: string
+  network: NetworkId
+  transactions?: Transaction[]
 }
 
 export interface PartialMicroBlock extends PartialBlock {
@@ -279,16 +313,27 @@ export interface PartialMicroBlock extends PartialBlock {
       }
     }
   }
+  equivocationProofs?: EquivocationProof[]
+  epoch?: undefined
+  parentElectionHash?: undefined
 }
 
 export interface MicroBlock extends PartialMicroBlock {
   transactions: Transaction[]
+  isElectionBlock?: undefined
+  lostRewardSet?: number[]
+  disabledSet?: number[]
+  interlink?: undefined
+  slots?: undefined
+  nextBatchInitialPunishedSet?: undefined
 }
 
 export interface PartialMacroBlock extends PartialBlock {
   type: BlockType.Macro
   epoch: number
-  parentElectionHash: string
+  parentElectionHash?: undefined
+  producer?: undefined
+  equivocationProofs?: undefined
 }
 
 export interface MacroBlock extends PartialMacroBlock {
@@ -296,13 +341,16 @@ export interface MacroBlock extends PartialMacroBlock {
   transactions: Transaction[]
   lostRewardSet: number[]
   disabledSet: number[]
-  justification: {
+  justification?: {
     round: number
     sig: {
       signature: { signature: string }
       signers: number[]
     }
   }
+  interlink?: undefined
+  slots?: undefined
+  nextBatchInitialPunishedSet?: undefined
 }
 
 export interface ElectionMacroBlock extends PartialMacroBlock {

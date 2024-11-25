@@ -1,4 +1,4 @@
-import type { Address, Coin } from './common'
+import type { Address, BlockchainState, Coin } from './common'
 
 export enum LogType {
   PayFee = 'pay-fee',
@@ -265,11 +265,6 @@ export interface RevertedBlockLog extends BlockLog {
 }
 
 export type BlockLogType = AppliedBlockLog | RevertedBlockLog
-
-export interface BlockchainState {
-  blockNumber: number
-  blockHash: string
-}
 
 export interface RPCData<T, M> {
   data: T

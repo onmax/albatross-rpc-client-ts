@@ -31,21 +31,83 @@ export enum InherentType {
   Penalize = 'penalize',
 }
 
+/**
+ * Represents constants used in the policy module of the blockchain.
+ */
 export interface PolicyConstants {
+  /**
+   * The staking contract address in the blockchain.
+   */
   stakingContractAddress: Address
+
+  /**
+   * The address that receives the block rewards (coinbase).
+   */
   coinbaseAddress: Address
+
+  /**
+   * The maximum validity window for transactions (number of blocks).
+   */
   transactionValidityWindow: number
+
+  /**
+   * The maximum size (in bytes) of the body of a micro block.
+   */
   maxSizeMicroBody: number
+
+  /**
+   * The version number of the policy constants.
+   */
   version: number
+
+  /**
+   * The total number of validator slots in the network.
+   */
   slots: number
+
+  /**
+   * The number of blocks in a batch.
+   */
   blocksPerBatch: number
+
+  /**
+   * The number of batches in an epoch.
+   */
   batchesPerEpoch: number
+
+  /**
+   * The total number of blocks in an epoch.
+   */
   blocksPerEpoch: number
+
+  /**
+   * The deposit amount required for a validator slot (in smallest currency unit, e.g., Lunas).
+   */
   validatorDeposit: number
+
+  /**
+   * The minimum stake required to participate in staking (in smallest currency unit, e.g., Lunas).
+   */
   minimumStake: number
+
+  /**
+   * The total supply of coins in the network (in smallest currency unit, e.g., Lunas).
+   */
   totalSupply: number
+
+  /**
+   * The number of epochs for which a validator is jailed after misbehavior.
+   */
   jailEpochs: number
+
+  /**
+   * The block number of the genesis block.
+   */
   genesisBlockNumber: number
+
+  /**
+   * The time (in seconds) between the production of two consecutive blocks.
+   */
   blockSeparationTime: number
 }
 

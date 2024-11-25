@@ -257,7 +257,7 @@ export class PolicyClient {
   /**
    * Gets the block number (height) of the next micro block after a given block number (height).
    *
-   * RPC method name: "getMicroBlockAfter"
+   * RPC method name: "isMicroBlockAt"
    *
    * @param blockNumber
    * @param options
@@ -291,7 +291,7 @@ export class PolicyClient {
   /**
    * Gets the block number of the first block of the given reporting window (which is always a micro block).
    *
-   * RPC method name: "get_block_after_reporting_window"
+   * RPC method name: "getBlockAfterReportingWindow"
    *
    * @param blockNumber
    * @returns The block number of the first block of the given reporting window (which is always a micro block).
@@ -307,7 +307,7 @@ export class PolicyClient {
   /**
    * Gets the block number of the first block of the given jail (which is always a micro block).
    *
-   * RPC method name: "get_block_after_jail"
+   * RPC method name: "getBlockAfterJail"
    *
    * @param blockNumber
    * @returns The block number of the first block of the given jail (which is always a micro block).

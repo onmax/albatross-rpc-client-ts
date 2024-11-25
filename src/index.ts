@@ -78,6 +78,15 @@ export class NimiqRPCClient {
     return this.ws.subscribe<Data, Request>(request, userOptions)
   }
 }
+
+let client: NimiqRPCClient
+export function createClient(url: URL | string, auth?: Auth) {
+  if (client)
+    return client
+  client = new NimiqRPCClient(url, auth)
+  return client
+}
+
 export * from './client/http'
 export * from './client/web-socket'
 export * from './modules'

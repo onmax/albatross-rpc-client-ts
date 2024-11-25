@@ -187,7 +187,7 @@ export class BlockchainClient {
       params: [address, p.max, p.startAt],
     }
     return this.client.call<
-      T['justHashes'] extends true ? Transaction[] : string[]
+      T['justHashes'] extends true ? string[] : Transaction[]
     >(req, options)
   }
 

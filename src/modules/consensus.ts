@@ -1,9 +1,9 @@
 import type { HttpClient, SendTxCallOptions } from '../client/http'
-import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX } from '../client/http'
 import type { Address, Coin, Hash, Transaction, ValidityStartHeight } from '../types/'
 import type { BlockLog } from '../types/logs'
 import type { BlockchainClient } from './blockchain'
 import type { BlockchainStream } from './blockchain-streams'
+import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX } from '../client/http'
 
 export interface RawTransactionInfoParams { rawTransaction: string }
 export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string } & ValidityStartHeight

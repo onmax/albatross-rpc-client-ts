@@ -1,5 +1,4 @@
 import type { HttpClient } from '../client/http'
-import { DEFAULT_OPTIONS } from '../client/http'
 import type {
   Account,
   Address,
@@ -14,6 +13,7 @@ import type {
   Transaction,
   Validator,
 } from '../types/'
+import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface GetBlockByHashParams { includeBody?: boolean }
 export interface GetBlockByBlockNumberParams { includeBody?: boolean }

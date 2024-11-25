@@ -8,4 +8,4 @@ import * as ValidatorClient from './validator'
 import * as WalletClient from './wallet'
 import * as ZkpComponentClient from './zkp-component'
 
-export { ConsensusClient, MempoolClient, NetworkClient, ValidatorClient, WalletClient, ZkpComponentClient, BlockchainClient, PolicyClient, BlockchainStream }
+export { BlockchainClient, BlockchainStream, ConsensusClient, MempoolClient, NetworkClient, PolicyClient, ValidatorClient, WalletClient, ZkpComponentClient }

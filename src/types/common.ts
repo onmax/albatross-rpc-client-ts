@@ -208,11 +208,9 @@ export interface BlockchainState {
   blockHash: string
 }
 
-export type Auth = {
+export interface Auth {
   username: string
   password: string
-} | {
-  secret: string
 }
 
 export enum BlockType {

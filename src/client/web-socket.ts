@@ -1,6 +1,11 @@
 import type { Auth, BlockchainState } from '../types/'
 
-async function getWs(url: string) {
+async function getWs(url: URL, auth?: Auth) {
+  if (auth) {
+    url.searchParams.append('username', auth.username)
+    url.searchParams.append('password', auth.password)
+  }
+
   let ws
   if (typeof WebSocket !== 'undefined') {
     ws = new WebSocket(url)
@@ -70,6 +75,7 @@ export class WebSocketClient {
   private url: URL
   private id: number = 0
   private textDecoder: TextDecoder
+  private auth?: Auth
 
   constructor(url: URL | string, auth?: Auth) {
     if (typeof url === 'string') {
@@ -80,8 +86,8 @@ export class WebSocketClient {
     this.url = wsUrl
     this.textDecoder = new TextDecoder()
 
-    if (auth && 'secret' in auth && auth.secret) {
-      this.url = new URL(`${url.href}?secret=${auth.secret}`)
+    if (auth?.username && auth?.password) {
+      this.auth = auth
     }
   }
 
@@ -92,7 +98,7 @@ export class WebSocketClient {
     request: Request,
     userOptions: StreamOptions,
   ): Promise<Subscription<Data>> {
-    const ws = await getWs(this.url.href)
+    const ws = await getWs(this.url, this.auth)
     let subscriptionId: number = -1
 
     const requestBody = {
@@ -208,7 +214,7 @@ export class WebSocketClient {
       getSubscriptionId: () => subscriptionId,
       context: {
         body: requestBody,
-        url: this.url.toString(),
+        url: this.url.href.replace(/(password=)\w+/, '$1...'),
         timestamp: Date.now(),
       },
     }

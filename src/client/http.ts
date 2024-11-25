@@ -59,10 +59,7 @@ export class HttpClient {
 
     this.url = typeof url === 'string' ? new URL(url) : url
 
-    if (auth && 'secret' in auth && auth.secret) {
-      this.url = new URL(`${this.url.href}?secret=${auth.secret}`)
-    }
-    else if (auth && 'username' in auth && auth.username && 'password' in auth && auth.password) {
+    if (auth?.username && auth.password) {
       const authorization = btoa(`${auth.username}:${auth.password}`)
       Object.assign(this.headers, { Authorization: `Basic ${authorization}` })
     }

@@ -1,25 +1,31 @@
 import type { Auth, BlockchainState } from '../types/'
 
+let shownWarning = false
+
 async function getWs(url: URL, auth?: Auth) {
-  if (auth) {
+  const inBrowser = typeof window !== 'undefined'
+  let headers: HeadersInit = {}
+
+  if (auth && inBrowser) {
+    if (!shownWarning) {
+      console.warn('Warning: Auth in WebSocket is not supported in the browser by default unless you create a custom proxy server that converts `username` and `password` to `Authorization` headers.')
+      shownWarning = true
+    }
     url.searchParams.append('username', auth.username)
     url.searchParams.append('password', auth.password)
   }
+  else if (auth?.username && auth.password) {
+    const authorization = btoa(`${auth.username}:${auth.password}`)
+    headers = { Authorization: `Basic ${authorization}` }
+  }
 
-  let ws
-  if (typeof WebSocket !== 'undefined') {
-    ws = new WebSocket(url)
-  }
-  else if (typeof globalThis !== 'undefined' && globalThis.WebSocket) {
-    ws = new globalThis.WebSocket(url)
-  }
-  else if (typeof window !== 'undefined' && window.WebSocket) {
-    ws = new window.WebSocket(url)
-  }
-  else {
-    const { WebSocket: Ws } = await import('ws')
-    ws = new Ws(url)
-  }
+  // Handle browser-specific WebSocket usage
+  if (inBrowser)
+    return new WebSocket(url.toString())
+
+  // For environments where headers are supported (Node.js, etc.)
+  const { WebSocket: Ws } = await import('ws')
+  const ws = new Ws(url.toString(), { headers })
   return ws
 }
 

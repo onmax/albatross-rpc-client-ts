@@ -376,7 +376,7 @@ export interface PartialMicroBlock extends PartialBlock {
     }
   }
   equivocationProofs?: EquivocationProof[]
-  epoch?: undefined
+  epoch: number
   parentElectionHash?: undefined
 }
 
@@ -393,7 +393,7 @@ export interface MicroBlock extends PartialMicroBlock {
 export interface PartialMacroBlock extends PartialBlock {
   type: BlockType.Macro
   epoch: number
-  parentElectionHash?: undefined
+  parentElectionHash: string
   producer?: undefined
   equivocationProofs?: undefined
 }

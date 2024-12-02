@@ -72,6 +72,8 @@ const block = await client.blockchain.getBlockByHash('HASH')
 // The `block` object now has the new `newFeature` property as well as the other properties defined by the library
 ```
 
+> This solution is great for you so it doesn't block your workflow, but all developers will benefit if you can create a PR or open the issue so I can add it to the library asap! 🙌
+
 ## Need help?
 
 Check the tests for examples on how to use the client [here](./src/index.test.ts).

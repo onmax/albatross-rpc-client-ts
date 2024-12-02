@@ -48,6 +48,30 @@ const { data, error } = await client.call<ResponseType>({ method: 'myAwesomeCust
 //     ?^ ResponseType | undefined  ?^ Use call for custom HTTP methods or `subscribe` for custom WS
 ```
 
+## Type Augmentation
+
+You can extend or update the types in the `albatross-rpc-client-ts` library, you can define your own type extensions. This approach is particularly useful if the Rust implementation evolves and includes new types or features that are not yet included in the TypeScript definitions.
+
+```typescript
+/// albatross-rpc-client-ts.d.ts
+
+declare module 'albatross-rpc-client-ts' {
+  interface Block {
+    newFeature: string
+  }
+}
+```
+
+Then, whenever you import the library, the new types will be available.
+
+```ts
+import { NimiqRPCClient } from 'albatross-rpc-client-ts'
+
+const client = new NimiqRPCClient(new URL('NODE_URL'))
+const block = await client.blockchain.getBlockByHash('HASH')
+// The `block` object now has the new `newFeature` property as well as the other properties defined by the library
+```
+
 ## Need help?
 
 Check the tests for examples on how to use the client [here](./src/index.test.ts).

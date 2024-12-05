@@ -251,8 +251,8 @@ export interface TransactionLog {
 }
 
 export interface BlockLog {
-  inherentLogs: Log[]
-  txLogs: TransactionLog[]
+  inherents: Log[]
+  transactions: TransactionLog[]
 }
 
 export interface AppliedBlockLog extends BlockLog {

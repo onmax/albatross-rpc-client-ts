@@ -1,3 +1,4 @@
+import type { WebSocket as NodeWebSocket } from 'ws'
 import type { Auth, BlockchainState } from '../types/'
 
 let shownWarning = false
@@ -37,6 +38,7 @@ export interface ErrorStreamReturn {
 export interface Subscription<Data> {
   next: (callback: (data: MaybeStreamResponse<Data>) => void) => void
   close: () => void
+  ws: WebSocket | NodeWebSocket
 
   context: {
     body: {
@@ -223,6 +225,7 @@ export class WebSocketClient {
         url: this.url.href.replace(/(password=)\w+/, '$1...'),
         timestamp: Date.now(),
       },
+      ws,
     }
 
     let hasOpened = false

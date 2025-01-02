@@ -30,7 +30,7 @@
     "release": "pnpm lint && pnpm build && bumpp --commit --push --tag && pnpm publish"
   },
   "dependencies": {
-    "ws": "^8.18.0"
+    "@open-rpc/client-js": "^1.8.1"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^3.9.2",

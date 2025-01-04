@@ -105,4 +105,9 @@ export class BlockchainStream {
     const { addresses = [], types = [] } = params
     return this.ws.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [addresses, types], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
   }
+
+  // TODO: the server does not support this method yet
+  // public async unsubscribe(subscription: number): Promise<void> {
+  //   return this.ws.unsubscribe(subscription)
+  // }
 }

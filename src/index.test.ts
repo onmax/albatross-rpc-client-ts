@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest'
-import { NimiqRPCClient } from '.'
+import type { Block } from '.'
+import { describe, expect, it, vi } from 'vitest'
+import { NimiqRPCClient, RetrieveType } from '.'
 import 'dotenv/config'
 
 let client: NimiqRPCClient
@@ -8,8 +9,8 @@ async function getClient() {
     return client
   const { RPC_URL, RPC_SECRET /* RPC_USERNAME, RPC_PASSWORD */ } = process.env
   if (!RPC_URL)
-    throw new Error('RPC_URL is undefined')
-  const url = new URL(RPC_URL || 'http://localhost:10200')
+    console.warn('RPC_URL is undefined')
+  const url = new URL(RPC_URL || 'http://localhost:8648')
 
   const auth = { secret: RPC_SECRET || '' }
   // const auth = { username: RPC_USERNAME || '', password: RPC_PASSWORD || '' }
@@ -18,6 +19,11 @@ async function getClient() {
 
   return client
 }
+
+describe('test for consensus', async () => {
+  const { consensus } = await getClient()
+  it('.established ok', async () => expect((await consensus.isConsensusEstablished()).data).toBe(true))
+})
 
 describe('test for blockchain module', async () => {
   const { blockchain } = await getClient()
@@ -55,48 +61,58 @@ describe('test for blockchain module', async () => {
 })
 
 // ⚠️ The RPC Server needs to have the subscriptions enabled
-// describe('test for subscriptions', async () => {
-//   const client = await getClient()
-//   it('subscribe to new full blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Full })
-//     next(data => {
-//       console.log({data})
-//       expect(data).toHaveProperty('transactions')
-//     })
-//     close()
-//   })
-//   it('subscribe to new partial blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Partial })
-//     next(data => expect(data).toHaveProperty('hash'))
-//     close()
-//   })
-//   it('subscribe to new partial blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Partial, blockType: BlockSubscriptionType.Election })
-//     next(data => expect(data).toHaveProperty('hash'))
-//     close()
-//   })
-//   it('subscribe to new partial blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Partial })
-//     next(data => expect(data).not.toHaveProperty('transactions'))
-//     close()
-//   })
-//   it('subscribe to new hashes blocks', async () => {
-//     const { next, close } = await client.block.subscribe({ retrieve: RetrieveBlock.Hash })
-//     next(data => expect(data).toBeInstanceOf(String))
-//     close()
-//   })
-//   it('subscribe to logs', async () => {
-//     const { next, close } = await client.logs.subscribe({ addresses: [] })
-//     next(data => expect(data).toHaveProperty('hash'))
-//     close()
-//   })
-//   it('subscribe to logs metadata', async () => {
-//     const { next, close } = await client.logs.subscribe({ addresses: [], withMetadata: true })
-//     next(data => expect(data).toHaveProperty('metadata'))
-//     close()
-//   })
-//   // We don't test for blocks.election.subscribe since those blocks are emitted every 8 hours
-// })
+describe('test for subscriptions', async () => {
+  const client = await getClient()
+  it('subscribe to new full blocks', async () => {
+    const { next, close } = await client.blockchainStreams.subscribeForBlocks({ retrieve: RetrieveType.Full })
+    let block: Block | undefined
+    next(({ data }) => block = data)
+    await vi.waitUntil(() => block !== undefined, { timeout: 10000 })
+    expect(block).toHaveProperty('transactions')
+    close()
+  })
+  it('subscribe to new partial blocks', async () => {
+    const { next, close } = await client.blockchainStreams.subscribeForBlocks({ retrieve: RetrieveType.Partial })
+    let block: Block | undefined
+    next(({ data }) => block = data)
+    await vi.waitUntil(() => block !== undefined, { timeout: 10000 })
+    expect(block).toHaveProperty('hash')
+    close()
+  })
+  it('subscribe to new hashes blocks', async () => {
+    const { next, close } = await client.blockchainStreams.subscribeForBlockHashes()
+    let hash: string | undefined
+    next(({ data }) => hash = data)
+    await vi.waitUntil(() => hash !== undefined, { timeout: 10000 })
+    expect(hash).toBeTypeOf('string')
+    close()
+  })
+  it('subscribe to new micro blocks', async () => {
+    const { next, close } = await client.blockchainStreams.subscribeForMicroBlocks()
+    let block: Block | undefined
+    next(({ data }) => block = data)
+    await vi.waitUntil(() => block !== undefined, { timeout: 10000 })
+    expect(block).toHaveProperty('hash')
+    close()
+  })
+  it('subscribe to new macro blocks', async () => {
+    const { next, close } = await client.blockchainStreams.subscribeForMacroBlocks()
+    let block: Block | undefined
+    next(({ data }) => block = data)
+    await vi.waitUntil(() => block !== undefined, { timeout: 65000 })
+    expect(block).toHaveProperty('hash')
+    close()
+  }, 70000)
+  it('subscribe to logs', async () => {
+    const { next, close } = await client.blockchainStreams.subscribeForLogsByAddressesAndTypes()
+    let log: any
+    next(({ data }) => log = data)
+    await vi.waitUntil(() => log !== undefined, { timeout: 10000 })
+    expect(log).toHaveProperty('type')
+    close()
+  })
+  // Election blocks take 12 hours, so we are not going to test them
+})
 
 // describe('test for batch module', async () => {
 //   const { batch } = await getClient()

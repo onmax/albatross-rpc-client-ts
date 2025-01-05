@@ -1,3 +1,4 @@
+import type { RequestArguments } from '@open-rpc/client-js/build/ClientInterface'
 import type { CallResult, HttpOptions } from './client/http'
 import type { StreamOptions, Subscription } from './client/web-socket'
 import type { Auth } from './types/'
@@ -70,12 +71,12 @@ export class NimiqRPCClient {
    */
   async subscribe<
     Data,
-    Request extends { method: string, params?: any[], withMetadata?: boolean },
+    Metadata,
   >(
-    request: Request,
+    request: RequestArguments,
     userOptions: StreamOptions,
-  ): Promise<Subscription<Data>> {
-    return this.ws.subscribe<Data, Request>(request, userOptions)
+  ): Promise<Subscription<Data, Metadata>> {
+    return this.ws.subscribe<Data, Metadata>(request, userOptions)
   }
 }
 

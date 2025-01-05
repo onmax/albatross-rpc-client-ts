@@ -1,4 +1,5 @@
-import type { Auth, BlockchainState } from '../types/'
+import type { RequestArguments } from '@open-rpc/client-js/build/ClientInterface'
+import type { Auth, RPCData } from '../types/'
 import { Client, RequestManager, WebSocketTransport } from '@open-rpc/client-js'
 
 let shownWarning = false
@@ -19,18 +20,13 @@ export interface ErrorStreamReturn {
   message: string
 }
 
-export interface Subscription<Data> {
-  next: (callback: (data: MaybeStreamResponse<Data>) => void) => void
+export interface Subscription<Data, Metadata> {
+  next: (callback: (data: MaybeStreamResponse<Data, Metadata>) => void) => void
   close: () => void
   ws: Client
 
   context: {
-    body: {
-      method: string
-      params: any[]
-      id: number
-      jsonrpc: string
-    }
+    body: RequestArguments
     timestamp: number
     url: string
   }
@@ -46,7 +42,7 @@ export const WS_DEFAULT_OPTIONS: StreamOptions = {
   timeout: 5000, // Default OpenRPC timeout
 } as const
 
-export type MaybeStreamResponse<Data> =
+export type MaybeStreamResponse<Data, Metadata> =
   | {
     error: ErrorStreamReturn
     data: undefined
@@ -55,7 +51,7 @@ export type MaybeStreamResponse<Data> =
   | {
     error: undefined
     data: Data
-    metadata?: BlockchainState
+    metadata: Metadata
   }
 
 export type FilterStreamFn = (data: any) => boolean
@@ -78,9 +74,13 @@ export interface StreamOptions {
   }
 }
 
+interface NotificationMessageParams {
+  subscription: number
+  result: object
+};
+
 export class WebSocketClient {
   private url: URL
-  private id = 0
   private isOpen = false
   private explicitlyClosed = false
   private auth?: Auth
@@ -111,19 +111,12 @@ export class WebSocketClient {
 
   async subscribe<
     Data,
-    Request extends { method: string, params?: any[], withMetadata?: boolean },
+    Metadata,
   >(
-    request: Request,
+    request: RequestArguments,
     userOptions: StreamOptions,
-  ): Promise<Subscription<Data>> {
+  ): Promise<Subscription<Data, Metadata>> {
     const { client, transport } = getWs(this.url, this.auth)
-
-    const requestBody = {
-      method: request.method,
-      params: request.params || [],
-      jsonrpc: '2.0',
-      id: this.id++,
-    }
 
     const options = {
       ...WS_DEFAULT_OPTIONS,
@@ -139,15 +132,14 @@ export class WebSocketClient {
           : undefined
 
     const { once, filter, timeout } = options
-    const withMetadata = 'withMetadata' in request ? request.withMetadata : false
 
     // Request subscription ID
-    const subscriptionId: number = await client.request(requestBody, timeout)
+    const subscriptionId: number = await client.request(request, timeout)
     this.explicitlyClosed = false
     this.retriesCount = 0 // reset retries on successful open
 
-    const args: Subscription<Data> = {
-      next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
+    const args: Subscription<Data, Metadata> = {
+      next: (callback: (data: MaybeStreamResponse<Data, Metadata>) => void) => {
         client.onError((error) => {
           callback({
             data: undefined,
@@ -157,7 +149,10 @@ export class WebSocketClient {
         })
 
         client.onNotification(async (event) => {
-          if (!('result' in event.params)) {
+          const params = event.params as NotificationMessageParams
+
+          // I dont think this will ever happen
+          if (!('result' in params)) {
             callback({
               data: undefined,
               metadata: undefined,
@@ -168,21 +163,14 @@ export class WebSocketClient {
             })
             return
           }
-          const payload = event.params.result as any
 
-          const data: Data = withMetadata
-            ? (payload as Data)
-            : payload.data
+          const result = params.result as RPCData<Data, Metadata>
 
-          if (filter && !filter(data)) {
+          if (filter && !filter(result.data)) {
             return
           }
 
-          const metadata = withMetadata
-            ? payload.metadata as BlockchainState
-            : undefined
-
-          callback({ data, metadata, error: undefined } as MaybeStreamResponse<Data>)
+          callback({ data: result.data, metadata: result.metadata, error: undefined })
 
           if (once) {
             client.close()
@@ -197,7 +185,7 @@ export class WebSocketClient {
       isConnectionPaused: () => transport.connection.isPaused,
       isConnectionOpen: () => this.isOpen,
       context: {
-        body: requestBody,
+        body: request,
         // For security reasons, remove query params
         url: this.url.href.split('?')[0],
         timestamp: Date.now(),

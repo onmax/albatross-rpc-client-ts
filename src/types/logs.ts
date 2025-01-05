@@ -1,4 +1,4 @@
-import type { Address, BlockchainState, Coin } from './common'
+import type { BlockchainState } from './common'
 
 export enum LogType {
   PayFee = 'pay-fee',
@@ -32,166 +32,166 @@ export enum LogType {
 
 export interface PayFeeLog {
   type: LogType.PayFee
-  from: Address
-  fee: Coin
+  from: string
+  fee: number
 }
 
 export interface TransferLog {
   type: LogType.Transfer
-  from: Address
-  to: Address
-  amount: Coin
+  from: string
+  to: string
+  amount: number
   data?: Uint8Array
 }
 
 export interface HtlcCreateLog {
   type: LogType.HtlcCreate
-  contractAddress: Address
-  sender: Address
-  recipient: Address
+  contractAddress: string
+  sender: string
+  recipient: string
   hashRoot: string
   hashCount: number
   timeout: bigint
-  totalAmount: Coin
+  totalAmount: number
 }
 
 export interface HtlcTimeoutResolveLog {
   type: LogType.HtlcTimeoutResolve
-  contractAddress: Address
+  contractAddress: string
 }
 
 export interface HtlcRegularTransferLog {
   type: LogType.HtlcRegularTransfer
-  contractAddress: Address
+  contractAddress: string
   preImage: string
   hashDepth: number
 }
 
 export interface HtlcEarlyResolveLog {
   type: LogType.HtlcEarlyResolve
-  contractAddress: Address
+  contractAddress: string
 }
 
 export interface VestingCreateLog {
   type: LogType.VestingCreate
-  contractAddress: Address
-  owner: Address
+  contractAddress: string
+  owner: string
   vestingStartTime: bigint
   vestingTimeStep: bigint
-  vestingStepAmount: Coin
-  vestingTotalAmount: Coin
+  vestingStepAmount: number
+  vestingTotalAmount: number
 }
 
 export interface CreateValidatorLog {
   type: LogType.CreateValidator
-  validatorAddress: Address
-  rewardAddress: Address
+  validatorAddress: string
+  rewardAddress: string
 }
 
 export interface UpdateValidatorLog {
   type: LogType.UpdateValidator
-  validatorAddress: Address
-  oldRewardAddress: Address
-  newRewardAddress: Address | null
+  validatorAddress: string
+  oldRewardAddress: string
+  newRewardAddress: string | null
 }
 
 export interface ValidatorFeeDeductionLog {
   type: LogType.ValidatorFeeDeduction
-  validatorAddress: Address
-  fee: Coin
+  validatorAddress: string
+  fee: number
 }
 
 export interface DeactivateValidatorLog {
   type: LogType.DeactivateValidator
-  validatorAddress: Address
+  validatorAddress: string
   inactiveFrom: number
 }
 
 export interface ReactivateValidatorLog {
   type: LogType.ReactivateValidator
-  validatorAddress: Address
+  validatorAddress: string
 }
 
 export interface RetireValidatorLog {
   type: LogType.RetireValidator
-  validatorAddress: Address
+  validatorAddress: string
 }
 
 export interface DeleteValidatorLog {
   type: LogType.DeleteValidator
-  validatorAddress: Address
-  rewardAddress: Address
+  validatorAddress: string
+  rewardAddress: string
 }
 
 export interface CreateStakerLog {
   type: LogType.CreateStaker
-  stakerAddress: Address
-  validatorAddress: Address | null
-  value: Coin
+  stakerAddress: string
+  validatorAddress: string | null
+  value: number
 }
 
 export interface StakeLog {
   type: LogType.Stake
-  stakerAddress: Address
-  validatorAddress: Address | null
-  value: Coin
+  stakerAddress: string
+  validatorAddress: string | null
+  value: number
 }
 
 export interface UpdateStakerLog {
   type: LogType.UpdateStaker
-  stakerAddress: Address
-  oldValidatorAddress: Address | null
-  newValidatorAddress: Address | null
-  activeBalance: Coin
+  stakerAddress: string
+  oldValidatorAddress: string | null
+  newValidatorAddress: string | null
+  activeBalance: number
   inactiveFrom: number | null
 }
 
 export interface SetActiveStakeLog {
   type: LogType.SetActiveStake
-  stakerAddress: Address
-  validatorAddress: Address | null
-  activeBalance: Coin
-  inactiveBalance: Coin
+  stakerAddress: string
+  validatorAddress: string | null
+  activeBalance: number
+  inactiveBalance: number
   inactiveFrom: number | null
 }
 
 export interface RetireStakeLog {
   type: LogType.RetireStake
-  stakerAddress: Address
-  validatorAddress: Address | null
-  inactiveBalance: Coin
+  stakerAddress: string
+  validatorAddress: string | null
+  inactiveBalance: number
   inactiveFrom: number | null
-  retiredBalance: Coin
+  retiredBalance: number
 }
 
 export interface RemoveStakeLog {
   type: LogType.RemoveStake
-  stakerAddress: Address
-  validatorAddress: Address | null
-  value: Coin
+  stakerAddress: string
+  validatorAddress: string | null
+  value: number
 }
 
 export interface DeleteStakerLog {
   type: LogType.DeleteStaker
-  stakerAddress: Address
-  validatorAddress: Address | null
+  stakerAddress: string
+  validatorAddress: string | null
 }
 
 export interface StakerFeeDeductionLog {
   type: LogType.StakerFeeDeduction
-  stakerAddress: Address
-  fee: Coin
+  stakerAddress: string
+  fee: number
 }
 
 export interface PayoutRewardLog {
   type: LogType.PayoutReward
-  to: Address
-  value: Coin
+  to: string
+  value: number
 }
 
 export interface PenalizeLog {
   type: LogType.Penalize
-  validatorAddress: Address
+  validatorAddress: string
   offenseEventBlock: number
   slot: number
   newlyDeactivated: boolean
@@ -199,19 +199,19 @@ export interface PenalizeLog {
 
 export interface JailValidatorLog {
   type: LogType.JailValidator
-  validatorAddress: Address
+  validatorAddress: string
   jailedFrom: number
 }
 
 export interface RevertContractLog {
   type: LogType.RevertContract
-  contractAddress: Address
+  contractAddress: string
 }
 
 export interface FailedTransactionLog {
   type: LogType.FailedTransaction
-  from: Address
-  to: Address
+  from: string
+  to: string
   failureReason: string
 }
 

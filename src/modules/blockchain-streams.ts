@@ -1,12 +1,12 @@
 import type { FilterStreamFn, StreamOptions, Subscription, WebSocketClient } from '../client/web-socket'
-import type { Address, Block, Hash, LogType, MacroBlock, MicroBlock, Validator } from '../types/'
+import type { Block, LogType, MacroBlock, MicroBlock, Validator } from '../types/'
 import type { BlockLog } from '../types/logs'
 import { WS_DEFAULT_OPTIONS } from '../client/web-socket'
 import { BlockSubscriptionType, RetrieveType } from '../types/'
 
 export interface BlockParams { retrieve?: RetrieveType.Full | RetrieveType.Partial }
-export interface ValidatorElectionParams { address: Address, withMetadata?: boolean }
-export interface LogsParams { addresses?: Address[], types?: LogType[], withMetadata?: boolean }
+export interface ValidatorElectionParams { address: string, withMetadata?: boolean }
+export interface LogsParams { addresses?: string[], types?: LogType[], withMetadata?: boolean }
 
 function getBlockType(block: any): BlockSubscriptionType {
   if (!block)
@@ -31,7 +31,7 @@ export class BlockchainStream {
   /**
    * Subscribes to block hash events.
    */
-  public async subscribeForBlockHashes<T = Hash>(
+  public async subscribeForBlockHashes<T = string>(
     userOptions?: Partial<StreamOptions>,
   ): Promise<Subscription<T>> {
     const options: StreamOptions = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions }

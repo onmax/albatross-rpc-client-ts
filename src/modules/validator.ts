@@ -1,5 +1,4 @@
 import type { HttpClient } from '../client/http'
-import type { Address } from '../types/'
 import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface SetAutomaticReactivationParams { automaticReactivation: boolean }
@@ -15,7 +14,7 @@ export class ValidatorClient {
    * Returns our validator address.
    */
   public async getAddress(options = DEFAULT_OPTIONS) {
-    return this.client.call<Address>({ method: 'getAddress' }, options)
+    return this.client.call<string>({ method: 'getAddress' }, options)
   }
 
   /**

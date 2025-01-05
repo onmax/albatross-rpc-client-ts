@@ -1,7 +1,5 @@
 import type { HttpClient } from '../client/http'
 import type {
-  BlockNumber,
-  EpochIndex,
   PolicyConstants,
 } from '../types/'
 import { DEFAULT_OPTIONS } from '../client/http'
@@ -42,7 +40,7 @@ export class PolicyClient {
    * @param options
    */
   public async getEpochAt(blockNumber: number, options = DEFAULT_OPTIONS) {
-    return this.client.call<EpochIndex>({
+    return this.client.call<number>({
       method: 'getEpochAt',
       params: [blockNumber],
     }, options)
@@ -62,7 +60,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<EpochIndex>({
+    return this.client.call<number>({
       method: 'getEpochIndexAt',
       params: [blockNumber],
     }, options)
@@ -78,7 +76,7 @@ export class PolicyClient {
    * @returns The batch number at a given `block_number` (height)
    */
   public async getBatchAt(blockNumber: number, options = DEFAULT_OPTIONS) {
-    return this.client.call<EpochIndex>({
+    return this.client.call<number>({
       method: 'getBatchAt',
       params: [blockNumber],
     }, options)
@@ -98,7 +96,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<EpochIndex>({
+    return this.client.call<number>({
       method: 'getBatchIndexAt',
       params: [blockNumber],
     }, options)
@@ -116,7 +114,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<BlockNumber>({
+    return this.client.call<number>({
       method: 'getElectionBlockAfter',
       params: [blockNumber],
     }, options)
@@ -136,7 +134,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<BlockNumber>({
+    return this.client.call<number>({
       method: 'getElectionBlockBefore',
       params: [blockNumber],
     }, options)
@@ -156,7 +154,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<BlockNumber>({
+    return this.client.call<number>({
       method: 'getLastElectionBlock',
       params: [blockNumber],
     }, options)
@@ -193,7 +191,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<BlockNumber>({
+    return this.client.call<number>({
       method: 'getMacroBlockAfter',
       params: [blockNumber],
     }, options)
@@ -211,7 +209,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<BlockNumber>({
+    return this.client.call<number>({
       method: 'getMacroBlockBefore',
       params: [blockNumber],
     }, options)
@@ -230,7 +228,7 @@ export class PolicyClient {
     blockNumber: number,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<BlockNumber>({
+    return this.client.call<number>({
       method: 'getLastMacroBlock',
       params: [blockNumber],
     }, options)
@@ -281,11 +279,11 @@ export class PolicyClient {
    * @returns The block number (height) of the first block of the given epoch (which is always a micro block).
    */
   public async getFirstBlockOfEpoch(
-    epochIndex: EpochIndex,
+    epochIndex: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getFirstBlockOf', params: [epochIndex] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**
@@ -301,7 +299,7 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getBlockAfterReportingWindow', params: [blockNumber] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**
@@ -317,7 +315,7 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getBlockAfterJail', params: [blockNumber] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**
@@ -334,7 +332,7 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getFirstBlockOfBatch', params: [batchIndex] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**
@@ -347,11 +345,11 @@ export class PolicyClient {
    * @returns The block number of the election macro block of the given epoch (which is always the last block).
    */
   public async getElectionBlockOfEpoch(
-    epochIndex: EpochIndex,
+    epochIndex: number,
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getElectionBlockOf', params: [epochIndex] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**
@@ -368,7 +366,7 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getMacroBlockOf', params: [batchIndex] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**
@@ -386,7 +384,7 @@ export class PolicyClient {
     options = DEFAULT_OPTIONS,
   ) {
     const req = { method: 'getFirstBatchOfEpoch', params: [blockNumber] }
-    return this.client.call<BlockNumber>(req, options)
+    return this.client.call<number>(req, options)
   }
 
   /**

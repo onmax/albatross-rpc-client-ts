@@ -1,6 +1,5 @@
 import type { HttpClient } from '../client/http'
 import type {
-  Hash,
   MempoolInfo,
   Transaction,
 } from '../types/'
@@ -31,7 +30,7 @@ export class MempoolClient {
     { transaction, withHighPriority }: PushTransactionParams,
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<Hash>({
+    return this.client.call<string>({
       method: withHighPriority
         ? 'pushHighPriorityTransaction'
         : 'pushTransaction',
@@ -55,7 +54,7 @@ export class MempoolClient {
     return this.client.call<
       MempoolContentParams['includeTransactions'] extends true
         ? Transaction[]
-        : Hash[]
+        : string[]
     >({
       method: 'mempoolContent',
       params: [includeTransactions],

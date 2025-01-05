@@ -1,11 +1,11 @@
 import type { HttpClient } from '../client/http'
-import type { Address, Signature, WalletAccount } from '../types/'
+import type { Signature, WalletAccount } from '../types/'
 import { DEFAULT_OPTIONS } from '../client/http'
 
 export interface ImportKeyParams { keyData: string, passphrase?: string }
 export interface UnlockAccountParams { passphrase?: string, duration?: number }
 export interface CreateAccountParams { passphrase?: string }
-export interface SignParams { message: string, address: Address, passphrase: string, isHex: boolean }
+export interface SignParams { message: string, address: string, passphrase: string, isHex: boolean }
 export interface VerifySignatureParams { message: string, publicKey: string, signature: Signature, isHex: boolean }
 
 export class WalletClient {
@@ -16,10 +16,10 @@ export class WalletClient {
   }
 
   public async importRawKey({ keyData, passphrase }: ImportKeyParams, options = DEFAULT_OPTIONS) {
-    return this.client.call<Address>({ method: 'importRawKey', params: [keyData, passphrase] }, options)
+    return this.client.call<string>({ method: 'importRawKey', params: [keyData, passphrase] }, options)
   }
 
-  public async isAccountImported(address: Address, options = DEFAULT_OPTIONS) {
+  public async isAccountImported(address: string, options = DEFAULT_OPTIONS) {
     return this.client.call<boolean>({ method: 'isAccountImported', params: [address] }, options)
   }
 
@@ -27,7 +27,7 @@ export class WalletClient {
     return this.client.call<string[]>({ method: 'listAccounts' }, options)
   }
 
-  public async lockAccount(address: Address, options = DEFAULT_OPTIONS) {
+  public async lockAccount(address: string, options = DEFAULT_OPTIONS) {
     return this.client.call<null>({ method: 'lockAccount', params: [address] }, options)
   }
 
@@ -35,11 +35,11 @@ export class WalletClient {
     return this.client.call<WalletAccount>({ method: 'createAccount', params: [p?.passphrase] }, options)
   }
 
-  public async unlockAccount(address: Address, { passphrase, duration }: UnlockAccountParams, options = DEFAULT_OPTIONS) {
+  public async unlockAccount(address: string, { passphrase, duration }: UnlockAccountParams, options = DEFAULT_OPTIONS) {
     return this.client.call<boolean>({ method: 'unlockAccount', params: [address, passphrase, duration] }, options)
   }
 
-  public async isAccountUnlocked(address: Address, options = DEFAULT_OPTIONS) {
+  public async isAccountUnlocked(address: string, options = DEFAULT_OPTIONS) {
     return this.client.call<boolean>({ method: 'isAccountUnlocked', params: [address] }, options)
   }
 
@@ -51,7 +51,7 @@ export class WalletClient {
     return this.client.call<boolean>({ method: 'verifySignature', params: [message, publicKey, signature, isHex] }, options)
   }
 
-  public async removeAccount(address: Address, options = DEFAULT_OPTIONS) {
+  public async removeAccount(address: string, options = DEFAULT_OPTIONS) {
     return this.client.call<boolean>({ method: 'removeAccount', params: [address] }, options)
   }
 }

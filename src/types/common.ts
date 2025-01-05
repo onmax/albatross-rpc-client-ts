@@ -1,13 +1,3 @@
-export type Address = string
-export type Coin = number
-export type Hash = string
-export type BlockNumber = number
-export type EpochIndex = number
-export type BatchIndex = number
-export type GenesisSupply = number
-export type GenesisTime = number
-export type CurrentTime = number
-
 export type ValidityStartHeight =
   | { relativeValidityStartHeight: number }
   | { absoluteValidityStartHeight: number }
@@ -38,12 +28,12 @@ export interface PolicyConstants {
   /**
    * The staking contract address in the blockchain.
    */
-  stakingContractAddress: Address
+  stakingContractAddress: string
 
   /**
    * The address that receives the block rewards (coinbase).
    */
-  coinbaseAddress: Address
+  coinbaseAddress: string
 
   /**
    * The maximum validity window for transactions (number of blocks).
@@ -113,37 +103,37 @@ export interface PolicyConstants {
 
 export interface BasicAccount {
   type: AccountType.Basic
-  address: Address
-  balance: Coin
+  address: string
+  balance: number
 }
 
 export interface VestingAccount {
   type: AccountType.Vesting
-  address: Address
-  balance: Coin
-  owner: Address
+  address: string
+  balance: number
+  owner: string
   vestingStart: number
   vestingStepBlocks: number
-  vestingStepAmount: Coin
-  vestingTotalAmount: Coin
+  vestingStepAmount: number
+  vestingTotalAmount: number
 }
 
 export interface HtlcAccount {
   type: AccountType.HTLC
-  address: Address
-  balance: Coin
-  sender: Address
-  recipient: Address
+  address: string
+  balance: number
+  sender: string
+  recipient: string
   hashRoot: string
   hashCount: number
   timeout: number
-  totalAmount: Coin
+  totalAmount: number
 }
 
 export interface StakingAccount {
   type: AccountType.Staking
-  address: Address
-  balance: Coin
+  address: string
+  balance: number
 }
 
 export type Account = BasicAccount | VestingAccount | HtlcAccount | StakingAccount
@@ -153,13 +143,13 @@ export interface Transaction {
   timestamp?: bigint // Optional, corresponds to Option<u64>
   confirmations?: number // Optional, corresponds to Option<u32>
   size: number // Corresponds to usize
-  relatedAddresses: Set<Address> // Corresponds to BTreeSet<Address>
-  from: Address
+  relatedAddresses: Set<string> // Corresponds to BTreeSet<string>
+  from: string
   fromType: number // Corresponds to u8
-  to: Address
+  to: string
   toType: number // Corresponds to u8
-  value: Coin
-  fee: Coin
+  value: number
+  fee: number
   senderData: string // Corresponds to Vec<u8>
   recipientData: string // Corresponds to Vec<u8>
   flags: number // Corresponds to u8
@@ -169,21 +159,21 @@ export interface Transaction {
 }
 
 export interface Staker {
-  address: Address
-  balance: Coin
-  delegation?: Address
-  inactiveBalance: Coin
+  address: string
+  balance: number
+  delegation?: string
+  inactiveBalance: number
   inactiveFrom: number | null
-  retiredBalance: Coin
+  retiredBalance: number
 }
 
 export interface Validator {
-  address: Address
+  address: string
   signingKey: string
   votingKey: string
-  rewardAddress: Address
+  rewardAddress: string
   signalData?: string
-  balance: Coin
+  balance: number
 
   /**
    * The total amount of stakers in the valiator
@@ -209,7 +199,7 @@ export interface Validator {
 export interface Slot {
   firstSlotNumber: number
   numSlots: number
-  validator: Address
+  validator: string
   publicKey: string
 }
 
@@ -222,9 +212,9 @@ export interface InherentReward {
   type: InherentType.Reward
   blockNumber: number
   blockTime: number
-  validatorAddress: Address
-  target: Address
-  value: Coin
+  validatorAddress: string
+  target: string
+  value: number
   hash: string
 }
 
@@ -232,7 +222,7 @@ export interface InherentPenalize {
   type: InherentType.Penalize
   blockNumber: number
   blockTime: number
-  validatorAddress: Address
+  validatorAddress: string
   offenseEventBlock: number
 }
 
@@ -240,7 +230,7 @@ export interface InherentJail {
   type: InherentType.Jail
   blockNumber: number
   blockTime: number
-  validatorAddress: Address
+  validatorAddress: string
   offenseEventBlock: number
 }
 
@@ -266,7 +256,7 @@ export interface MempoolInfo {
 }
 
 export interface WalletAccount {
-  address: Address
+  address: string
   publicKey: string
   privateKey: string
 }
@@ -362,7 +352,7 @@ export interface PartialMicroBlock extends PartialBlock {
   type: BlockType.Micro
   producer: {
     slotNumber: number
-    validator: Address
+    validator: string
     publicKey: string
   }
   justification: {

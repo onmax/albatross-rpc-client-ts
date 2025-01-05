@@ -1,30 +1,30 @@
 import type { HttpClient, SendTxCallOptions } from '../client/http'
-import type { Address, Coin, Hash, Transaction, ValidityStartHeight } from '../types/'
+import type { Transaction, ValidityStartHeight } from '../types/'
 import type { BlockLog } from '../types/logs'
 import type { BlockchainClient } from './blockchain'
 import type { BlockchainStream } from './blockchain-streams'
 import { DEFAULT_OPTIONS, DEFAULT_OPTIONS_SEND_TX } from '../client/http'
 
 export interface RawTransactionInfoParams { rawTransaction: string }
-export type TransactionParams = { wallet: Address, recipient: Address, value: Coin, fee: Coin, data?: string } & ValidityStartHeight
-export type VestingTxParams = { wallet: Address, owner: Address, startTime: number, timeStep: number, numSteps: number, value: Coin, fee: Coin } & ValidityStartHeight
-export type RedeemVestingTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight
-export type HtlcTransactionParams = { wallet: Address, htlcSender: Address, htlcRecipient: Address, hashRoot: string, hashCount: number, timeout: number, value: Coin, fee: Coin } & ValidityStartHeight
-export type RedeemRegularHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, preImage: string, hashRoot: string, hashCount: number, value: Coin, fee: Coin } & ValidityStartHeight
-export type RedeemTimeoutHtlcTxParams = { wallet: Address, contractAddress: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight
-export type RedeemEarlyHtlcTxParams = { contractAddress: Address, recipient: Address, htlcSenderSignature: string, htlcRecipientSignature: string, value: Coin, fee: Coin } & ValidityStartHeight
-export type CreateStakeTxParams = { senderWallet: Address, stakerWallet: string, delegation: Address | undefined, value: Coin, fee: Coin } & ValidityStartHeight
-export type UpdateStakeTxParams = { senderWallet: Address, stakerWallet: string, newDelegation: Address | undefined, newInactiveBalance: boolean, fee: Coin } & ValidityStartHeight
-export type StakeTxParams = { senderWallet: Address, stakerWallet: string, value: Coin, fee: Coin } & ValidityStartHeight
-export type SetActiveStakeTxParams = { senderWallet: Address, stakerWallet: string, newActiveBalance: Coin, fee: Coin } & ValidityStartHeight
-export type CreateRetireStakeTxParams = { senderWallet: Address, stakerWallet: string, retireStake: Coin, fee: Coin } & ValidityStartHeight
-export type RemoveStakeTxParams = { stakerWallet: Address, recipient: Address, value: Coin, fee: Coin } & ValidityStartHeight
-export type NewValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, votingSecretKey: string, rewardAddress: Address, signalData: string, fee: Coin } & ValidityStartHeight
-export type UpdateValidatorTxParams = { senderWallet: Address, validator: Address, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: Address, newSignalData: string, fee: Coin } & ValidityStartHeight
-export type DeactiveValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight
-export type ReactivateValidatorTxParams = { senderWallet: Address, validator: Address, signingSecretKey: string, fee: Coin } & ValidityStartHeight
-export type RetireValidatorTxParams = { senderWallet: Address, validator: Address, fee: Coin } & ValidityStartHeight
-export type DeleteValidatorTxParams = { validator: Address, recipient: Address, fee: Coin, value: Coin } & ValidityStartHeight
+export type TransactionParams = { wallet: string, recipient: string, value: number, fee: number, data?: string } & ValidityStartHeight
+export type VestingTxParams = { wallet: string, owner: string, startTime: number, timeStep: number, numSteps: number, value: number, fee: number } & ValidityStartHeight
+export type RedeemVestingTxParams = { wallet: string, contractAddress: string, recipient: string, value: number, fee: number } & ValidityStartHeight
+export type HtlcTransactionParams = { wallet: string, htlcSender: string, htlcRecipient: string, hashRoot: string, hashCount: number, timeout: number, value: number, fee: number } & ValidityStartHeight
+export type RedeemRegularHtlcTxParams = { wallet: string, contractAddress: string, recipient: string, preImage: string, hashRoot: string, hashCount: number, value: number, fee: number } & ValidityStartHeight
+export type RedeemTimeoutHtlcTxParams = { wallet: string, contractAddress: string, recipient: string, value: number, fee: number } & ValidityStartHeight
+export type RedeemEarlyHtlcTxParams = { contractAddress: string, recipient: string, htlcSenderSignature: string, htlcRecipientSignature: string, value: number, fee: number } & ValidityStartHeight
+export type CreateStakeTxParams = { senderWallet: string, stakerWallet: string, delegation: string | undefined, value: number, fee: number } & ValidityStartHeight
+export type UpdateStakeTxParams = { senderWallet: string, stakerWallet: string, newDelegation: string | undefined, newInactiveBalance: boolean, fee: number } & ValidityStartHeight
+export type StakeTxParams = { senderWallet: string, stakerWallet: string, value: number, fee: number } & ValidityStartHeight
+export type SetActiveStakeTxParams = { senderWallet: string, stakerWallet: string, newActiveBalance: number, fee: number } & ValidityStartHeight
+export type CreateRetireStakeTxParams = { senderWallet: string, stakerWallet: string, retireStake: number, fee: number } & ValidityStartHeight
+export type RemoveStakeTxParams = { stakerWallet: string, recipient: string, value: number, fee: number } & ValidityStartHeight
+export type NewValidatorTxParams = { senderWallet: string, validator: string, signingSecretKey: string, votingSecretKey: string, rewardAddress: string, signalData: string, fee: number } & ValidityStartHeight
+export type UpdateValidatorTxParams = { senderWallet: string, validator: string, newSigningSecretKey: string, newVotingSecretKey: string, newRewardAddress: string, newSignalData: string, fee: number } & ValidityStartHeight
+export type DeactiveValidatorTxParams = { senderWallet: string, validator: string, signingSecretKey: string, fee: number } & ValidityStartHeight
+export type ReactivateValidatorTxParams = { senderWallet: string, validator: string, signingSecretKey: string, fee: number } & ValidityStartHeight
+export type RetireValidatorTxParams = { senderWallet: string, validator: string, fee: number } & ValidityStartHeight
+export type DeleteValidatorTxParams = { validator: string, recipient: string, fee: number, value: number } & ValidityStartHeight
 
 export interface TxLog { tx: Transaction, log?: BlockLog, hash: string }
 
@@ -90,7 +90,7 @@ export class ConsensusClient {
    * Sends a raw transaction to the network
    */
   public sendRawTransaction({ rawTransaction }: RawTransactionInfoParams, options = DEFAULT_OPTIONS) {
-    return this.client.call<Hash>({ method: 'sendRawTransaction', params: [rawTransaction] }, options)
+    return this.client.call<string>({ method: 'sendRawTransaction', params: [rawTransaction] }, options)
   }
 
   /**
@@ -114,7 +114,7 @@ export class ConsensusClient {
     const req = p.data
       ? { method: 'sendBasicTransactionWithData', params: [p.wallet, p.recipient, p.data, p.value, p.fee, this.getValidityStartHeight(p)] }
       : { method: 'sendBasicTransaction', params: [p.wallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -140,7 +140,7 @@ export class ConsensusClient {
    */
   public sendNewVestingTransaction(p: VestingTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendNewVestingTransaction', params: [p.wallet, p.owner, p.startTime, p.timeStep, p.numSteps, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -166,7 +166,7 @@ export class ConsensusClient {
    */
   public async sendRedeemVestingTransaction(p: RedeemVestingTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRedeemVestingTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -192,7 +192,7 @@ export class ConsensusClient {
    */
   public async sendNewHtlcTransaction(p: HtlcTransactionParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendNewHtlcTransaction', params: [p.wallet, p.htlcSender, p.htlcRecipient, p.hashRoot, p.hashCount, p.timeout, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -218,7 +218,7 @@ export class ConsensusClient {
    */
   public async sendRedeemRegularHtlcTransaction(p: RedeemRegularHtlcTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.preImage, p.hashRoot, p.hashCount, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -246,7 +246,7 @@ export class ConsensusClient {
    */
   public async sendRedeemTimeoutHtlcTransaction(p: RedeemTimeoutHtlcTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRedeemRegularHtlcTransaction', params: [p.wallet, p.contractAddress, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -275,7 +275,7 @@ export class ConsensusClient {
    */
   public async sendRedeemEarlyHtlcTransaction(p: RedeemEarlyHtlcTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRedeemEarlyHtlcTransaction', params: [p.contractAddress, p.recipient, p.htlcSenderSignature, p.htlcRecipientSignature, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -313,7 +313,7 @@ export class ConsensusClient {
    */
   public async sendNewStakerTransaction(p: CreateStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendNewStakerTransaction', params: [p.senderWallet, p.stakerWallet, p.delegation, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -342,7 +342,7 @@ export class ConsensusClient {
    */
   public async sendStakeTransaction(p: StakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -373,7 +373,7 @@ export class ConsensusClient {
    */
   public async sendUpdateStakerTransaction(p: UpdateStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendUpdateStakerTransaction', params: [p.senderWallet, p.stakerWallet, p.newDelegation, p.newInactiveBalance, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -405,7 +405,7 @@ export class ConsensusClient {
    */
   public async sendSetActiveStakeTransaction(p: SetActiveStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendSetActiveStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.newActiveBalance, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -437,7 +437,7 @@ export class ConsensusClient {
    */
   public async sendRetireStakeTransaction(p: CreateRetireStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRetireStakeTransaction', params: [p.senderWallet, p.stakerWallet, p.retireStake, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -465,7 +465,7 @@ export class ConsensusClient {
    */
   public async sendRemoveStakeTransaction(p: RemoveStakeTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRemoveStakeTransaction', params: [p.stakerWallet, p.recipient, p.value, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -501,7 +501,7 @@ export class ConsensusClient {
    */
   public async sendNewValidatorTransaction(p: NewValidatorTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendNewValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.votingSecretKey, p.rewardAddress, p.signalData, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -545,7 +545,7 @@ export class ConsensusClient {
    */
   public async sendUpdateValidatorTransaction(p: UpdateValidatorTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendUpdateValidatorTransaction', params: [p.senderWallet, p.validator, p.newSigningSecretKey, p.newVotingSecretKey, p.newRewardAddress, p.newSignalData, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -579,7 +579,7 @@ export class ConsensusClient {
    */
   public async sendDeactivateValidatorTransaction(p: DeactiveValidatorTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendDeactivateValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -609,7 +609,7 @@ export class ConsensusClient {
    */
   public async sendReactivateValidatorTransaction(p: ReactivateValidatorTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendReactivateValidatorTransaction', params: [p.senderWallet, p.validator, p.signingSecretKey, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -639,7 +639,7 @@ export class ConsensusClient {
    */
   public async sendRetireValidatorTransaction(p: RetireValidatorTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendRetireValidatorTransaction', params: [p.senderWallet, p.validator, p.fee, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**
@@ -673,7 +673,7 @@ export class ConsensusClient {
    */
   public async sendDeleteValidatorTransaction(p: DeleteValidatorTxParams, options = DEFAULT_OPTIONS) {
     const req = { method: 'sendDeleteValidatorTransaction', params: [p.validator, p.recipient, p.fee, p.value, this.getValidityStartHeight(p)] }
-    return this.client.call<Hash>(req, options)
+    return this.client.call<string>(req, options)
   }
 
   /**

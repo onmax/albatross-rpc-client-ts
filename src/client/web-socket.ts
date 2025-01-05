@@ -198,7 +198,8 @@ export class WebSocketClient {
       isConnectionOpen: () => this.isOpen,
       context: {
         body: requestBody,
-        url: this.url.href.replace(/(password=)\w+/, '$1...'),
+        // For security reasons, remove query params
+        url: this.url.href.split('?')[0],
         timestamp: Date.now(),
       },
       ws: client,

@@ -20,19 +20,8 @@ export interface ErrorStreamReturn {
 }
 
 export interface Subscription<Data> {
-  /**
-   * The `next` callback is called whenever the WebSocket receives
-   * a message.
-   */
   next: (callback: (data: MaybeStreamResponse<Data>) => void) => void
-  /**
-   * Closes the websocket connection gracefully.
-   */
   close: () => void
-  /**
-   * The WebSocket client.
-   * @see https://github.com/open-rpc/client-js/blob/master/src/Client.ts
-   */
   ws: Client
 
   context: {
@@ -46,18 +35,8 @@ export interface Subscription<Data> {
     url: string
   }
 
-  /**
-   * Returns the subscription ID.
-   * This is only available after the subscription is opened.
-   */
   getSubscriptionId: () => number
-  /**
-   * Indicates whether the websocket is paused.
-   */
   isConnectionPaused: () => boolean
-  /**
-   * Indicates whether the websocket connection is open and ready to communicate.
-   */
   isConnectionOpen: () => boolean
 }
 
@@ -67,52 +46,48 @@ export const WS_DEFAULT_OPTIONS: StreamOptions = {
   timeout: 5000, // Default OpenRPC timeout
 } as const
 
-export type MaybeStreamResponse<Data> = {
-  error: ErrorStreamReturn
-  data: undefined
-  metadata: undefined
-} | {
-  error: undefined
-  data: Data
-  metadata?: BlockchainState
-}
+export type MaybeStreamResponse<Data> =
+  | {
+    error: ErrorStreamReturn
+    data: undefined
+    metadata: undefined
+  }
+  | {
+    error: undefined
+    data: Data
+    metadata?: BlockchainState
+  }
 
 export type FilterStreamFn = (data: any) => boolean
 
 export interface StreamOptions {
-  /**
-   * If true, the subscription will close after the first event.
-   *
-   * @default false
-   */
   once: boolean
-  /**
-   * A function that filters the data received from the WebSocket.
-   *
-   * @default () => true
-   */
   filter?: FilterStreamFn
-  /**
-   * The timeout in milliseconds for the WebSocket connection.
-   *
-   * @default 5000
-   */
   timeout: number
-  /**
-   * Callback for when the WebSocket connection encounters
-   * an error.
-   *
-   * @param error The error that occurred.
-   */
   onError?: (error?: Error) => void
+  /**
+   * If true or an object, we attempt reconnects when the socket closes.
+   * - `retries` can be a number or a function. If it's a function, it should return true to keep retrying.
+   * - `delay` is the time before trying again.
+   * - `onFailed` is called when we stop retrying.
+   */
+  autoReconnect?: boolean | {
+    retries?: number | (() => boolean)
+    delay?: number
+    onFailed?: () => void
+  }
 }
 
 export class WebSocketClient {
   private url: URL
-  private id: number = 0
+  private id = 0
   private isOpen = false
   private explicitlyClosed = false
   private auth?: Auth
+
+  // For reconnect logic
+  private retriesCount = 0
+  private reconnectTimer?: ReturnType<typeof setTimeout>
 
   constructor(url: URL | string, auth?: Auth) {
     if (typeof url === 'string') {
@@ -127,8 +102,13 @@ export class WebSocketClient {
     }
   }
 
-  // TODO: we probably need multiple subscriptions
-  // https://github.com/babayeshifu/sui/blob/bdd29d7f8e70d6632d7881dbe3e5c86cb455e507/sdk/typescript/src/rpc/websocket-client.ts#L55
+  private clearReconnectTimer() {
+    if (this.reconnectTimer) {
+      clearTimeout(this.reconnectTimer)
+      this.reconnectTimer = undefined
+    }
+  }
+
   async subscribe<
     Data,
     Request extends { method: string, params?: any[], withMetadata?: boolean },
@@ -150,11 +130,21 @@ export class WebSocketClient {
       ...userOptions,
     }
 
+    // "autoReconnect" can be a boolean or an object
+    const reconnectSettings
+      = typeof options.autoReconnect === 'object'
+        ? options.autoReconnect
+        : options.autoReconnect === true
+          ? {}
+          : undefined
+
     const { once, filter, timeout } = options
     const withMetadata = 'withMetadata' in request ? request.withMetadata : false
 
+    // Request subscription ID
     const subscriptionId: number = await client.request(requestBody, timeout)
     this.explicitlyClosed = false
+    this.retriesCount = 0 // reset retries on successful open
 
     const args: Subscription<Data> = {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
@@ -167,10 +157,6 @@ export class WebSocketClient {
         })
 
         client.onNotification(async (event) => {
-          // if ('subscription' in event.params) {
-          //   subscriptionId = event.params.subscription as number
-          // }
-
           if (!('result' in event.params)) {
             callback({
               data: undefined,
@@ -193,13 +179,14 @@ export class WebSocketClient {
           }
 
           const metadata = withMetadata
-            ? (payload.metadata as BlockchainState)
+            ? payload.metadata as BlockchainState
             : undefined
 
           callback({ data, metadata, error: undefined } as MaybeStreamResponse<Data>)
 
-          if (once)
+          if (once) {
             client.close()
+          }
         })
       },
       close: () => {
@@ -219,13 +206,49 @@ export class WebSocketClient {
 
     transport.connection.onopen = () => {
       this.isOpen = true
+      this.retriesCount = 0
     }
 
     transport.connection.onclose = () => {
       this.isOpen = false
       if (!this.explicitlyClosed) {
-        const { onError } = options
-        onError?.(new Error('WebSocket connection closed unexpectedly'))
+        // Check if autoReconnect is enabled
+        if (reconnectSettings) {
+          const maxRetries = reconnectSettings.retries ?? -1
+          const delay = reconnectSettings.delay ?? 1000
+          const canKeepRetrying = () => {
+            if (typeof maxRetries === 'number') {
+              return maxRetries < 0 || this.retriesCount < maxRetries
+            }
+            else if (typeof maxRetries === 'function') {
+              return maxRetries()
+            }
+            return false
+          }
+
+          if (canKeepRetrying()) {
+            this.retriesCount++
+            // clear any existing timer before setting a new one
+            this.clearReconnectTimer()
+            this.reconnectTimer = setTimeout(() => {
+              // Try again by calling subscribe with the same args
+              this.subscribe(request, userOptions).catch(() => {
+                // If it still fails, we might try again
+                // or pass the error to the onError callback
+                const { onError } = options
+                onError?.(new Error('Failed to reconnect'))
+              })
+            }, delay)
+          }
+          else {
+            reconnectSettings.onFailed?.()
+          }
+        }
+        else {
+          // if autoReconnect is not enabled, call user-provided onError
+          const { onError } = options
+          onError?.(new Error('WebSocket connection closed unexpectedly'))
+        }
       }
     }
 
@@ -238,13 +261,4 @@ export class WebSocketClient {
 
     return args
   }
-
-  // TODO: the server does not support this method yet
-  // async unsubscribe(subscriptionId: number) {
-  //   const { client } = getWs(this.url, this.auth)
-  //   await client.request({
-  //     method: 'unsubscribe',
-  //     params: [subscriptionId],
-  //   })
-  // }
 }

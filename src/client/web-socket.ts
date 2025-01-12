@@ -65,12 +65,6 @@ export interface StreamOptions {
   filter?: FilterStreamFn
   timeout: number
   onError?: (error?: Error) => void
-  /**
-   * If true or an object, we attempt reconnects when the socket closes.
-   * - `retries` can be a number or a function. If it's a function, it should return true to keep retrying.
-   * - `delay` is the time before trying again.
-   * - `onFailed` is called when we stop retrying.
-   */
   autoReconnect?: boolean | {
     retries?: number | (() => boolean)
     delay?: number
@@ -78,14 +72,39 @@ export interface StreamOptions {
   }
 }
 
-export class WebSocketClient {
+export class WebSocketManager {
+  private connections = new Map<string, WebSocketClient>()
+
+  constructor(private defaultAuth?: Auth) {}
+
+  getConnection(url: string, auth?: Auth): WebSocketClient {
+    if (!this.connections.has(url)) {
+      const connection = new WebSocketClient(url, auth || this.defaultAuth)
+      this.connections.set(url, connection)
+    }
+    return this.connections.get(url)!
+  }
+
+  closeConnection(url: string) {
+    const connection = this.connections.get(url)
+    if (connection) {
+      connection.close()
+      this.connections.delete(url)
+    }
+  }
+
+  closeAll() {
+    this.connections.forEach(connection => connection.close())
+    this.connections.clear()
+  }
+}
+
+class WebSocketClient {
   private url: URL
   private id = 0
   private isOpen = false
   private explicitlyClosed = false
   private auth?: Auth
-
-  // For reconnect logic
   private retriesCount = 0
   private reconnectTimer?: ReturnType<typeof setTimeout>
 
@@ -130,7 +149,6 @@ export class WebSocketClient {
       ...userOptions,
     }
 
-    // "autoReconnect" can be a boolean or an object
     const reconnectSettings
       = typeof options.autoReconnect === 'object'
         ? options.autoReconnect
@@ -179,7 +197,7 @@ export class WebSocketClient {
           }
 
           const metadata = withMetadata
-            ? payload.metadata as BlockchainState
+            ? (payload.metadata as BlockchainState)
             : undefined
 
           callback({ data, metadata, error: undefined } as MaybeStreamResponse<Data>)
@@ -213,7 +231,6 @@ export class WebSocketClient {
     transport.connection.onclose = () => {
       this.isOpen = false
       if (!this.explicitlyClosed) {
-        // Check if autoReconnect is enabled
         if (reconnectSettings) {
           const maxRetries = reconnectSettings.retries ?? -1
           const delay = reconnectSettings.delay ?? 1000
@@ -261,5 +278,10 @@ export class WebSocketClient {
     }
 
     return args
+  }
+
+  close() {
+    this.explicitlyClosed = true
+    this.clearReconnectTimer()
   }
 }

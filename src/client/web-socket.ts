@@ -1,18 +1,13 @@
+/**
+ * Some ideas:
+ *
+ * - next() can return the function to unsubscribe
+ * - rename close() to unsubscribe()
+ */
+
+import type { RequestArguments } from '@open-rpc/client-js/build/ClientInterface'
 import type { Auth, BlockchainState } from '../types/'
 import { Client, RequestManager, WebSocketTransport } from '@open-rpc/client-js'
-
-let shownWarning = false
-
-function getWs(url: URL, auth?: Auth) {
-  if (auth && !shownWarning) {
-    console.warn('Warning: Auth in WebSocket is not supported in the browser by default unless you create a custom proxy server that converts `username` and `password` to `Authorization` headers.')
-    shownWarning = true
-  }
-
-  const transport = new WebSocketTransport(url.toString())
-  const client = new Client(new RequestManager([transport]))
-  return { client, transport }
-}
 
 export interface ErrorStreamReturn {
   code: number
@@ -25,12 +20,7 @@ export interface Subscription<Data> {
   ws: Client
 
   context: {
-    body: {
-      method: string
-      params: any[]
-      id: number
-      jsonrpc: string
-    }
+    requestArguments: RequestArguments
     timestamp: number
     url: string
   }
@@ -61,9 +51,9 @@ export type MaybeStreamResponse<Data> =
 export type FilterStreamFn = (data: any) => boolean
 
 export interface StreamOptions {
-  once: boolean
+  once?: boolean
   filter?: FilterStreamFn
-  timeout: number
+  timeout?: number
   onError?: (error?: Error) => void
   autoReconnect?: boolean | {
     retries?: number | (() => boolean)
@@ -72,21 +62,34 @@ export interface StreamOptions {
   }
 }
 
+function handleUrl(url: URL | string) {
+  if (typeof url === 'string')
+    url = new URL(url)
+  url.protocol = 'ws'
+  url.pathname = '/ws'
+  return url
+}
+
 export class WebSocketManager {
-  private connections = new Map<string, WebSocketClient>()
+  private connections = new Map<URL, WebSocketClient>()
+  url: URL
+  auth: Auth | undefined
 
-  constructor(private defaultAuth?: Auth) {}
-
-  getConnection(url: string, auth?: Auth): WebSocketClient {
-    if (!this.connections.has(url)) {
-      const connection = new WebSocketClient(url, auth || this.defaultAuth)
-      this.connections.set(url, connection)
-    }
-    return this.connections.get(url)!
+  constructor(url: URL | string, auth?: Auth) {
+    this.url = handleUrl(url)
+    this.auth = auth
   }
 
-  closeConnection(url: string) {
-    const connection = this.connections.get(url)
+  getConnection(): WebSocketClient {
+    if (!this.connections.has(this.url)) {
+      const connection = new WebSocketClient(this.url, this.auth)
+      this.connections.set(this.url, connection)
+    }
+    return this.connections.get(this.url)!
+  }
+
+  closeConnection(url: URL) {
+    const connection = this.connections.get(handleUrl(url))
     if (connection) {
       connection.close()
       this.connections.delete(url)
@@ -101,21 +104,14 @@ export class WebSocketManager {
 
 class WebSocketClient {
   private url: URL
-  private id = 0
   private isOpen = false
   private explicitlyClosed = false
   private auth?: Auth
   private retriesCount = 0
   private reconnectTimer?: ReturnType<typeof setTimeout>
 
-  constructor(url: URL | string, auth?: Auth) {
-    if (typeof url === 'string') {
-      url = new URL(url)
-    }
-    const wsUrl = new URL(url.href.replace(/^http/, 'ws'))
-    wsUrl.pathname = '/ws'
-    this.url = wsUrl
-
+  constructor(url: URL, auth?: Auth) {
+    this.url = url
     if (auth?.username && auth?.password) {
       this.auth = auth
     }
@@ -133,36 +129,22 @@ class WebSocketClient {
     Request extends { method: string, params?: any[], withMetadata?: boolean },
   >(
     request: Request,
-    userOptions: StreamOptions,
+    userOptions: StreamOptions = WS_DEFAULT_OPTIONS,
   ): Promise<Subscription<Data>> {
-    const { client, transport } = getWs(this.url, this.auth)
+    const { method, params, withMetadata = false } = request
+    const transport = new WebSocketTransport(this.url.href)
+    const client = new Client(new RequestManager([transport]))
+    await client.requestManager.connectPromise
+    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions }
 
-    const requestBody = {
-      method: request.method,
-      params: request.params || [],
-      jsonrpc: '2.0',
-      id: this.id++,
-    }
+    const { once, filter, timeout, autoReconnect } = options
+    const reconnectSettings = autoReconnect === true ? {} : autoReconnect
 
-    const options = {
-      ...WS_DEFAULT_OPTIONS,
-      ...userOptions,
-    }
-
-    const reconnectSettings
-      = typeof options.autoReconnect === 'object'
-        ? options.autoReconnect
-        : options.autoReconnect === true
-          ? {}
-          : undefined
-
-    const { once, filter, timeout } = options
-    const withMetadata = 'withMetadata' in request ? request.withMetadata : false
-
-    // Request subscription ID
-    const subscriptionId: number = await client.request(requestBody, timeout)
+    console.log('Making a req', this.url.href)
+    const requestArguments: RequestArguments = { method, params }
+    const subscriptionId: number = await client.request(requestArguments, timeout)
     this.explicitlyClosed = false
-    this.retriesCount = 0 // reset retries on successful open
+    this.retriesCount = 0
 
     const args: Subscription<Data> = {
       next: (callback: (data: MaybeStreamResponse<Data>) => void) => {
@@ -215,7 +197,7 @@ class WebSocketClient {
       isConnectionPaused: () => transport.connection.isPaused,
       isConnectionOpen: () => this.isOpen,
       context: {
-        body: requestBody,
+        requestArguments,
         // For security reasons, remove query params
         url: this.url.href.split('?')[0],
         timestamp: Date.now(),

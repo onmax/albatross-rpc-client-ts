@@ -62,38 +62,32 @@ export interface StreamOptions {
   }
 }
 
-function handleUrl(url: URL | string) {
+function handleUrl(url: URL | string, auth?: Auth) {
   if (typeof url === 'string')
     url = new URL(url)
   url.protocol = 'ws'
   url.pathname = '/ws'
+  if (auth) {
+    url.username = auth.username
+    url.password = auth.password
+  }
   return url
 }
 
 export class WebSocketManager {
   private connections = new Map<URL, WebSocketClient>()
   url: URL
-  auth: Auth | undefined
 
   constructor(url: URL | string, auth?: Auth) {
-    this.url = handleUrl(url)
-    this.auth = auth
+    this.url = handleUrl(url, auth)
   }
 
   getConnection(): WebSocketClient {
     if (!this.connections.has(this.url)) {
-      const connection = new WebSocketClient(this.url, this.auth)
+      const connection = new WebSocketClient(this.url)
       this.connections.set(this.url, connection)
     }
     return this.connections.get(this.url)!
-  }
-
-  closeConnection(url: URL) {
-    const connection = this.connections.get(handleUrl(url))
-    if (connection) {
-      connection.close()
-      this.connections.delete(url)
-    }
   }
 
   closeAll() {
@@ -110,11 +104,8 @@ class WebSocketClient {
   private retriesCount = 0
   private reconnectTimer?: ReturnType<typeof setTimeout>
 
-  constructor(url: URL, auth?: Auth) {
+  constructor(url: URL) {
     this.url = url
-    if (auth?.username && auth?.password) {
-      this.auth = auth
-    }
   }
 
   private clearReconnectTimer() {

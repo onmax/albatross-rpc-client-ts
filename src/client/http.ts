@@ -53,12 +53,8 @@ export class HttpClient {
   private static id: number = 0
   private headers: HeadersInit = { 'Content-Type': 'application/json', 'Authorization': '' }
 
-  constructor(url: URL | string, auth?: Auth) {
-    if (!url)
-      throw new Error('URL is required')
-
-    this.url = typeof url === 'string' ? new URL(url) : url
-
+  constructor(url: URL, auth?: Auth) {
+    this.url = url
     if (auth?.username && auth.password) {
       const authorization = btoa(`${auth.username}:${auth.password}`)
       Object.assign(this.headers, { Authorization: `Basic ${authorization}` })

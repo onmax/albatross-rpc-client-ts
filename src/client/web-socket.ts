@@ -62,9 +62,7 @@ export interface StreamOptions {
   }
 }
 
-function handleUrl(url: URL | string, auth?: Auth) {
-  if (typeof url === 'string')
-    url = new URL(url)
+function handleUrl(url: URL, auth?: Auth) {
   url.protocol = url.protocol === 'https:' ? 'wss' : 'ws'
   url.pathname = '/ws'
   if (auth) {
@@ -78,7 +76,7 @@ export class WebSocketManager {
   private connections = new Map<URL, WebSocketClient>()
   url: URL
 
-  constructor(url: URL | string, auth?: Auth) {
+  constructor(url: URL, auth?: Auth) {
     this.url = handleUrl(url, auth)
   }
 

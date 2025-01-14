@@ -65,7 +65,7 @@ export interface StreamOptions {
 function handleUrl(url: URL | string, auth?: Auth) {
   if (typeof url === 'string')
     url = new URL(url)
-  url.protocol = 'ws'
+  url.protocol = url.protocol === 'https:' ? 'wss' : 'ws'
   url.pathname = '/ws'
   if (auth) {
     url.username = auth.username
@@ -100,7 +100,6 @@ class WebSocketClient {
   private url: URL
   private isOpen = false
   private explicitlyClosed = false
-  private auth?: Auth
   private retriesCount = 0
   private reconnectTimer?: ReturnType<typeof setTimeout>
 

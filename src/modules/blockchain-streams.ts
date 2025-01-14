@@ -1,7 +1,6 @@
 import type { FilterStreamFn, StreamOptions, Subscription, WebSocketManager } from '../client/web-socket'
 import type { Block, LogType, MacroBlock, MicroBlock, Validator } from '../types/'
 import type { BlockLog } from '../types/logs'
-import { WS_DEFAULT_OPTIONS } from '../client/web-socket'
 import { BlockSubscriptionType, RetrieveType } from '../types/'
 
 export interface BlockParams { retrieve?: RetrieveType.Full | RetrieveType.Partial }
@@ -32,25 +31,22 @@ export class BlockchainStream {
    * Subscribes to block hash events.
    */
   public async subscribeForBlockHashes<T = string>(
-    url: string,
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
-    const options: StreamOptions = { ...WS_DEFAULT_OPTIONS, ...userOptions as StreamOptions }
-    const wsClient = this.wsManager.getConnection(url)
-    return wsClient.subscribe({ method: 'subscribeForHeadBlockHash' }, options) as Promise<Subscription<T>>
+    const wsClient = this.wsManager.getConnection()
+    return wsClient.subscribe({ method: 'subscribeForHeadBlockHash' }, userOptions) as Promise<Subscription<T>>
   }
 
   /**
    * Subscribes to election blocks.
    */
   public async subscribeForElectionBlocks<T = Block>(
-    url: string,
     params: BlockParams = {},
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
     const { retrieve = RetrieveType.Full } = params
-    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isElection }
-    const wsClient = this.wsManager.getConnection(url)
+    const options: StreamOptions = { ...userOptions, filter: isElection }
+    const wsClient = this.wsManager.getConnection()
     return wsClient.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
@@ -58,13 +54,12 @@ export class BlockchainStream {
    * Subscribes to micro blocks.
    */
   public async subscribeForMicroBlocks<T = MicroBlock>(
-    url: string,
     params: BlockParams = {},
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
     const { retrieve = RetrieveType.Full } = params
-    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isMicro }
-    const wsClient = this.wsManager.getConnection(url)
+    const options = { ...userOptions, filter: isMicro }
+    const wsClient = this.wsManager.getConnection()
     return wsClient.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
@@ -72,13 +67,12 @@ export class BlockchainStream {
    * Subscribes to macro blocks.
    */
   public async subscribeForMacroBlocks<T = MacroBlock>(
-    url: string,
     params: BlockParams = {},
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
     const { retrieve = RetrieveType.Full } = params || {}
-    const options = { ...WS_DEFAULT_OPTIONS, ...userOptions, filter: isMacro }
-    const wsClient = this.wsManager.getConnection(url)
+    const options = { ...userOptions, filter: isMacro }
+    const wsClient = this.wsManager.getConnection()
     return wsClient.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, options) as Promise<Subscription<T>>
   }
 
@@ -86,38 +80,35 @@ export class BlockchainStream {
    * Subscribes to all blocks.
    */
   public async subscribeForBlocks<T = Block>(
-    url: string,
     params: BlockParams = {},
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
     const { retrieve = RetrieveType.Full } = params
-    const wsClient = this.wsManager.getConnection(url)
-    return wsClient.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+    const wsClient = this.wsManager.getConnection()
+    return wsClient.subscribe({ method: 'subscribeForHeadBlock', params: [retrieve === RetrieveType.Full] }, userOptions)
   }
 
   /**
    * Subscribes to pre epoch validators events.
    */
   public async subscribeForValidatorElectionByAddress<T = Validator>(
-    url: string,
     params: ValidatorElectionParams,
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
-    const wsClient = this.wsManager.getConnection(url)
-    return wsClient.subscribe({ method: 'subscribeForValidatorElectionByAddress', params: [params.address], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+    const wsClient = this.wsManager.getConnection()
+    return wsClient.subscribe({ method: 'subscribeForValidatorElectionByAddress', params: [params.address], withMetadata: params?.withMetadata }, userOptions)
   }
 
   /**
    * Subscribes to log events related to a given list of addresses and log types.
    */
   public async subscribeForLogsByAddressesAndTypes<T = BlockLog>(
-    url: string,
     params: LogsParams = {},
-    userOptions?: Partial<StreamOptions>,
+    userOptions?: StreamOptions,
   ): Promise<Subscription<T>> {
     const { addresses = [], types = [] } = params
-    const wsClient = this.wsManager.getConnection(url)
-    return wsClient.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [addresses, types], withMetadata: params?.withMetadata }, { ...WS_DEFAULT_OPTIONS, ...userOptions })
+    const wsClient = this.wsManager.getConnection()
+    return wsClient.subscribe({ method: 'subscribeForLogsByAddressesAndTypes', params: [addresses, types], withMetadata: params?.withMetadata }, userOptions)
   }
 
   // TODO: the server does not support this method yet

@@ -24,8 +24,8 @@ export class NimiqRPCClient {
    * @param auth { username, password }
    */
   constructor(url: URL | string, auth?: Auth) {
-    this.http = new HttpClient(url, auth)
-    this.ws = new WebSocketManager(url, auth)
+    this.http = new HttpClient(new URL(url), auth)
+    this.ws = new WebSocketManager(new URL(url), auth)
 
     this.blockchain = new Modules.BlockchainClient.BlockchainClient(this.http)
     this.blockchainStreams = new Modules.BlockchainStream.BlockchainStream(

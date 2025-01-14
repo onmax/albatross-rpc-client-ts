@@ -2,12 +2,12 @@ import type { CallResult, HttpOptions } from './client/http'
 import type { StreamOptions, Subscription } from './client/web-socket'
 import type { Auth } from './types/'
 import { DEFAULT_OPTIONS, HttpClient } from './client/http'
-import { WebSocketClient } from './client/web-socket'
+import { WebSocketManager } from './client/web-socket'
 import * as Modules from './modules'
 
 export class NimiqRPCClient {
   public http: HttpClient
-  public ws: WebSocketClient
+  public ws: WebSocketManager
 
   public blockchain
   public blockchainStreams
@@ -25,7 +25,7 @@ export class NimiqRPCClient {
    */
   constructor(url: URL | string, auth?: Auth) {
     this.http = new HttpClient(url, auth)
-    this.ws = new WebSocketClient(url, auth)
+    this.ws = new WebSocketManager(url, auth)
 
     this.blockchain = new Modules.BlockchainClient.BlockchainClient(this.http)
     this.blockchainStreams = new Modules.BlockchainStream.BlockchainStream(
@@ -75,7 +75,7 @@ export class NimiqRPCClient {
     request: Request,
     userOptions: StreamOptions,
   ): Promise<Subscription<Data>> {
-    return this.ws.subscribe<Data, Request>(request, userOptions)
+    return this.ws.getConnection().subscribe<Data, Request>(request, userOptions)
   }
 }
 

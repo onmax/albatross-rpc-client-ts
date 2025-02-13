@@ -42,20 +42,14 @@ export class MempoolClient {
    * Content of the mempool
    *
    * @param params
-   * @param params.includeTransactions
-   * @returns includeTransactions ? Transaction[] : string[]
+   * @param params.includeTransactions Whether to include full transaction objects
+   * @returns Array of transaction hashes or full transaction objects depending on includeTransactions
    */
-  public mempoolContent(
-    { includeTransactions }: MempoolContentParams = {
-      includeTransactions: false,
-    },
+  public mempoolContent<T extends boolean = false>(
+    { includeTransactions }: { includeTransactions: T } = { includeTransactions: false as T },
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<
-      MempoolContentParams['includeTransactions'] extends true
-        ? Transaction[]
-        : string[]
-    >({
+    return this.client.call<T extends true ? Transaction[] : string[]>({
       method: 'mempoolContent',
       params: [includeTransactions],
     }, options)

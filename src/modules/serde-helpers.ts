@@ -22,6 +22,7 @@ export class SerdeHelper {
    * RPC method name: "serializeToHex"
    *
    * @param params - The byte array to serialize.
+   * @param params.data - The byte array to serialize.
    * @param options - Optional settings for the request.
    * @returns The serialized hexadecimal string.
    */
@@ -41,6 +42,7 @@ export class SerdeHelper {
    * RPC method name: "deserializeFromHex"
    *
    * @param params - The hexadecimal string to deserialize.
+   * @params params.hexString - The hexadecimal string to deserialize.
    * @param options - Optional settings for the request.
    * @returns The deserialized byte array.
    */

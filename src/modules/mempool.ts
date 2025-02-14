@@ -72,7 +72,7 @@ export class MempoolClient {
    * @returns Minimum fee per byte
    */
   public getMinFeePerByte(options = DEFAULT_OPTIONS) {
-    return this.client.call</* f64 */ number>(
+    return this.client.call<number>(
       { method: 'getMinFeePerByte' },
       options,
     )

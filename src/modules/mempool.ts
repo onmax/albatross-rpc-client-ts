@@ -45,14 +45,21 @@ export class MempoolClient {
    * @param params.includeTransactions Whether to include full transaction objects
    * @returns Array of transaction hashes or full transaction objects depending on includeTransactions
    */
-  public mempoolContent<T extends boolean = false>(
+  public async mempoolContent<T extends boolean = false>(
     { includeTransactions }: { includeTransactions: T } = { includeTransactions: false as T },
     options = DEFAULT_OPTIONS,
   ) {
-    return this.client.call<T extends true ? Transaction[] : string[]>({
+    const res = await this.client.call<T extends true ? Transaction[] : string[]>({
       method: 'mempoolContent',
       params: [includeTransactions],
     }, options)
+    if (!res.error && res.data.length > 0) {
+      res.data = res.data.map(
+        tx => includeTransactions ? (tx as unknown as { tx: Transaction }).tx : (tx as unknown as { hash: string }).hash,
+      ) as (T extends true ? Transaction[] : string[])
+    }
+
+    return res
   }
 
   /**

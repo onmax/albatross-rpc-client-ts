@@ -223,13 +223,11 @@ export class BlockchainClient {
    */
   public async getAccountByAddress<T extends { withMetadata?: boolean }>(
     address: string,
-    { withMetadata }: T,
     options = DEFAULT_OPTIONS,
   ) {
     const req = {
       method: 'getAccountByAddress',
       params: [address],
-      withMetadata,
     }
     return this.client.call<
       Account,

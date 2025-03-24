@@ -1,7 +1,7 @@
 {
   "name": "nimiq-rpc-client-ts",
   "type": "module",
-  "version": "1.0.0-beta.7",
+  "version": "1.0.0-beta.9",
   "private": false,
   "packageManager": "pnpm@10.4.0",
   "description": "A Nimiq RPC client for TypeScript",

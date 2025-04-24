@@ -8,13 +8,17 @@
   "author": "onmax",
   "license": "MIT",
   "exports": {
-    "http": {
+    "./http": {
       "types": "./dist/http.d.mts",
       "import": "./dist/http.mjs"
     },
-    "types": {
+    "./types": {
       "types": "./dist/types/index.d.mts",
       "import": "./dist/types/index.d.mts"
+    },
+    "./config": {
+      "types": "./dist/config.d.mts",
+      "import": "./dist/config.mjs"
     }
   },
   "main": "./dist/index.mjs",

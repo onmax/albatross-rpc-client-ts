@@ -2,11 +2,16 @@
   "name": "nimiq-rpc-client-ts",
   "type": "module",
   "version": "1.0.0-beta.14",
-  "private": false,
   "packageManager": "pnpm@10.4.0",
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/onmax/albatross-rpc-client-ts.git"
+  },
+  "keywords": ["nimiq", "albatross", "rpc", "client", "typescript"],
+  "sideEffects": false,
   "exports": {
     "./http": {
       "types": "./dist/http.d.mts",
@@ -14,7 +19,7 @@
     },
     "./types": {
       "types": "./dist/types/index.d.mts",
-      "import": "./dist/types/index.d.mts"
+      "import": "./dist/types/index.mjs"
     },
     "./config": {
       "types": "./dist/config.d.mts",
@@ -24,7 +29,9 @@
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
   "types": "dist/index.d.mts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "unbuild --stub",
     "test": "vitest run",
@@ -46,9 +53,12 @@
     "pkg-pr-new": "^0.0.39",
     "simple-git": "^3.27.0",
     "simple-git-hooks": "^2.11.1",
+    "tinyexec": "^1.0.1",
     "typescript": "^5.7.3",
     "unbuild": "^3.3.1",
-    "vitest": "^3.0.5"
+    "vitest": "^3.0.5",
+    "vitest-package-exports": "^0.1.1",
+    "yaml": "^2.7.1"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"

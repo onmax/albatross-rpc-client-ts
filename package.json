@@ -10,7 +10,13 @@
     "type": "git",
     "url": "git+https://github.com/onmax/albatross-rpc-client-ts.git"
   },
-  "keywords": ["nimiq", "albatross", "rpc", "client", "typescript"],
+  "keywords": [
+    "nimiq",
+    "albatross",
+    "rpc",
+    "client",
+    "typescript"
+  ],
   "sideEffects": false,
   "exports": {
     "./http": {
@@ -26,9 +32,7 @@
       "import": "./dist/config.mjs"
     }
   },
-  "main": "./dist/index.mjs",
-  "module": "./dist/index.mjs",
-  "types": "dist/index.d.mts",
+  "types": "dist/types/index.d.mts",
   "files": [
     "dist"
   ],

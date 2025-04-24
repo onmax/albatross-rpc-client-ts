@@ -114,4 +114,4 @@
 ./config:
   __getAuth: function
   __getBaseUrl: function
-  init: function
+  initRpcClient: function

@@ -26,9 +26,6 @@ export interface HttpRequest {
 
 }
 
-export interface HttpRpcResult<D, M = undefined> {
-  request: HttpRequest
-  data?: D
-  metadata?: M
-  error?: { code: number, message: string }
-}
+export type HttpRpcResultSuccess<T> = [true, undefined, T, { request: HttpRequest, metadata?: any }]
+export type HttpRpcResultError = [false, string, undefined, { request: HttpRequest, metadata?: any }]
+export type HttpRpcResult<T> = HttpRpcResultSuccess<T> | HttpRpcResultError

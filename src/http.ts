@@ -33,7 +33,7 @@ function base64Encode(input: string): string {
   return globalThis.btoa(input)
 }
 
-export async function rpcCall<D, M = undefined>(method: string, params: any[] = [], options: HttpOptions = {}): Promise<HttpRpcResult<D, M>> {
+export async function rpcCall<D>(method: string, params: any[] = [], options: HttpOptions = {}): Promise<HttpRpcResult<D>> {
   const url = options.url ? new URL(options.url.toString()) : __getBaseUrl()
   const auth = options.auth ?? __getAuth()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
@@ -58,35 +58,25 @@ export async function rpcCall<D, M = undefined>(method: string, params: any[] = 
   }
   catch (e: any) {
     clearTimeout(timeoutId)
-    return {
-      request,
-      error: {
-        code: e.name === 'AbortError' ? 408 : 503,
-        message: e.message,
-      },
-    }
+    const error = JSON.stringify(e)
+    return [false, error, undefined, { request }]
   }
   clearTimeout(timeoutId)
   if (!res.ok) {
-    return {
-      request,
-      error: {
-        code: res.status,
-        message: res.statusText,
-      },
-    }
+    const error = `HTTP error ${res.status}: ${res.statusText}`
+    return [false, error, undefined, { request }]
   }
   const json = await res.json().catch(() => null)
   if (!json)
-    return { request, error: { code: -1, message: 'Invalid JSON response' } }
+    return [false, 'Invalid JSON response', undefined, { request }]
 
   if ('error' in json)
-    return { request, error: { code: json.error.code, message: json.error.message } }
+    return [false, JSON.stringify(json.error), undefined, { request }]
 
   if ('result' in json)
-    return { request, data: json.result.data, metadata: json.result.metadata } as HttpRpcResult<D, M>
+    return [true, undefined, json.result.data, { request, metadata: json.result.metadata }]
 
-  return { request, error: { code: -1, message: 'Unexpected RPC format' } }
+  return [false, 'Unexpected RPC format', undefined, { request }]
 }
 
 // #region Blockchain
@@ -829,19 +819,14 @@ export type GetZkpStateOpts = HttpOptions
 export async function getZkpState<R = ZKPState>(opts?: GetZkpStateOpts): Promise<HttpRpcResult<R>> {
   const result = await rpcCall<ZKPStateKebab>('getZkpState', [], opts)
 
-  if (result.error) {
+  if (!result[0])
     return result as unknown as Promise<HttpRpcResult<R>>
-  }
-  else {
-    return {
-      ...result,
-      data: {
-        latestHeaderNumber: result.data!['latest-header-number'],
-        latestBlockNumber: result.data!['latest-block-number'],
-        latestProof: result.data!['latest-proof'],
-      } as R,
-    }
-  }
+
+  return [true, undefined, {
+    latestHeaderNumber: result[2]!['latest-header-number'],
+    latestBlockNumber: result[2]!['latest-block-number'],
+    latestProof: result[2]!['latest-proof'],
+  } as R, result[3]]
 }
 
 export interface ImportKeyParams { keyData: string, passphrase?: string }

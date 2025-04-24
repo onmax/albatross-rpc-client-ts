@@ -24,18 +24,16 @@
       "import": "./dist/http.mjs"
     },
     "./types": {
-      "types": "./dist/types/index.d.mts",
-      "import": "./dist/types/index.mjs"
+      "types": "./dist/types.d.mts",
+      "import": "./dist/types.mjs"
     },
     "./config": {
       "types": "./dist/config.d.mts",
       "import": "./dist/config.mjs"
     }
   },
-  "types": "dist/types/index.d.mts",
-  "files": [
-    "dist"
-  ],
+  "types": "./dist/types.d.mts",
+  "files": ["dist"],
   "scripts": {
     "dev": "unbuild --stub",
     "test": "vitest run",

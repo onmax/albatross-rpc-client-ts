@@ -2,24 +2,22 @@ import type {
   Account,
   Block,
   BlockchainState,
+  HttpOptions,
+  HttpRequest,
+  HttpRpcResult,
   Inherent,
   LogType,
   MempoolInfo,
   PartialBlock,
   PenalizedSlots,
   PolicyConstants,
+  Signature,
   Slot,
   Staker,
   Transaction,
   Validator,
   ValidityStartHeight,
 } from './types'
-import type { Signature } from './types/'
-import type { HttpOptions, HttpRequest, HttpRpcResult } from './types/http'
-
-// #endregion
-
-// #region Wallet
 
 import { __getAuth, __getBaseUrl } from './config'
 

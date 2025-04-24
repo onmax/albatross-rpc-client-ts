@@ -1,4 +1,4 @@
-import type { Auth } from './types/common'
+import type { Auth } from './types'
 
 let _baseUrl: URL
 let _auth: Auth | undefined

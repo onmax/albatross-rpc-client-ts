@@ -23,7 +23,7 @@
   },
   "main": "./dist/index.mjs",
   "module": "./dist/index.mjs",
-  "types": "dist/types/index.d.mts",
+  "types": "dist/index.d.mts",
   "files": ["dist"],
   "scripts": {
     "dev": "unbuild --stub",

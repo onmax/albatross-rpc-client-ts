@@ -4,7 +4,7 @@ export default defineBuildConfig({
   entries: [
     'src/http',
     'src/config',
-    'src/types/index',
+    'src/types',
   ],
   clean: true,
   declaration: 'node16',

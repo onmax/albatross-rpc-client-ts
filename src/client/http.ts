@@ -51,7 +51,7 @@ export type CallResult<Data, Metadata = undefined> = {
 export class HttpClient {
   private url: URL
   private static id: number = 0
-  private headers: HeadersInit = { 'Content-Type': 'application/json', 'Authorization': '' }
+  private headers: HeadersInit = { 'Content-Type': 'application/json' }
 
   constructor(url: URL, auth?: Auth) {
     this.url = url

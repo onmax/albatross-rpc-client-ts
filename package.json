@@ -8,15 +8,16 @@
   "author": "onmax",
   "license": "MIT",
   "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
+    "http": {
+      "types": "./dist/http.d.mts",
+      "import": "./dist/http.mjs"
+    },
+    "types": {
+      "types": "./dist/types/index.d.mts",
+      "import": "./dist/types/index.d.mts"
     }
   },
-  "main": "dist/index.mjs",
-  "module": "dist/index.mjs",
-  "types": "dist/index.d.ts",
+  "types": "dist/types/index.d.mts",
   "files": [
     "dist"
   ],
@@ -25,6 +26,7 @@
     "test": "vitest run",
     "build": "unbuild",
     "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
     "lint:fix": "eslint --fix .",
     "ci": "pnpm lint && pnpm build",
     "release": "pnpm lint && pnpm build && bumpp --commit --push --tag && pnpm publish"
@@ -45,7 +47,6 @@
     "simple-git-hooks": "^2.11.1",
     "typescript": "^5.7.3",
     "unbuild": "^3.3.1",
-    "vite": "^6.1.0",
     "vitest": "^3.0.5"
   },
   "simple-git-hooks": {

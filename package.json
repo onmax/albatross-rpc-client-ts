@@ -2,7 +2,7 @@
   "name": "nimiq-rpc-client-ts",
   "type": "module",
   "version": "1.0.0-beta.18",
-  "packageManager": "pnpm@10.4.0",
+  "packageManager": "pnpm@10.10.0",
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",
   "license": "MIT",
@@ -23,6 +23,10 @@
       "types": "./dist/http.d.mts",
       "import": "./dist/http.mjs"
     },
+    "./ws": {
+      "types": "./dist/ws.d.mts",
+      "import": "./dist/ws.mjs"
+    },
     "./types": {
       "types": "./dist/types.d.mts",
       "import": "./dist/types.mjs"
@@ -33,7 +37,9 @@
     }
   },
   "types": "./dist/types.d.mts",
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "dev": "unbuild --stub",
     "test": "vitest run",
@@ -44,6 +50,9 @@
     "ci": "pnpm lint && pnpm build",
     "release": "pnpm lint && pnpm typecheck && pnpm build && bumpp --commit --push --tag && pnpm publish"
   },
+  "dependencies": {
+    "@libsql/isomorphic-ws": "^0.1.5"
+  },
   "devDependencies": {
     "@antfu/eslint-config": "^4.2.0",
     "@changesets/cli": "^2.27.12",
@@ -51,6 +60,7 @@
     "bumpp": "^10.0.3",
     "dotenv": "^16.4.7",
     "eslint": "^9.20.1",
+    "eslint-plugin-format": "^1.0.1",
     "lint-staged": "^15.4.3",
     "pkg-pr-new": "^0.0.39",
     "simple-git": "^3.27.0",

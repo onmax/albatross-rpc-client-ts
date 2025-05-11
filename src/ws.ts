@@ -1,4 +1,4 @@
-import type { Block, LogType, Validator } from './types'
+import type { Block, CreateStakerLog, CreateValidatorLog, DeactivateValidatorLog, DeleteStakerLog, DeleteValidatorLog, FailedTransactionLog, HtlcCreateLog, HtlcEarlyResolveLog, HtlcRegularTransferLog, HtlcTimeoutResolveLog, JailValidatorLog, Log, LogType, PayFeeLog, PayoutRewardLog, PenalizeLog, ReactivateValidatorLog, RemoveStakeLog, RetireStakeLog, RetireValidatorLog, RevertContractLog, SetActiveStakeLog, StakeLog, StakerFeeDeductionLog, TransferLog, UpdateStakerLog, UpdateValidatorLog, Validator, ValidatorFeeDeductionLog, VestingCreateLog } from './types'
 import { WebSocket } from '@libsql/isomorphic-ws'
 import { __getBaseUrl } from './config'
 
@@ -253,14 +253,60 @@ export function subscribeForHeadBlockHash(opts?: StreamOptions<string[]>): Promi
 }
 
 /**
+ * Maps LogType to corresponding log interface
+ */
+export interface LogTypeMap {
+  [LogType.PayFee]: PayFeeLog
+  [LogType.Transfer]: TransferLog
+  [LogType.HtlcCreate]: HtlcCreateLog
+  [LogType.HtlcTimeoutResolve]: HtlcTimeoutResolveLog
+  [LogType.HtlcRegularTransfer]: HtlcRegularTransferLog
+  [LogType.HtlcEarlyResolve]: HtlcEarlyResolveLog
+  [LogType.VestingCreate]: VestingCreateLog
+  [LogType.CreateValidator]: CreateValidatorLog
+  [LogType.UpdateValidator]: UpdateValidatorLog
+  [LogType.ValidatorFeeDeduction]: ValidatorFeeDeductionLog
+  [LogType.DeactivateValidator]: DeactivateValidatorLog
+  [LogType.ReactivateValidator]: ReactivateValidatorLog
+  [LogType.RetireValidator]: RetireValidatorLog
+  [LogType.DeleteValidator]: DeleteValidatorLog
+  [LogType.CreateStaker]: CreateStakerLog
+  [LogType.Stake]: StakeLog
+  [LogType.UpdateStaker]: UpdateStakerLog
+  [LogType.SetActiveStake]: SetActiveStakeLog
+  [LogType.RetireStake]: RetireStakeLog
+  [LogType.RemoveStake]: RemoveStakeLog
+  [LogType.DeleteStaker]: DeleteStakerLog
+  [LogType.StakerFeeDeduction]: StakerFeeDeductionLog
+  [LogType.PayoutReward]: PayoutRewardLog
+  [LogType.Penalize]: PenalizeLog
+  [LogType.JailValidator]: JailValidatorLog
+  [LogType.RevertContract]: RevertContractLog
+  [LogType.FailedTransaction]: FailedTransactionLog
+}
+
+/**
+ * Helper type to extract log type from LogType array
+ */
+export type LogTypeToInterface<T extends LogType[]> = T extends (infer U)[]
+  ? U extends LogType
+    ? LogTypeMap[U]
+    : never
+  : never
+
+/**
  * Subscribe to log events related to given addresses and log types
  */
-export function subscribeForLogsByAddressesAndTypes(
+export function subscribeForLogsByAddressesAndTypes<T extends LogType[] = []>(
   addresses: string[] = [],
-  logTypes: LogType[] = [],
-  opts?: StreamOptions<any>,
-): Promise<WSSubscription<any>> {
-  return rpcSubscribe<any>('subscribeForLogsByAddressesAndTypes', [addresses, logTypes], opts)
+  logTypes: T = [] as unknown as T,
+  opts?: StreamOptions<T extends [] ? Log : LogTypeToInterface<T>>,
+): Promise<WSSubscription<T extends [] ? Log : LogTypeToInterface<T>>> {
+  return rpcSubscribe<T extends [] ? Log : LogTypeToInterface<T>>(
+    'subscribeForLogsByAddressesAndTypes',
+    [addresses, logTypes],
+    opts,
+  )
 }
 
 /**

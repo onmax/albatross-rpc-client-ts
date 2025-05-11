@@ -119,8 +119,10 @@ export async function rpcSubscribe<T>(method: string, params: any[] = [], option
 
       if (raw instanceof Blob)
         raw = await raw.arrayBuffer().then(buffer => new TextDecoder().decode(buffer))
-      else if (raw instanceof ArrayBuffer || raw instanceof Buffer)
-        raw = Buffer.from(raw).toString()
+      else if (raw instanceof ArrayBuffer)
+        raw = new TextDecoder().decode(raw)
+      else if (raw instanceof Buffer)
+        raw = raw.toString()
 
       if (raw instanceof ArrayBuffer) {
         if (typeof TextDecoder !== 'undefined') {
@@ -128,7 +130,7 @@ export async function rpcSubscribe<T>(method: string, params: any[] = [], option
         }
         else {
           const { Buffer } = await import('node:buffer')
-          raw = Buffer.from(raw).toString()
+          raw = Buffer.from(raw as ArrayBuffer).toString()
         }
       }
 

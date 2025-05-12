@@ -849,3 +849,186 @@ export type ListAccountsOpts = HttpOptions
 export function listAccounts<R = string[]>(opts?: ListAccountsOpts): Promise<HttpRpcResult<R>> {
   return rpcCall<R>('listAccounts', [], opts)
 }
+
+export type AddVotingKeyOpts = HttpOptions
+export function addVotingKey<R = null>(secretKey: string, opts?: AddVotingKeyOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('addVotingKey', [secretKey], opts)
+}
+
+export type CreateAccountOpts = HttpOptions
+export function createAccount<R = Account>(passphrase: string, opts?: CreateAccountOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('createAccount', [passphrase], opts)
+}
+
+export type GetAddressOpts = HttpOptions
+export function getAddress<R = string>(opts?: GetAddressOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getAddress', [], opts)
+}
+
+// Voting & Signing Keys
+export type GetSigningKeyOpts = HttpOptions
+export function getSigningKey<R = string>(opts?: GetSigningKeyOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getSigningKey', [], opts)
+}
+
+export type GetVotingKeyOpts = HttpOptions
+export function getVotingKey<R = string>(opts?: GetVotingKeyOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getVotingKey', [], opts)
+}
+
+export type GetVotingKeysOpts = HttpOptions
+export function getVotingKeys<R = string[]>(opts?: GetVotingKeysOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getVotingKeys', [], opts)
+}
+
+// Account State
+export type IsAccountUnlockedOpts = HttpOptions
+export function isAccountUnlocked<R = boolean>(address: string, opts?: IsAccountUnlockedOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('isAccountUnlocked', [address], opts)
+}
+
+export type LockAccountOpts = HttpOptions
+export function lockAccount<R = null>(address: string, opts?: LockAccountOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('lockAccount', [address], opts)
+}
+
+export type RemoveAccountOpts = HttpOptions
+export function removeAccount<R = boolean>(address: string, opts?: RemoveAccountOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('removeAccount', [address], opts)
+}
+
+// Validator & Consensus Queries
+export type IsValidatorElectedOpts = HttpOptions
+export function isValidatorElected<R = boolean>(opts?: IsValidatorElectedOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('isValidatorElected', [], opts)
+}
+
+export type IsValidatorSyncedOpts = HttpOptions
+export function isValidatorSynced<R = boolean>(opts?: IsValidatorSyncedOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('isValidatorSynced', [], opts)
+}
+
+// Transaction Submissions
+export type PushHighPriorityTransactionOpts = HttpOptions
+export function pushHighPriorityTransaction<R = string>(rawTx: string, opts?: PushHighPriorityTransactionOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('pushHighPriorityTransaction', [rawTx], opts)
+}
+
+export type SendBasicTransactionOpts = HttpOptions
+export function sendBasicTransaction<R = string>(
+  wallet: string,
+  recipient: string,
+  value: number,
+  fee: number,
+  validityStartHeight: number,
+  opts?: SendBasicTransactionOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('sendBasicTransaction', [wallet, recipient, value, fee, validityStartHeight], opts)
+}
+
+export type SendBasicTransactionWithDataOpts = HttpOptions
+export function sendBasicTransactionWithData<R = string>(
+  wallet: string,
+  recipient: string,
+  data: string,
+  value: number,
+  fee: number,
+  validityStartHeight: number,
+  opts?: SendBasicTransactionWithDataOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('sendBasicTransactionWithData', [wallet, recipient, data, value, fee, validityStartHeight], opts)
+}
+
+// Automatic Reactivation
+export type SetAutomaticReactivationOpts = HttpOptions
+export function setAutomaticReactivation<R = null>(automaticReactivate: boolean, opts?: SetAutomaticReactivationOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('setAutomaticReactivation', [automaticReactivate], opts)
+}
+
+// Signing & Verification
+export type SignOpts = HttpOptions
+export function sign<R = Signature>(
+  message: string,
+  address: string,
+  passphrase: string,
+  isHex: boolean,
+  opts?: SignOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('sign', [message, address, passphrase, isHex], opts)
+}
+
+export type VerifySignatureOpts = HttpOptions
+export function verifySignature<R = boolean>(
+  message: string,
+  publicKey: string,
+  signature: Signature,
+  isHex: boolean,
+  opts?: VerifySignatureOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('verifySignature', [message, publicKey, signature, isHex], opts)
+}
+
+// Subscriptions
+export type SubscribeForHeadBlockOpts = HttpOptions
+export function subscribeForHeadBlock<R = number>(includeBody: boolean, opts?: SubscribeForHeadBlockOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('subscribeForHeadBlock', [includeBody], opts)
+}
+
+export type SubscribeForHeadBlockHashOpts = HttpOptions
+export function subscribeForHeadBlockHash<R = number>(opts?: SubscribeForHeadBlockHashOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('subscribeForHeadBlockHash', [], opts)
+}
+
+export type SubscribeForLogsByAddressesAndTypesOpts = HttpOptions
+export function subscribeForLogsByAddressesAndTypes<R = number>(
+  addresses: string[],
+  logTypes: LogType[],
+  opts?: SubscribeForLogsByAddressesAndTypesOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('subscribeForLogsByAddressesAndTypes', [addresses, logTypes], opts)
+}
+
+export type SubscribeForValidatorElectionByAddressOpts = HttpOptions
+export function subscribeForValidatorElectionByAddress<R = number>(
+  address: string,
+  opts?: SubscribeForValidatorElectionByAddressOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('subscribeForValidatorElectionByAddress', [address], opts)
+}
+
+// Unlocking Accounts
+export type UnlockAccountOpts = HttpOptions
+export function unlockAccount<R = boolean>(
+  address: string,
+  passphrase: string,
+  duration: number,
+  opts?: UnlockAccountOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('unlockAccount', [address, passphrase, duration], opts)
+}
+
+// Address Streams & Blocks
+export function getTransactionsByAddress<R = Transaction[]>(
+  address: string,
+  max: number,
+  startAt: string,
+  opts?: GetTransactionsByAddressOpts,
+): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getTransactionsByAddress', [address, max, startAt], opts)
+}
+
+// Epoch & Block Queries
+export type GetElectionBlockOfOpts = HttpOptions
+export function getElectionBlockOf<R = number>(epoch: number, opts?: GetElectionBlockOfOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getElectionBlockOf', [epoch], opts)
+}
+
+export type GetFirstBlockOfOpts = HttpOptions
+export function getFirstBlockOf<R = number>(epoch: number, opts?: GetFirstBlockOfOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getFirstBlockOf', [epoch], opts)
+}
+
+export type GetMacroBlockOfOpts = HttpOptions
+export function getMacroBlockOf<R = number>(batch: number, opts?: GetMacroBlockOfOpts): Promise<HttpRpcResult<R>> {
+  return rpcCall<R>('getMacroBlockOf', [batch], opts)
+}

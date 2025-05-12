@@ -1,79 +1,261 @@
-# Nimiq RPC Client for TypeScript
+# Nimiq Albatross RPC Client for TypeScript
 
-A fully typed Nimiq RPC client for TypeScript.
+A fully typed Nimiq Albatross RPC client for TypeScript with support for both HTTP and WebSocket connections.
 
-## How to use
-
-### Installation
+## Installation
 
 ```bash
+# Using npm
 npm install nimiq-rpc-client-ts
+
+# Using yarn
+yarn add nimiq-rpc-client-ts
+
+# Using pnpm
+pnpm add nimiq-rpc-client-ts
 ```
 
-#### NIMIQ_SECRET
+## Configuration
 
-<!--
-The development network is currently in a phase where we are giving RPC access to interested developers. Its main purpose is to invite all developers to exercise and test the Nimiq 2.0 RPC functionality (to see how it fits for their app use cases), and we invite them to file and report any issues through our GitHub repository. Using the TOKEN that will be given after requesting developer access from a team member through our social media channels.
--->
+The client can be configured in multiple ways:
 
-The development network is currently in a phase where we request developers to set up their own nodes.
+### 1. Using `initRpcClient` (recommended)
 
-### Usage
+```typescript
+import { initRpcClient } from 'nimiq-rpc-client-ts'
 
-It is structured the same way as the [`Rust RPC Client`](https://github.com/nimiq/core-rs-albatross/tree/albatross/rpc-server/src/dispatchers)
+// Initialize with URL only
+initRpcClient({
+  url: 'https://rpc.nimiq-testnet.com'
+})
+
+// Initialize with URL and authentication
+initRpcClient({
+  url: 'https://rpc.nimiq-testnet.com',
+  auth: {
+    username: 'your-username',
+    password: 'your-password'
+  }
+})
+```
+
+### 2. Using environment variables
+
+```bash
+# Set these environment variables before running your application
+export ALBATROSS_RPC_NODE_URL=https://rpc.nimiq-testnet.com
+export ALBATROSS_RPC_NODE_USERNAME=your-username
+export ALBATROSS_RPC_NODE_PASSWORD=your-password
+```
+
+### 3. Per-request configuration
+
+You can also override configuration on a per-request basis:
+
+```typescript
+import { getBlockNumber } from 'nimiq-rpc-client-ts'
+
+// Override URL and auth for a specific request
+const result = await getBlockNumber({
+  url: new URL('https://rpc.nimiq-testnet.com'),
+  auth: {
+    username: 'your-username',
+    password: 'your-password'
+  }
+})
+```
+
+## HTTP API Usage
+
+All HTTP RPC methods are exposed as individual functions:
+
+```typescript
+import {
+  getAccountByAddress,
+  getBlockByHash,
+  getBlockNumber,
+  sendTransaction
+} from 'nimiq-rpc-client-ts'
+
+// Simple call without options
+const [success, error, result, meta] = await getBlockNumber()
+if (success && result) {
+  console.log(`Current block number: ${result}`)
+}
+
+// Call with options
+const [success, error, block, meta] = await getBlockByHash('abc123...', {
+  includeBody: true // Method-specific option
+})
+
+// Working with accounts
+const [success, error, account, meta] = await getAccountByAddress('NQ...')
+
+// Sending transactions
+const [success, error, txHash, meta] = await sendTransaction({
+  wallet: 'NQ...',
+  recipient: 'NQ...',
+  value: 1000,
+  fee: 10,
+  relativeValidityStartHeight: 0 // or use absoluteValidityStartHeight
+})
+
+// All results are returned as tuples: [success, error, data, metadata]
+// - success: boolean indicating if the call was successful
+// - error: error message if the call failed
+// - data: the actual result data if successful
+// - metadata: additional information about the request
+```
+
+## WebSocket Subscriptions
+
+Subscribe to real-time events using the WebSocket API:
+
+```typescript
+import {
+  LogType,
+  subscribeForHeadBlock,
+  subscribeForHeadBlockHash,
+  subscribeForLogsByAddressesAndTypes
+} from 'nimiq-rpc-client-ts'
+
+// Subscribe to new blocks
+const blockSubscription = await subscribeForHeadBlock(true, {
+  // Optional settings
+  once: false, // Set to true to auto-unsubscribe after first message
+  filter: block => block.number > 100, // Filter events
+  timeout: 30000, // Timeout in ms (default: 30000, false to disable)
+  autoReconnect: true, // Auto reconnect on disconnect
+  onError: e => console.error(e)
+})
+
+// Listen for block events
+blockSubscription.addEventListener('data', (event) => {
+  const { data: block, metadata } = event.detail
+  console.log('New block:', block.number, block.hash)
+})
+
+// Subscribe to head block hashes only (lighter)
+const hashSubscription = await subscribeForHeadBlockHash()
+hashSubscription.addEventListener('data', (event) => {
+  const { data: hashes } = event.detail
+  console.log('New block hashes:', hashes)
+})
+
+// Subscribe to specific log types for addresses
+const logSubscription = await subscribeForLogsByAddressesAndTypes(
+  ['NQ...', 'NQ...'], // Addresses to monitor
+  [LogType.Transfer, LogType.PayFee] // Log types to monitor
+)
+
+// Handle connection events
+blockSubscription.addEventListener('open', () => console.log('Connected'))
+blockSubscription.addEventListener('error', event => console.error('Error:', event.detail))
+blockSubscription.addEventListener('close', () => console.log('Disconnected'))
+```
+
+## Migration Guide from v0.0.0 to v1.0.0
+
+If you're migrating from v0.0.0 to v1.0.0, here are the key changes:
+
+### Class-based to Functional API
+
+**Before (v0.0.0):**
 
 ```typescript
 import { NimiqRPCClient } from 'nimiq-rpc-client-ts'
 
-const url = 'NODE_URL'
-const client = new NimiqRPCClient(new URL(url))
-const { data: currentEpoch, error: errorCurrentEpoch } = await client.blockchain.getEpochNumber()
-if (errorCurrentEpoch || !currentEpoch)
-  throw new Error(errorCurrentEpoch?.message || 'No current epoch')
-
-client.blockchain.getBlockNumber()
-client.network.getPeerCount()
-// use auto-complete to see all available methods, or checkout the class https://github.com/onmax/albatross-rpc-client-ts/blob/main/src/index.ts#L26
+const client = new NimiqRPCClient(new URL('NODE_URL'))
+const { data: currentEpoch, error } = await client.blockchain.getEpochNumber()
 ```
 
-## Call custom method
+**After (v1.0.0):**
 
-If you have a custom method in your RPC server, or the library is out of date, you can always make a `raw` request:
+```typescript
+import { getEpochNumber, initRpcClient } from 'nimiq-rpc-client-ts'
 
-```ts
-interface ResponseType {
-  myResult: string
+// Initialize once at app startup
+initRpcClient({ url: 'NODE_URL' })
+
+// Make calls using direct functions
+const [success, error, currentEpoch, metadata] = await getEpochNumber()
+```
+
+### Return Value Format
+
+**Before (v0.0.0):**
+
+```typescript
+const { data, error } = await client.blockchain.getBlockNumber()
+if (error || !data) {
+  console.error('Error:', error)
 }
-const { data, error } = await rpcCall<ResponseType>({ method: 'myAwesomeCustomMethod', params: ['FirstParameter', 'secondParameter'] }, { /* some http options */ })
-//     ?^ ResponseType | undefined  ?^ Use call for custom HTTP methods or `subscribe` for custom WS
+else {
+  console.log('Block number:', data)
+}
+```
+
+**After (v1.0.0):**
+
+```typescript
+const [success, error, blockNumber, metadata] = await getBlockNumber()
+if (!success || !blockNumber) {
+  console.error('Error:', error)
+}
+else {
+  console.log('Block number:', blockNumber)
+}
+```
+
+### WebSocket Subscriptions
+
+**Before (v0.0.0):**
+
+```typescript
+const { next } = await client.subscribe.forHeadBlock()
+next(block => console.log(block))
+```
+
+**After (v1.0.0):**
+
+```typescript
+const subscription = await subscribeForHeadBlock()
+subscription.addEventListener('data', (event) => {
+  const { data: block } = event.detail
+  console.log(block)
+})
+```
+
+## Custom RPC Methods
+
+If you need to call custom methods not covered by the library:
+
+```typescript
+import { rpcCall, rpcSubscribe } from 'nimiq-rpc-client-ts'
+
+// For HTTP RPC
+const [success, error, data, meta] = await rpcCall<YourResponseType>(
+  'yourCustomMethod',
+  ['param1', 'param2'],
+  { /* options */ }
+)
+
+const subscription = await rpcSubscribe<YourEventType>(
+  'subscribeToYourCustomEvents',
+  ['param1', 'param2'],
+  { /* options */ }
+)
 ```
 
 ## Type Augmentation
 
-You can extend or update the types in the `albatross-rpc-client-ts` library, you can define your own type extensions. This approach is particularly useful if the Rust implementation evolves and includes new types or features that are not yet included in the TypeScript definitions.
+You can extend the library's types for custom needs:
 
 ```typescript
-/// albatross-rpc-client-ts.d.ts
-
-declare module 'albatross-rpc-client-ts' {
+// albatross-rpc-client-ts.d.ts
+declare module 'nimiq-rpc-client-ts' {
   interface Block {
-    newFeature: string
+    myCustomProperty: string
   }
 }
 ```
-
-Then, whenever you import the library, the new types will be available.
-
-```ts
-import { NimiqRPCClient } from 'albatross-rpc-client-ts'
-
-const client = new NimiqRPCClient(new URL('NODE_URL'))
-const block = await client.blockchain.getBlockByHash('HASH')
-// The `block` object now has the new `newFeature` property as well as the other properties defined by the library
-```
-
-> This solution is great for you so it doesn't block your workflow, but all developers will benefit if you can create a PR or open the issue so I can add it to the library asap! 🙌
-
-## Need help?
-
-Check the tests for examples on how to use the client [here](./src/index.test.ts).

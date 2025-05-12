@@ -1,3 +1,4 @@
+import type { LogType } from '../src/types'
 import { describe, expect, it } from 'vitest'
 import {
   subscribeForHeadBlock,
@@ -51,8 +52,8 @@ describe('webSocket Subscriptions', () => {
   it('should subscribe for logs by addresses and types', async () => {
     // This test might not receive data in a short time as logs depend on blockchain activity
     // We'll just test that the subscription is successfully created
-    const addresses = [] // Empty array means all addresses
-    const logTypes = [] // Empty array means all log types
+    const addresses: string[] = [] // Empty array means all addresses
+    const logTypes: LogType[] = [] // Empty array means all log types
     const subscription = await subscribeForLogsByAddressesAndTypes(addresses, logTypes, {
       once: true, // Only receive one event if it happens
       timeout: 5000, // Short timeout for the test

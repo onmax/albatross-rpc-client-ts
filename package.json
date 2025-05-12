@@ -51,7 +51,7 @@
     "release": "pnpm lint && pnpm typecheck && pnpm build && bumpp --commit --push --tag && pnpm publish"
   },
   "dependencies": {
-    "@libsql/isomorphic-ws": "^0.1.5"
+    "isomorphic-ws": "^5.0.0"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^4.2.0",

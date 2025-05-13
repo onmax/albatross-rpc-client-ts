@@ -65,6 +65,39 @@ const result = await getBlockNumber({
 })
 ```
 
+## Module Resolution Setup
+
+This library is published as an ESM-only package with subpath exports. To use it properly, make sure your TypeScript project is configured for ESM:
+
+```json
+// tsconfig.json
+{
+  "compilerOptions": {
+    "target": "ES2020", // or higher
+    "module": "NodeNext", // or "ESNext" with "moduleResolution": "Bundler"
+    "moduleResolution": "NodeNext", // or "Bundler" if using "module": "ESNext"
+    "esModuleInterop": true
+    // Other compiler options...
+  }
+}
+```
+
+Import from specific subpaths like this:
+
+```typescript
+// Import types
+import type { Account, Block } from 'nimiq-rpc-client-ts/types'
+
+// Import configuration utilities
+import { initRpcClient } from 'nimiq-rpc-client-ts/config'
+
+// Import HTTP methods
+import { getAccountByAddress, getBlockNumber } from 'nimiq-rpc-client-ts/http'
+
+// Import WebSocket methods
+import { subscribeForHeadBlock } from 'nimiq-rpc-client-ts/ws'
+```
+
 ## HTTP API Usage
 
 All HTTP RPC methods are exposed as individual functions.

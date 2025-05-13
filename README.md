@@ -67,7 +67,12 @@ const result = await getBlockNumber({
 
 ## HTTP API Usage
 
-All HTTP RPC methods are exposed as individual functions:
+All HTTP RPC methods are exposed as individual functions.
+
+The methods have either one or two parameters:
+
+- If the RPC method does not have any parameters, then the first parameter is an options object for the request.
+- If the RPC method has parameters, then the first parameter is the method-specific parameters and the second parameter is an options object.
 
 ```typescript
 import {
@@ -84,7 +89,8 @@ if (success && result) {
 }
 
 // Call with options
-const [success, error, block, meta] = await getBlockByHash('abc123...', {
+const [success, error, block, meta] = await getBlockByHash({ /* Params first */
+  hash: 'abcd1234...', // Block hash
   includeBody: true // Method-specific option
 })
 

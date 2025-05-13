@@ -6,7 +6,6 @@ import type {
   HttpRequest,
   HttpRpcResult,
   Inherent,
-  LogType,
   MempoolInfo,
   PartialBlock,
   PenalizedSlots,
@@ -33,6 +32,8 @@ function base64Encode(input: string): string {
   return globalThis.btoa(input)
 }
 
+type Res<R> = Promise<HttpRpcResult<R>>
+
 export async function rpcCall<D>(method: string, params: any[] = [], options: HttpOptions = {}): Promise<HttpRpcResult<D>> {
   const url = options.url ? new URL(options.url.toString()) : __getBaseUrl()
   const auth = options.auth ?? __getAuth()
@@ -50,7 +51,15 @@ export async function rpcCall<D>(method: string, params: any[] = [], options: Ht
   }
 
   const body = { jsonrpc: '2.0', method, params: params.map(p => p ?? null), id }
-  const request: HttpRequest = { url: url.href, method: 'POST', headers, body, timestamp: Date.now(), abortController }
+  const request: HttpRequest = {
+    url: url.href,
+    method: 'POST',
+    headers,
+    body,
+    timestamp: Date.now(),
+    abortController,
+    ...options.request,
+  }
 
   let res: Response
   try {
@@ -81,118 +90,111 @@ export async function rpcCall<D>(method: string, params: any[] = [], options: Ht
 
 // #region Blockchain
 
-export type GetBlockNumberOpts = HttpOptions
-export function getBlockNumber<R = number>(opts?: HttpOptions): Promise<HttpRpcResult<R>> {
+export function getBlockNumber<R = number>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockNumber', [], opts)
 }
 
-export type GetBatchNumberOpts = HttpOptions
-export function getBatchNumber<R = number>(opts?: HttpOptions): Promise<HttpRpcResult<R>> {
+export function getBatchNumber<R = number>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBatchNumber', [], opts)
 }
 
-export type GetEpochNumberOpts = HttpOptions
-export function getEpochNumber<R = number>(opts?: HttpOptions): Promise<HttpRpcResult<R>> {
+export function getEpochNumber<R = number>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getEpochNumber', [], opts)
 }
 
-export type GetBlockByHashOpts<T> = HttpOptions & { includeBody?: T }
-export function getBlockByHash<T extends boolean = false, R = T extends true ? Block : PartialBlock>(hash: string, { includeBody, ...opts }: GetBlockByHashOpts<T> = {}): Promise<HttpRpcResult<R>> {
+export interface GetBlockByHashParams<T> { hash: string, includeBody?: T }
+export function getBlockByHash<T extends boolean = false, R = T extends true ? Block : PartialBlock>({ hash, includeBody }: GetBlockByHashParams<T>, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockByHash', [hash, includeBody || false], opts)
 }
 
-export type GetBlockByNumberOpts<T> = HttpOptions & { includeBody?: T }
-export function getBlockByNumber<T extends boolean = false, R = T extends true ? Block : PartialBlock>(blockNumber: number, { includeBody, ...opts }: GetBlockByNumberOpts<T> = {}): Promise<HttpRpcResult<R>> {
+export interface GetBlockByNumberParams<T> { blockNumber: number, includeBody?: T }
+export function getBlockByNumber<T extends boolean = false, R = T extends true ? Block : PartialBlock>({ blockNumber, includeBody }: GetBlockByNumberParams<T>, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockByNumber', [blockNumber, includeBody || false], opts)
 }
 
-export type GetLatestBlockOpts<T> = HttpOptions & { includeBody?: T }
-export function getLatestBlock<T extends boolean = false, R = T extends true ? Block : PartialBlock>({ includeBody, ...opts }: GetLatestBlockOpts<T> = {}): Promise<HttpRpcResult<R>> {
+export interface GetLatestBlockParams<T> { includeBody?: T }
+export function getLatestBlock<T extends boolean = false, R = T extends true ? Block : PartialBlock>({ includeBody }: GetLatestBlockParams<T> = {}, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getLatestBlock', [includeBody || false], opts)
 }
 
-export type GetSlotAtOpts = HttpOptions & { offsetOpt?: number }
-export function getSlotAt<R = Slot>(blockNumber: number, { offsetOpt, ...opts }: GetSlotAtOpts = {}): Promise<HttpRpcResult<R>> {
+export interface GetSlotAtParams { blockNumber: number, offsetOpt?: number }
+export function getSlotAt<R = Slot>({ blockNumber, offsetOpt }: GetSlotAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getSlotAt', [blockNumber, offsetOpt], opts)
 }
 
-export type GetTransactionByHashOpts = HttpOptions
-export function getTransactionByHash<R = Transaction>(hash: string, opts?: GetTransactionByHashOpts): Promise<HttpRpcResult<R>> {
+export interface GetTransactionByHashParams { hash: string }
+export function getTransactionByHash<R = Transaction>({ hash }: GetTransactionByHashParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionByHash', [hash], opts)
 }
 
-export type GetTransactionsByBlockNumberOpts = HttpOptions
-export function getTransactionsByBlockNumber<R = Transaction[]>(blockNumber: number, opts?: GetTransactionsByBlockNumberOpts): Promise<HttpRpcResult<R>> {
+export interface GetTransactionsByBlockNumberParams { blockNumber: number }
+export function getTransactionsByBlockNumber<R = Transaction[]>({ blockNumber }: GetTransactionsByBlockNumberParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionsByBlockNumber', [blockNumber], opts)
 }
 
-export type GetTransactionsByBatchNumberOpts = HttpOptions
-export function getTransactionsByBatchNumber<R = Transaction[]>(batchIndex: number, opts?: GetTransactionsByBatchNumberOpts): Promise<HttpRpcResult<R>> {
+export interface GetTransactionsByBatchNumberParams { batchIndex: number }
+export function getTransactionsByBatchNumber<R = Transaction[]>({ batchIndex }: GetTransactionsByBatchNumberParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionsByBatchNumber', [batchIndex], opts)
 }
 
-export type GetTransactionsByAddressOpts = HttpOptions & { max: number, startAt: string }
-export function getTransactionByAddress<R = Transaction[]>(address: string, { max, startAt, ...opts }: GetTransactionsByAddressOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getTransactionByAddress', [address, max, startAt], opts)
+export interface GetTransactionsByAddressParams { address: string, max?: number, startAt?: string }
+export function getTransactionsByAddress<R = Transaction[]>({ address, max, startAt }: GetTransactionsByAddressParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getTransactionsByAddress', [address, max, startAt], opts)
 }
 
-export type GetTransactionsHashesByAddressOpts = HttpOptions & { max: number, startAt: string }
-export function getTransactionHashesByAddress<R = string[]>(address: string, { max, startAt, ...opts }: GetTransactionsHashesByAddressOpts): Promise<HttpRpcResult<R>> {
+export interface GetTransactionsHashesByAddressParams { address: string, max?: number, startAt?: string }
+export function getTransactionHashesByAddress<R = string[]>({ address, max, startAt }: GetTransactionsHashesByAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionHashesByAddress', [address, max, startAt], opts)
 }
 
-export type GetInherentsByBlockNumberOpts = HttpOptions
-export function getInherentsByBlockNumber<R = Inherent[]>(blockNumber: number, opts?: GetInherentsByBlockNumberOpts): Promise<HttpRpcResult<R>> {
+export interface GetInherentsByBlockNumberParams { blockNumber: number }
+export function getInherentsByBlockNumber<R = Inherent[]>({ blockNumber }: GetInherentsByBlockNumberParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getInherentsByBlockNumber', [blockNumber], opts)
 }
 
-export type GetInherentsByBatchNumberOpts = HttpOptions
-export function getInherentsByBatchNumber<R = Inherent[]>(batchIndex: number, opts?: GetInherentsByBatchNumberOpts): Promise<HttpRpcResult<R>> {
+export interface GetInherentsByBatchNumberParams { batchIndex: number }
+export function getInherentsByBatchNumber<R = Inherent[]>({ batchIndex }: GetInherentsByBatchNumberParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getInherentsByBatchNumber', [batchIndex], opts)
 }
 
-export type GetAccountByAddressOpts = HttpOptions
-export function getAccountByAddress<R = Account>(address: string, opts: GetAccountByAddressOpts = {}): Promise<HttpRpcResult<R>> {
+export interface GetAccountByAddressParams { address: string }
+export function getAccountByAddress<R = Account>({ address }: GetAccountByAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getAccountByAddress', [address], opts)
 }
 
-export type GetAccountsOpts = HttpOptions
-export function getAccounts<R = Account[]>(opts?: GetAccountsOpts): Promise<HttpRpcResult<R>> {
+export function getAccounts<R = Account[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getAccounts', [], opts)
 }
 
-export type GetActiveValidatorsOpts = HttpOptions
-export function getActiveValidators<R = Validator[]>(opts?: GetActiveValidatorsOpts): Promise<HttpRpcResult<R>> {
+export function getActiveValidators<R = Validator[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getActiveValidators', [], opts)
 }
 
-export type GetCurrentPenalizedSlotsOpts = HttpOptions
-export function getCurrentPenalizedSlots<R = PenalizedSlots[]>(opts?: GetCurrentPenalizedSlotsOpts): Promise<HttpRpcResult<R>> {
+export function getCurrentPenalizedSlots<R = PenalizedSlots[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getCurrentPenalizedSlots', [], opts)
 }
 
-export type GetPreviousPenalizedSlotsOpts = HttpOptions
-export function getPreviousPenalizedSlots<R = PenalizedSlots[]>(opts?: GetPreviousPenalizedSlotsOpts): Promise<HttpRpcResult<R>> {
+export function getPreviousPenalizedSlots<R = PenalizedSlots[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPreviousPenalizedSlots', [], opts)
 }
 
-export type GetValidatorByAddressOpts = HttpOptions
-export function getValidatorByAddress<R = Validator>(address: string, opts?: GetValidatorByAddressOpts): Promise<HttpRpcResult<R>> {
+export interface GetValidatorByAddressParams { address: string }
+export function getValidatorByAddress<R = Validator>({ address }: GetValidatorByAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getValidatorByAddress', [address], opts)
 }
 
 export type GetValidatorsOpts = HttpOptions
-export function getValidators<R = Validator[]>(opts?: GetValidatorsOpts): Promise<HttpRpcResult<R>> {
+export function getValidators<R = Validator[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getValidators', [], opts)
 }
 
-export type GetStakersByValidatorAddressOpts = HttpOptions
-export function getStakersByValidatorAddress<R = Staker[]>(address: string, opts?: GetStakersByValidatorAddressOpts): Promise<HttpRpcResult<R>> {
+export interface GetStakersByValidatorAddressParams { address: string }
+export function getStakersByValidatorAddress<R = Staker[]>({ address }: GetStakersByValidatorAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getStakersByValidatorAddress', [address], opts)
 }
 
-export type GetStakerByAddressOpts = HttpOptions
-export function getStakerByAddress<R = Staker>(address: string, opts?: GetStakerByAddressOpts): Promise<HttpRpcResult<R>> {
+export interface GetStakerByAddressParams { address: string }
+export function getStakerByAddress<R = Staker>({ address }: GetStakerByAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getStakerByAddress', [address], opts)
 }
 
@@ -206,23 +208,23 @@ function getValidityStartHeight(p: ValidityStartHeight): string {
     : `${p.absoluteValidityStartHeight}`
 }
 
-export function isConsensusEstablished(opts: HttpOptions): Promise<HttpRpcResult<boolean>> {
+export function isConsensusEstablished(opts?: HttpOptions): Promise<HttpRpcResult<boolean>> {
   return rpcCall<boolean>('isConsensusEstablished', [], opts)
 }
 
 export interface RawTransactionInfoParams { rawTransaction: string }
-export function getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, opts: HttpOptions): Promise<HttpRpcResult<Transaction>> {
+export function getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, opts?: HttpOptions): Promise<HttpRpcResult<Transaction>> {
   return rpcCall<Transaction>('getRawTransactionInfo', [rawTransaction], opts)
 }
 
 export interface RawTransactionInfoParamsSend { rawTransaction: string }
-export function sendRawTransaction<R = string>({ rawTransaction }: RawTransactionInfoParamsSend, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRawTransaction<R = string>({ rawTransaction }: RawTransactionInfoParamsSend, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('sendRawTransaction', [rawTransaction], opts)
 }
 
 export type TransactionParams = { wallet: string, recipient: string, value: number, fee: number, data?: string } & ValidityStartHeight
 
-export function createTransaction<R = string>(params: TransactionParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createTransaction<R = string>(params: TransactionParams, opts?: HttpOptions): Res<R> {
   const { wallet, recipient, value, fee, data } = params
   const validity = getValidityStartHeight(params)
   const method = data ? 'createBasicTransactionWithData' : 'createBasicTransaction'
@@ -232,7 +234,7 @@ export function createTransaction<R = string>(params: TransactionParams, opts: H
   return rpcCall<R>(method, rpcParams, opts)
 }
 
-export function sendTransaction<R = string>(params: TransactionParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendTransaction<R = string>(params: TransactionParams, opts?: HttpOptions): Res<R> {
   const { wallet, recipient, value, fee, data } = params
   const validity = getValidityStartHeight(params)
   const method = data ? 'sendBasicTransactionWithData' : 'sendBasicTransaction'
@@ -252,13 +254,13 @@ export type VestingTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createNewVestingTransaction<R = string>(params: VestingTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createNewVestingTransaction<R = string>(params: VestingTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, owner, startTime, timeStep, numSteps, value, fee } = params
   return rpcCall<R>('createNewVestingTransaction', [wallet, owner, startTime, timeStep, numSteps, value, fee, validity], opts)
 }
 
-export function sendNewVestingTransaction<R = string>(params: VestingTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendNewVestingTransaction<R = string>(params: VestingTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, owner, startTime, timeStep, numSteps, value, fee } = params
   return rpcCall<R>('sendNewVestingTransaction', [wallet, owner, startTime, timeStep, numSteps, value, fee, validity], opts)
@@ -271,13 +273,13 @@ export type RedeemVestingTxParams = {
   value: number
   fee: number
 } & ValidityStartHeight
-export function createRedeemVestingTransaction<R = string>(params: RedeemVestingTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRedeemVestingTransaction<R = string>(params: RedeemVestingTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, contractAddress, recipient, value, fee } = params
   return rpcCall<R>('createRedeemVestingTransaction', [wallet, contractAddress, recipient, value, fee, validity], opts)
 }
 
-export function sendRedeemVestingTransaction<R = string>(params: RedeemVestingTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRedeemVestingTransaction<R = string>(params: RedeemVestingTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, contractAddress, recipient, value, fee } = params
   return rpcCall<R>('sendRedeemVestingTransaction', [wallet, contractAddress, recipient, value, fee, validity], opts)
@@ -294,13 +296,13 @@ export type HtlcTransactionParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createNewHtlcTransaction<R = string>(params: HtlcTransactionParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createNewHtlcTransaction<R = string>(params: HtlcTransactionParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, htlcSender, htlcRecipient, hashRoot, hashCount, timeout, value, fee } = params
   return rpcCall<R>('createNewHtlcTransaction', [wallet, htlcSender, htlcRecipient, hashRoot, hashCount, timeout, value, fee, validity], opts)
 }
 
-export function sendNewHtlcTransaction<R = string>(params: HtlcTransactionParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendNewHtlcTransaction<R = string>(params: HtlcTransactionParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, htlcSender, htlcRecipient, hashRoot, hashCount, timeout, value, fee } = params
   return rpcCall<R>('sendNewHtlcTransaction', [wallet, htlcSender, htlcRecipient, hashRoot, hashCount, timeout, value, fee, validity], opts)
@@ -317,13 +319,13 @@ export type RedeemRegularHtlcTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createRedeemRegularHtlcTransaction<R = string>(params: RedeemRegularHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRedeemRegularHtlcTransaction<R = string>(params: RedeemRegularHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, contractAddress, recipient, preImage, hashRoot, hashCount, value, fee } = params
   return rpcCall<R>('createRedeemRegularHtlcTransaction', [wallet, contractAddress, recipient, preImage, hashRoot, hashCount, value, fee, validity], opts)
 }
 
-export function sendRedeemRegularHtlcTransaction<R = string>(params: RedeemRegularHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRedeemRegularHtlcTransaction<R = string>(params: RedeemRegularHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, contractAddress, recipient, preImage, hashRoot, hashCount, value, fee } = params
   return rpcCall<R>('sendRedeemRegularHtlcTransaction', [wallet, contractAddress, recipient, preImage, hashRoot, hashCount, value, fee, validity], opts)
@@ -337,13 +339,13 @@ export type RedeemTimeoutHtlcTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createRedeemTimeoutHtlcTransaction<R = string>(params: RedeemTimeoutHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRedeemTimeoutHtlcTransaction<R = string>(params: RedeemTimeoutHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, contractAddress, recipient, value, fee } = params
   return rpcCall<R>('createRedeemTimeoutHtlcTransaction', [wallet, contractAddress, recipient, value, fee, validity], opts)
 }
 
-export function sendRedeemTimeoutHtlcTransaction<R = string>(params: RedeemTimeoutHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRedeemTimeoutHtlcTransaction<R = string>(params: RedeemTimeoutHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { wallet, contractAddress, recipient, value, fee } = params
   return rpcCall<R>('sendRedeemTimeoutHtlcTransaction', [wallet, contractAddress, recipient, value, fee, validity], opts)
@@ -358,19 +360,19 @@ export type RedeemEarlyHtlcTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee } = params
   return rpcCall<R>('createRedeemEarlyHtlcTransaction', [contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee, validity], opts)
 }
 
-export function sendRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee } = params
   return rpcCall<R>('sendRedeemEarlyHtlcTransaction', [contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee, validity], opts)
 }
 
-export function signRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function signRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee } = params
   return rpcCall<R>('signRedeemEarlyHtlcTransaction', [contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee, validity], opts)
@@ -384,13 +386,13 @@ export type CreateStakeTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createNewStakerTransaction<R = string>(params: CreateStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createNewStakerTransaction<R = string>(params: CreateStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, delegation, value, fee } = params
   return rpcCall<R>('createNewStakerTransaction', [senderWallet, stakerWallet, delegation, value, fee, validity], opts)
 }
 
-export function sendNewStakerTransaction<R = string>(params: CreateStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendNewStakerTransaction<R = string>(params: CreateStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, delegation, value, fee } = params
   return rpcCall<R>('sendNewStakerTransaction', [senderWallet, stakerWallet, delegation, value, fee, validity], opts)
@@ -403,13 +405,13 @@ export type StakeTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createStakeTransaction<R = string>(params: StakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createStakeTransaction<R = string>(params: StakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, value, fee } = params
   return rpcCall<R>('createStakeTransaction', [senderWallet, stakerWallet, value, fee, validity], opts)
 }
 
-export function sendStakeTransaction<R = string>(params: StakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendStakeTransaction<R = string>(params: StakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, value, fee } = params
   return rpcCall<R>('sendStakeTransaction', [senderWallet, stakerWallet, value, fee, validity], opts)
@@ -423,13 +425,13 @@ export type UpdateStakeTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createUpdateStakerTransaction<R = string>(params: UpdateStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createUpdateStakerTransaction<R = string>(params: UpdateStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee } = params
   return rpcCall<R>('createUpdateStakerTransaction', [senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee, validity], opts)
 }
 
-export function sendUpdateStakerTransaction<R = string>(params: UpdateStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendUpdateStakerTransaction<R = string>(params: UpdateStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee } = params
   return rpcCall<R>('sendUpdateStakerTransaction', [senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee, validity], opts)
@@ -442,13 +444,13 @@ export type SetActiveStakeTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createSetActiveStakeTransaction<R = string>(params: SetActiveStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createSetActiveStakeTransaction<R = string>(params: SetActiveStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, newActiveBalance, fee } = params
   return rpcCall<R>('createSetActiveStakeTransaction', [senderWallet, stakerWallet, newActiveBalance, fee, validity], opts)
 }
 
-export function sendSetActiveStakeTransaction<R = string>(params: SetActiveStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendSetActiveStakeTransaction<R = string>(params: SetActiveStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, newActiveBalance, fee } = params
   return rpcCall<R>('sendSetActiveStakeTransaction', [senderWallet, stakerWallet, newActiveBalance, fee, validity], opts)
@@ -461,13 +463,13 @@ export type CreateRetireStakeTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createRetireStakeTransaction<R = string>(params: CreateRetireStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRetireStakeTransaction<R = string>(params: CreateRetireStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, retireStake, fee } = params
   return rpcCall<R>('createRetireStakeTransaction', [senderWallet, stakerWallet, retireStake, fee, validity], opts)
 }
 
-export function sendRetireStakeTransaction<R = string>(params: CreateRetireStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRetireStakeTransaction<R = string>(params: CreateRetireStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, stakerWallet, retireStake, fee } = params
   return rpcCall<R>('sendRetireStakeTransaction', [senderWallet, stakerWallet, retireStake, fee, validity], opts)
@@ -480,13 +482,13 @@ export type RemoveStakeTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createRemoveStakeTransaction<R = string>(params: RemoveStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRemoveStakeTransaction<R = string>(params: RemoveStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { stakerWallet, recipient, value, fee } = params
   return rpcCall<R>('createRemoveStakeTransaction', [stakerWallet, recipient, value, fee, validity], opts)
 }
 
-export function sendRemoveStakeTransaction<R = string>(params: RemoveStakeTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRemoveStakeTransaction<R = string>(params: RemoveStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { stakerWallet, recipient, value, fee } = params
   return rpcCall<R>('sendRemoveStakeTransaction', [stakerWallet, recipient, value, fee, validity], opts)
@@ -502,13 +504,13 @@ export type NewValidatorTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createNewValidatorTransaction<R = string>(params: NewValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createNewValidatorTransaction<R = string>(params: NewValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, signingSecretKey, votingSecretKey, rewardAddress, signalData, fee } = params
   return rpcCall<R>('createNewValidatorTransaction', [senderWallet, validator, signingSecretKey, votingSecretKey, rewardAddress, signalData, fee, validity], opts)
 }
 
-export function sendNewValidatorTransaction<R = string>(params: NewValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendNewValidatorTransaction<R = string>(params: NewValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, signingSecretKey, votingSecretKey, rewardAddress, signalData, fee } = params
   return rpcCall<R>('sendNewValidatorTransaction', [senderWallet, validator, signingSecretKey, votingSecretKey, rewardAddress, signalData, fee, validity], opts)
@@ -524,13 +526,13 @@ export type UpdateValidatorTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createUpdateValidatorTransaction<R = string>(params: UpdateValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createUpdateValidatorTransaction<R = string>(params: UpdateValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, newSigningSecretKey, newVotingSecretKey, newRewardAddress, newSignalData, fee } = params
   return rpcCall<R>('createUpdateValidatorTransaction', [senderWallet, validator, newSigningSecretKey, newVotingSecretKey, newRewardAddress, newSignalData, fee, validity], opts)
 }
 
-export function sendUpdateValidatorTransaction<R = string>(params: UpdateValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendUpdateValidatorTransaction<R = string>(params: UpdateValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, newSigningSecretKey, newVotingSecretKey, newRewardAddress, newSignalData, fee } = params
   return rpcCall<R>('sendUpdateValidatorTransaction', [senderWallet, validator, newSigningSecretKey, newVotingSecretKey, newRewardAddress, newSignalData, fee, validity], opts)
@@ -543,13 +545,13 @@ export type DeactivateValidatorTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createDeactivateValidatorTransaction<R = string>(params: DeactivateValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createDeactivateValidatorTransaction<R = string>(params: DeactivateValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, signingSecretKey, fee } = params
   return rpcCall<R>('createDeactivateValidatorTransaction', [senderWallet, validator, signingSecretKey, fee, validity], opts)
 }
 
-export function sendDeactivateValidatorTransaction<R = string>(params: DeactivateValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendDeactivateValidatorTransaction<R = string>(params: DeactivateValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, signingSecretKey, fee } = params
   return rpcCall<R>('sendDeactivateValidatorTransaction', [senderWallet, validator, signingSecretKey, fee, validity], opts)
@@ -562,13 +564,13 @@ export type ReactivateValidatorTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createReactivateValidatorTransaction<R = string>(params: ReactivateValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createReactivateValidatorTransaction<R = string>(params: ReactivateValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, signingSecretKey, fee } = params
   return rpcCall<R>('createReactivateValidatorTransaction', [senderWallet, validator, signingSecretKey, fee, validity], opts)
 }
 
-export function sendReactivateValidatorTransaction<R = string>(params: ReactivateValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendReactivateValidatorTransaction<R = string>(params: ReactivateValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, signingSecretKey, fee } = params
   return rpcCall<R>('sendReactivateValidatorTransaction', [senderWallet, validator, signingSecretKey, fee, validity], opts)
@@ -580,13 +582,13 @@ export type RetireValidatorTxParams = {
   fee: number
 } & ValidityStartHeight
 
-export function createRetireValidatorTransaction<R = string>(params: RetireValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createRetireValidatorTransaction<R = string>(params: RetireValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, fee } = params
   return rpcCall<R>('createRetireValidatorTransaction', [senderWallet, validator, fee, validity], opts)
 }
 
-export function sendRetireValidatorTransaction<R = string>(params: RetireValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendRetireValidatorTransaction<R = string>(params: RetireValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { senderWallet, validator, fee } = params
   return rpcCall<R>('sendRetireValidatorTransaction', [senderWallet, validator, fee, validity], opts)
@@ -599,13 +601,13 @@ export type DeleteValidatorTxParams = {
   value: number
 } & ValidityStartHeight
 
-export function createDeleteValidatorTransaction<R = string>(params: DeleteValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function createDeleteValidatorTransaction<R = string>(params: DeleteValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { validator, recipient, fee, value } = params
   return rpcCall<R>('createDeleteValidatorTransaction', [validator, recipient, fee, value, validity], opts)
 }
 
-export function sendDeleteValidatorTransaction<R = string>(params: DeleteValidatorTxParams, opts: HttpOptions): Promise<HttpRpcResult<R>> {
+export function sendDeleteValidatorTransaction<R = string>(params: DeleteValidatorTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
   const { validator, recipient, fee, value } = params
   return rpcCall<R>('sendDeleteValidatorTransaction', [validator, recipient, fee, value, validity], opts)
@@ -615,49 +617,43 @@ export function sendDeleteValidatorTransaction<R = string>(params: DeleteValidat
 
 // #region Mempool
 
-export interface PushTransactionOptions extends HttpOptions { withHighPriority?: boolean }
-
-export async function pushTransaction<R = string>(transaction: string, { withHighPriority, ...opts }: PushTransactionOptions = {}): Promise<HttpRpcResult<R>> {
+export interface PushTransactionParams { transaction: string, withHighPriority?: boolean }
+export async function pushTransaction<R = string>({ transaction, withHighPriority }: PushTransactionParams, opts?: HttpOptions): Res<R> {
   const method = (withHighPriority || false) ? 'pushHighPriorityTransaction' : 'pushTransaction'
   return rpcCall<R>(method, [transaction], opts)
 }
 
-export interface MempoolContentOptions<T extends boolean = false> extends HttpOptions { includeTransactions?: T }
-export async function mempoolContent<T extends boolean = false, R = T extends true ? { tx: Transaction }[] : { hash: string }[]>(includeTransactions: T, options: MempoolContentOptions<T> = {}): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('mempoolContent', [includeTransactions || false], options)
+export interface MempoolContentParams<T extends boolean = false> { includeTransactions?: T }
+export async function mempoolContent<T extends boolean = false, R = T extends true ? { tx: Transaction }[] : { hash: string }[]>({ includeTransactions }: MempoolContentParams<T>, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('mempoolContent', [includeTransactions || false], opts)
 }
 
-export interface MempoolOptions extends HttpOptions { }
-export async function mempool<R = MempoolInfo>(options: MempoolOptions = {}): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('mempool', [], options)
+export async function mempool<R = MempoolInfo>(opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('mempool', [], opts)
 }
 
-export interface GetMinFeePerByteOptions extends HttpOptions { }
-export async function getMinFeePerByte<R = number>(options: GetMinFeePerByteOptions = {}): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getMinFeePerByte', [], options)
+export async function getMinFeePerByte<R = number>(opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getMinFeePerByte', [], opts)
 }
 
-export interface GetTransactionFromMempoolOptions extends HttpOptions { }
-export async function getTransactionFromMempool<R = Transaction>(hash: string, options: GetTransactionFromMempoolOptions = {}): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getTransactionFromMempool', [hash], options)
+export interface GetTransactionFromMempoolParams { hash: string }
+export async function getTransactionFromMempool<R = Transaction>({ hash }: GetTransactionFromMempoolParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getTransactionFromMempool', [hash], opts)
 }
 
 // #endregion
 
 // #region Peers
 
-export type GetPeerIdOpts = HttpOptions
-export function getPeerId<R = string>(opts?: GetPeerIdOpts): Promise<HttpRpcResult<R>> {
+export function getPeerId<R = string>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPeerId', [], opts)
 }
 
-export type GetPeerCountOpts = HttpOptions
-export function getPeerCount<R = number>(opts?: GetPeerCountOpts): Promise<HttpRpcResult<R>> {
+export function getPeerCount<R = number>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPeerCount', [], opts)
 }
 
-export type GetPeerListOpts = HttpOptions
-export function getPeerList<R = string[]>(opts?: GetPeerListOpts): Promise<HttpRpcResult<R>> {
+export function getPeerList<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPeerList', [], opts)
 }
 
@@ -665,138 +661,117 @@ export function getPeerList<R = string[]>(opts?: GetPeerListOpts): Promise<HttpR
 
 // #region Policy
 
-export type GetPolicyConstantsOpts = HttpOptions
-export function getPolicyConstants<R = PolicyConstants>(opts?: GetPolicyConstantsOpts): Promise<HttpRpcResult<R>> {
+export function getPolicyConstants<R = PolicyConstants>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPolicyConstants', [], opts)
 }
 
-export type GetEpochAtOpts = HttpOptions
-export function getEpochAt<R = number>(blockNumber: number, opts?: GetEpochAtOpts): Promise<HttpRpcResult<R>> {
+export interface GetEpochAtParams { blockNumber: number }
+export function getEpochAt<R = number>({ blockNumber }: GetEpochAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getEpochAt', [blockNumber], opts)
 }
 
-export type GetEpochIndexAtOpts = HttpOptions
-export function getEpochIndexAt<R = number>(blockNumber: number, opts?: GetEpochIndexAtOpts): Promise<HttpRpcResult<R>> {
+export interface GetEpochIndexAtParams { blockNumber: number }
+export function getEpochIndexAt<R = number>({ blockNumber }: GetEpochIndexAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getEpochIndexAt', [blockNumber], opts)
 }
 
-export type GetBatchAtOpts = HttpOptions
-export function getBatchAt<R = number>(blockNumber: number, opts?: GetBatchAtOpts): Promise<HttpRpcResult<R>> {
+export interface GetBatchAtParams { blockNumber: number }
+export function getBatchAt<R = number>({ blockNumber }: GetBatchAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBatchAt', [blockNumber], opts)
 }
 
-export type GetBatchIndexAtOpts = HttpOptions
-export function getBatchIndexAt<R = number>(blockNumber: number, opts?: GetBatchIndexAtOpts): Promise<HttpRpcResult<R>> {
+export interface GetBatchIndexAtParams { blockNumber: number }
+export function getBatchIndexAt<R = number>({ blockNumber }: GetBatchIndexAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBatchIndexAt', [blockNumber], opts)
 }
 
-export type GetElectionBlockAfterOpts = HttpOptions
-export function getElectionBlockAfter<R = number>(blockNumber: number, opts?: GetElectionBlockAfterOpts): Promise<HttpRpcResult<R>> {
+export interface GetElectionBlockAfterParams { blockNumber: number }
+export function getElectionBlockAfter<R = number>({ blockNumber }: GetElectionBlockAfterParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getElectionBlockAfter', [blockNumber], opts)
 }
 
-export type GetElectionBlockBeforeOpts = HttpOptions
-export function getElectionBlockBefore<R = number>(blockNumber: number, opts?: GetElectionBlockBeforeOpts): Promise<HttpRpcResult<R>> {
+export interface GetElectionBlockBeforeParams { blockNumber: number }
+export function getElectionBlockBefore<R = number>({ blockNumber }: GetElectionBlockBeforeParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getElectionBlockBefore', [blockNumber], opts)
 }
 
-export type GetLastElectionBlockOpts = HttpOptions
-export function getLastElectionBlock<R = number>(blockNumber: number, opts?: GetLastElectionBlockOpts): Promise<HttpRpcResult<R>> {
+export interface GetLastElectionBlockParams { blockNumber: number }
+export function getLastElectionBlock<R = number>({ blockNumber }: GetLastElectionBlockParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getLastElectionBlock', [blockNumber], opts)
 }
 
-export type IsElectionBlockAtOpts = HttpOptions
-export function isElectionBlockAt<R = boolean>(blockNumber: number, opts?: IsElectionBlockAtOpts): Promise<HttpRpcResult<R>> {
+export interface IsElectionBlockAtParams { blockNumber: number }
+export function isElectionBlockAt<R = boolean>({ blockNumber }: IsElectionBlockAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isElectionBlockAt', [blockNumber], opts)
 }
 
-export type GetMacroBlockAfterOpts = HttpOptions
-export function getMacroBlockAfter<R = number>(blockNumber: number, opts?: GetMacroBlockAfterOpts): Promise<HttpRpcResult<R>> {
+export interface GetMacroBlockAfterParams { blockNumber: number }
+export function getMacroBlockAfter<R = number>({ blockNumber }: GetMacroBlockAfterParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getMacroBlockAfter', [blockNumber], opts)
 }
 
-export type GetMacroBlockBeforeOpts = HttpOptions
-export function getMacroBlockBefore<R = number>(blockNumber: number, opts?: GetMacroBlockBeforeOpts): Promise<HttpRpcResult<R>> {
+export interface GetMacroBlockBeforeParams { blockNumber: number }
+export function getMacroBlockBefore<R = number>({ blockNumber }: GetMacroBlockBeforeParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getMacroBlockBefore', [blockNumber], opts)
 }
 
-export type GetLastMacroBlockOpts = HttpOptions
-export function getLastMacroBlock<R = number>(blockNumber: number, opts?: GetLastMacroBlockOpts): Promise<HttpRpcResult<R>> {
+export interface GetLastMacroBlockParams { blockNumber: number }
+export function getLastMacroBlock<R = number>({ blockNumber }: GetLastMacroBlockParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getLastMacroBlock', [blockNumber], opts)
 }
 
-export type IsMacroBlockAtOpts = HttpOptions
-export function isMacroBlockAt<R = boolean>(blockNumber: number, opts?: IsMacroBlockAtOpts): Promise<HttpRpcResult<R>> {
+export interface IsMacroBlockAtParams { blockNumber: number }
+export function isMacroBlockAt<R = boolean>({ blockNumber }: IsMacroBlockAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isMacroBlockAt', [blockNumber], opts)
 }
 
-export type IsMicroBlockAtOpts = HttpOptions
-export function isMicroBlockAt<R = boolean>(blockNumber: number, opts?: IsMicroBlockAtOpts): Promise<HttpRpcResult<R>> {
+export interface IsMicroBlockAtParams { blockNumber: number }
+export function isMicroBlockAt<R = boolean>({ blockNumber }: IsMicroBlockAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isMicroBlockAt', [blockNumber], opts)
 }
 
-export type GetFirstBlockOfEpochOpts = HttpOptions
-export function getFirstBlockOfEpoch<R = number>(epochIndex: number, opts?: GetFirstBlockOfEpochOpts): Promise<HttpRpcResult<R>> {
+export interface GetFirstBlockOfEpochParams { epochIndex: number }
+export function getFirstBlockOfEpoch<R = number>({ epochIndex }: GetFirstBlockOfEpochParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getFirstBlockOfEpoch', [epochIndex], opts)
 }
 
-export type GetBlockAfterReportingWindowOpts = HttpOptions
-export function getBlockAfterReportingWindow<R = number>(blockNumber: number, opts?: GetBlockAfterReportingWindowOpts): Promise<HttpRpcResult<R>> {
+export interface GetBlockAfterReportingWindowParams { blockNumber: number }
+export function getBlockAfterReportingWindow<R = number>({ blockNumber }: GetBlockAfterReportingWindowParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockAfterReportingWindow', [blockNumber], opts)
 }
 
-export type GetBlockAfterJailOpts = HttpOptions
-export function getBlockAfterJail<R = number>(blockNumber: number, opts?: GetBlockAfterJailOpts): Promise<HttpRpcResult<R>> {
+export interface GetBlockAfterJailParams { blockNumber: number }
+export function getBlockAfterJail<R = number>({ blockNumber }: GetBlockAfterJailParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockAfterJail', [blockNumber], opts)
 }
 
-export type GetFirstBlockOfBatchOpts = HttpOptions
-export function getFirstBlockOfBatch<R = number>(batchIndex: number, opts?: GetFirstBlockOfBatchOpts): Promise<HttpRpcResult<R>> {
+export interface GetFirstBlockOfBatchParams { batchIndex: number }
+export function getFirstBlockOfBatch<R = number>({ batchIndex }: GetFirstBlockOfBatchParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getFirstBlockOfBatch', [batchIndex], opts)
 }
 
-export type GetElectionBlockOfEpochOpts = HttpOptions
-export function getElectionBlockOfEpoch<R = number>(epochIndex: number, opts?: GetElectionBlockOfEpochOpts): Promise<HttpRpcResult<R>> {
+export interface GetElectionBlockOfEpochParams { epochIndex: number }
+export function getElectionBlockOfEpoch<R = number>({ epochIndex }: GetElectionBlockOfEpochParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getElectionBlockOf', [epochIndex], opts)
 }
 
-export type GetMacroBlockOfBatchOpts = HttpOptions
-export function getMacroBlockOfBatch<R = number>(batchIndex: number, opts?: GetMacroBlockOfBatchOpts): Promise<HttpRpcResult<R>> {
+export interface GetMacroBlockOfBatchParams { batchIndex: number }
+export function getMacroBlockOfBatch<R = number>({ batchIndex }: GetMacroBlockOfBatchParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getMacroBlockOf', [batchIndex], opts)
 }
 
-export type GetFirstBatchOfEpochOpts = HttpOptions
-export function getFirstBatchOfEpoch<R = number>(blockNumber: number, opts?: GetFirstBatchOfEpochOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getFirstBatchOfEpoch', [blockNumber], opts)
+export interface GetFirstBatchOfEpochParams { epochIndex: number }
+export function getFirstBatchOfEpoch<R = number>({ epochIndex }: GetFirstBatchOfEpochParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getFirstBatchOfEpoch', [epochIndex], opts)
 }
 
-export type GetBlockchainStateOpts = HttpOptions
-export function getBlockchainState<R = BlockchainState>(opts?: GetBlockchainStateOpts): Promise<HttpRpcResult<R>> {
+export function getBlockchainState<R = BlockchainState>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockchainState', [], opts)
 }
 
-export type GetSupplyAtOpts = HttpOptions
-export function getSupplyAt<R = string>(blockNumber: number, opts?: GetSupplyAtOpts): Promise<HttpRpcResult<R>> {
+export interface GetSupplyAtParams { blockNumber: number }
+export function getSupplyAt<R = string>({ blockNumber }: GetSupplyAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getSupplyAt', [blockNumber], opts)
-}
-
-// #endregion
-
-// #region Logs
-
-export type GetLogOpts = HttpOptions
-export function getLog<R = any[]>(fromBlock: number, toBlock: number, address?: string, types?: LogType[], opts?: GetLogOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getLog', [fromBlock, toBlock, address, types], opts)
-}
-
-export type GetLogByAddressOpts = HttpOptions
-export function getLogByAddress<R = any[]>(address: string, fromBlock: number, toBlock: number, types?: LogType[], opts?: GetLogByAddressOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getLogByAddress', [address, fromBlock, toBlock, types], opts)
-}
-
-export type GetLogByTypesOpts = HttpOptions
-export function getLogByTypes<R = any[]>(types: LogType[], fromBlock: number, toBlock: number, address?: string, opts?: GetLogByTypesOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getLogByTypes', [types, fromBlock, toBlock, address], opts)
 }
 
 // #endregion
@@ -815,12 +790,11 @@ interface ZKPState {
   latestProof: string
 }
 
-export type GetZkpStateOpts = HttpOptions
-export async function getZkpState<R = ZKPState>(opts?: GetZkpStateOpts): Promise<HttpRpcResult<R>> {
+export async function getZkpState<R = ZKPState>(opts?: HttpOptions): Res<R> {
   const result = await rpcCall<ZKPStateKebab>('getZkpState', [], opts)
 
   if (!result[0])
-    return result as unknown as Promise<HttpRpcResult<R>>
+    return result as unknown as Res<R>
 
   return [true, undefined, {
     latestHeaderNumber: result[2]!['latest-header-number'],
@@ -829,206 +803,134 @@ export async function getZkpState<R = ZKPState>(opts?: GetZkpStateOpts): Promise
   } as R, result[3]]
 }
 
-export interface ImportKeyParams { keyData: string, passphrase?: string }
-export interface UnlockAccountParams { passphrase?: string, duration?: number }
-export interface CreateAccountParams { passphrase?: string }
-export interface SignParams { message: string, address: string, passphrase: string, isHex: boolean }
-export interface VerifySignatureParams { message: string, publicKey: string, signature: Signature, isHex: boolean }
+// #endregion
 
-export type ImportRawKeyOpts = HttpOptions
-export function importRawKey<R = string>({ keyData, passphrase }: ImportKeyParams, opts?: ImportRawKeyOpts): Promise<HttpRpcResult<R>> {
+// #region Wallet
+
+export interface ImportKeyParams { keyData: string, passphrase?: string }
+export function importRawKey<R = string>({ keyData, passphrase }: ImportKeyParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('importRawKey', [keyData, passphrase], opts)
 }
 
-export type IsAccountImportedOpts = HttpOptions
-export function isAccountImported<R = boolean>(address: string, opts?: IsAccountImportedOpts): Promise<HttpRpcResult<R>> {
+export interface IsAccountImportedParams { address: string }
+export function isAccountImported<R = boolean>({ address }: IsAccountImportedParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isAccountImported', [address], opts)
 }
 
-export type ListAccountsOpts = HttpOptions
-export function listAccounts<R = string[]>(opts?: ListAccountsOpts): Promise<HttpRpcResult<R>> {
+export function listAccounts<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('listAccounts', [], opts)
 }
 
-export type AddVotingKeyOpts = HttpOptions
-export function addVotingKey<R = null>(secretKey: string, opts?: AddVotingKeyOpts): Promise<HttpRpcResult<R>> {
+export interface AddVotingKeyParams { secretKey: string }
+export function addVotingKey<R = null>({ secretKey }: AddVotingKeyParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('addVotingKey', [secretKey], opts)
 }
 
-export type CreateAccountOpts = HttpOptions
-export function createAccount<R = Account>(passphrase: string, opts?: CreateAccountOpts): Promise<HttpRpcResult<R>> {
+export interface CreateAccountParams { passphrase?: string }
+export function createAccount<R = Account>({ passphrase }: CreateAccountParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('createAccount', [passphrase], opts)
 }
 
-export type GetAddressOpts = HttpOptions
-export function getAddress<R = string>(opts?: GetAddressOpts): Promise<HttpRpcResult<R>> {
+export function getAddress<R = string>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getAddress', [], opts)
 }
 
-// Voting & Signing Keys
-export type GetSigningKeyOpts = HttpOptions
-export function getSigningKey<R = string>(opts?: GetSigningKeyOpts): Promise<HttpRpcResult<R>> {
+export function getSigningKey<R = string>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getSigningKey', [], opts)
 }
 
-export type GetVotingKeyOpts = HttpOptions
-export function getVotingKey<R = string>(opts?: GetVotingKeyOpts): Promise<HttpRpcResult<R>> {
+export function getVotingKey<R = string>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getVotingKey', [], opts)
 }
 
-export type GetVotingKeysOpts = HttpOptions
-export function getVotingKeys<R = string[]>(opts?: GetVotingKeysOpts): Promise<HttpRpcResult<R>> {
+export function getVotingKeys<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getVotingKeys', [], opts)
 }
 
-// Account State
-export type IsAccountUnlockedOpts = HttpOptions
-export function isAccountUnlocked<R = boolean>(address: string, opts?: IsAccountUnlockedOpts): Promise<HttpRpcResult<R>> {
+export interface IsAccountUnlockedParams { address: string }
+export function isAccountUnlocked<R = boolean>({ address }: IsAccountUnlockedParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isAccountUnlocked', [address], opts)
 }
 
-export type LockAccountOpts = HttpOptions
-export function lockAccount<R = null>(address: string, opts?: LockAccountOpts): Promise<HttpRpcResult<R>> {
+export interface LockAccountParams { address: string }
+export function lockAccount<R = null>({ address }: LockAccountParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('lockAccount', [address], opts)
 }
 
-export type RemoveAccountOpts = HttpOptions
-export function removeAccount<R = boolean>(address: string, opts?: RemoveAccountOpts): Promise<HttpRpcResult<R>> {
+export interface RemoveAccountParams { address: string }
+export function removeAccount<R = boolean>({ address }: RemoveAccountParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('removeAccount', [address], opts)
 }
 
-// Validator & Consensus Queries
-export type IsValidatorElectedOpts = HttpOptions
-export function isValidatorElected<R = boolean>(opts?: IsValidatorElectedOpts): Promise<HttpRpcResult<R>> {
+export function isValidatorElected<R = boolean>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isValidatorElected', [], opts)
 }
 
-export type IsValidatorSyncedOpts = HttpOptions
-export function isValidatorSynced<R = boolean>(opts?: IsValidatorSyncedOpts): Promise<HttpRpcResult<R>> {
+export function isValidatorSynced<R = boolean>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('isValidatorSynced', [], opts)
 }
 
-// Transaction Submissions
-export type PushHighPriorityTransactionOpts = HttpOptions
-export function pushHighPriorityTransaction<R = string>(rawTx: string, opts?: PushHighPriorityTransactionOpts): Promise<HttpRpcResult<R>> {
+export interface PushHighPriorityTransactionOpts { rawTx: string }
+export function pushHighPriorityTransaction<R = string>(rawTx: string, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('pushHighPriorityTransaction', [rawTx], opts)
 }
 
-export type SendBasicTransactionOpts = HttpOptions
-export function sendBasicTransaction<R = string>(
-  wallet: string,
-  recipient: string,
-  value: number,
-  fee: number,
-  validityStartHeight: number,
-  opts?: SendBasicTransactionOpts,
-): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('sendBasicTransaction', [wallet, recipient, value, fee, validityStartHeight], opts)
-}
-
-export type SendBasicTransactionWithDataOpts = HttpOptions
-export function sendBasicTransactionWithData<R = string>(
-  wallet: string,
-  recipient: string,
-  data: string,
-  value: number,
-  fee: number,
-  validityStartHeight: number,
-  opts?: SendBasicTransactionWithDataOpts,
-): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('sendBasicTransactionWithData', [wallet, recipient, data, value, fee, validityStartHeight], opts)
-}
-
-// Automatic Reactivation
-export type SetAutomaticReactivationOpts = HttpOptions
-export function setAutomaticReactivation<R = null>(automaticReactivate: boolean, opts?: SetAutomaticReactivationOpts): Promise<HttpRpcResult<R>> {
+export interface SetAutomaticReactivationParams { automaticReactivate: boolean }
+export function setAutomaticReactivation<R = null>({ automaticReactivate }: SetAutomaticReactivationParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('setAutomaticReactivation', [automaticReactivate], opts)
 }
 
-// Signing & Verification
-export type SignOpts = HttpOptions
-export function sign<R = Signature>(
-  message: string,
-  address: string,
-  passphrase: string,
-  isHex: boolean,
-  opts?: SignOpts,
-): Promise<HttpRpcResult<R>> {
+export interface SignParams {
+  message: string
+  address: string
+  passphrase: string
+  isHex: boolean
+}
+export function sign<R = Signature>({
+  message,
+  address,
+  passphrase,
+  isHex,
+}: SignParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('sign', [message, address, passphrase, isHex], opts)
 }
 
-export type VerifySignatureOpts = HttpOptions
-export function verifySignature<R = boolean>(
-  message: string,
-  publicKey: string,
-  signature: Signature,
-  isHex: boolean,
-  opts?: VerifySignatureOpts,
-): Promise<HttpRpcResult<R>> {
+export interface VerifySignatureParams {
+  message: string
+  publicKey: string
+  signature: Signature
+  isHex: boolean
+}
+export function verifySignature<R = boolean>({
+  message,
+  publicKey,
+  signature,
+  isHex,
+}: VerifySignatureParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('verifySignature', [message, publicKey, signature, isHex], opts)
 }
 
-// Subscriptions
-export type SubscribeForHeadBlockOpts = HttpOptions
-export function subscribeForHeadBlock<R = number>(includeBody: boolean, opts?: SubscribeForHeadBlockOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('subscribeForHeadBlock', [includeBody], opts)
+export interface UnlockAccountParams {
+  address: string
+  passphrase?: string
+  duration?: number
 }
-
-export type SubscribeForHeadBlockHashOpts = HttpOptions
-export function subscribeForHeadBlockHash<R = number>(opts?: SubscribeForHeadBlockHashOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('subscribeForHeadBlockHash', [], opts)
-}
-
-export type SubscribeForLogsByAddressesAndTypesOpts = HttpOptions
-export function subscribeForLogsByAddressesAndTypes<R = number>(
-  addresses: string[],
-  logTypes: LogType[],
-  opts?: SubscribeForLogsByAddressesAndTypesOpts,
-): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('subscribeForLogsByAddressesAndTypes', [addresses, logTypes], opts)
-}
-
-export type SubscribeForValidatorElectionByAddressOpts = HttpOptions
-export function subscribeForValidatorElectionByAddress<R = number>(
-  address: string,
-  opts?: SubscribeForValidatorElectionByAddressOpts,
-): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('subscribeForValidatorElectionByAddress', [address], opts)
-}
-
-// Unlocking Accounts
-export type UnlockAccountOpts = HttpOptions
-export function unlockAccount<R = boolean>(
-  address: string,
-  passphrase: string,
-  duration: number,
-  opts?: UnlockAccountOpts,
-): Promise<HttpRpcResult<R>> {
+export function unlockAccount<R = boolean>({ address, passphrase, duration }: UnlockAccountParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('unlockAccount', [address, passphrase, duration], opts)
 }
 
-// Address Streams & Blocks
-export function getTransactionsByAddress<R = Transaction[]>(
-  address: string,
-  max: number,
-  startAt: string,
-  opts?: GetTransactionsByAddressOpts,
-): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getTransactionsByAddress', [address, max, startAt], opts)
-}
-
 // Epoch & Block Queries
-export type GetElectionBlockOfOpts = HttpOptions
-export function getElectionBlockOf<R = number>(epoch: number, opts?: GetElectionBlockOfOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getElectionBlockOf', [epoch], opts)
+export interface GetElectionBlockOfParams { epochIndex: number }
+export function getElectionBlockOf<R = number>({ epochIndex }: GetElectionBlockOfParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getElectionBlockOf', [epochIndex], opts)
 }
 
-export type GetFirstBlockOfOpts = HttpOptions
-export function getFirstBlockOf<R = number>(epoch: number, opts?: GetFirstBlockOfOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getFirstBlockOf', [epoch], opts)
+export interface GetFirstBlockOfParams { epochIndex: number }
+export function getFirstBlockOf<R = number>({ epochIndex }: GetFirstBlockOfParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getFirstBlockOf', [epochIndex], opts)
 }
 
-export type GetMacroBlockOfOpts = HttpOptions
-export function getMacroBlockOf<R = number>(batch: number, opts?: GetMacroBlockOfOpts): Promise<HttpRpcResult<R>> {
-  return rpcCall<R>('getMacroBlockOf', [batch], opts)
+export interface GetMacroBlockOfParams { batchNumber: number }
+export function getMacroBlockOf<R = number>({ batchNumber }: GetMacroBlockOfParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getMacroBlockOf', [batchNumber], opts)
 }

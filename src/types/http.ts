@@ -5,6 +5,13 @@ export interface HttpOptions {
   url?: string | URL
   auth?: Auth
   abortController?: AbortController
+  /**
+   * The request object that was used to make the request. It will override any other
+   * parameters that are passed to the function from the library.
+   *
+   * Useful if you want to pass custom headers or other options to the request.
+   */
+  request?: HttpRequest
 }
 
 export interface SendTxOptions extends HttpOptions {

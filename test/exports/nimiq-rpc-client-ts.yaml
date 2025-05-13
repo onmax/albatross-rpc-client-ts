@@ -1,4 +1,6 @@
 ./http:
+  addVotingKey: function
+  createAccount: function
   createDeactivateValidatorTransaction: function
   createDeleteValidatorTransaction: function
   createNewHtlcTransaction: function
@@ -21,6 +23,7 @@
   getAccountByAddress: function
   getAccounts: function
   getActiveValidators: function
+  getAddress: function
   getBatchAt: function
   getBatchIndexAt: function
   getBatchNumber: function
@@ -33,11 +36,13 @@
   getCurrentPenalizedSlots: function
   getElectionBlockAfter: function
   getElectionBlockBefore: function
+  getElectionBlockOf: function
   getElectionBlockOfEpoch: function
   getEpochAt: function
   getEpochIndexAt: function
   getEpochNumber: function
   getFirstBatchOfEpoch: function
+  getFirstBlockOf: function
   getFirstBlockOfBatch: function
   getFirstBlockOfEpoch: function
   getInherentsByBatchNumber: function
@@ -45,11 +50,9 @@
   getLastElectionBlock: function
   getLastMacroBlock: function
   getLatestBlock: function
-  getLog: function
-  getLogByAddress: function
-  getLogByTypes: function
   getMacroBlockAfter: function
   getMacroBlockBefore: function
+  getMacroBlockOf: function
   getMacroBlockOfBatch: function
   getMinFeePerByte: function
   getPeerCount: function
@@ -58,29 +61,38 @@
   getPolicyConstants: function
   getPreviousPenalizedSlots: function
   getRawTransactionInfo: function
+  getSigningKey: function
   getSlotAt: function
   getStakerByAddress: function
   getStakersByValidatorAddress: function
   getSupplyAt: function
-  getTransactionByAddress: function
   getTransactionByHash: function
   getTransactionFromMempool: function
   getTransactionHashesByAddress: function
+  getTransactionsByAddress: function
   getTransactionsByBatchNumber: function
   getTransactionsByBlockNumber: function
   getValidatorByAddress: function
   getValidators: function
+  getVotingKey: function
+  getVotingKeys: function
   getZkpState: function
   importRawKey: function
   isAccountImported: function
+  isAccountUnlocked: function
   isConsensusEstablished: function
   isElectionBlockAt: function
   isMacroBlockAt: function
   isMicroBlockAt: function
+  isValidatorElected: function
+  isValidatorSynced: function
   listAccounts: function
+  lockAccount: function
   mempool: function
   mempoolContent: function
+  pushHighPriorityTransaction: function
   pushTransaction: function
+  removeAccount: function
   rpcCall: function
   sendDeactivateValidatorTransaction: function
   sendDeleteValidatorTransaction: function
@@ -102,7 +114,17 @@
   sendTransaction: function
   sendUpdateStakerTransaction: function
   sendUpdateValidatorTransaction: function
+  setAutomaticReactivation: function
+  sign: function
   signRedeemEarlyHtlcTransaction: function
+  unlockAccount: function
+  verifySignature: function
+./ws:
+  rpcSubscribe: function
+  subscribeForHeadBlock: function
+  subscribeForHeadBlockHash: function
+  subscribeForLogsByAddressesAndTypes: function
+  subscribeForValidatorElectionByAddress: function
 ./types:
   AccountType: object
   BlockSubscriptionType: object

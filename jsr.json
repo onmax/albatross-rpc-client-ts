@@ -1,0 +1,12 @@
+{
+  "name": "@onmax/nimiq-rpc-client-ts",
+  "version": "1.0.0-beta.25",
+  "license": "MIT",
+  "exports": {
+    ".": "./src/index.ts",
+    "./http": "./src/http.ts",
+    "./ws": "./src/ws.ts",
+    "./types": "./src/types.ts",
+    "./client": "./src/client.ts"
+  }
+}

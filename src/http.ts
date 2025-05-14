@@ -18,7 +18,7 @@ import type {
   ValidityStartHeight,
 } from './types'
 
-import { __getAuth, __getBaseUrl } from './config'
+import { __getAuth, __getBaseUrl } from './client'
 
 export interface IncludeBody<T extends boolean> { includeBody?: T }
 

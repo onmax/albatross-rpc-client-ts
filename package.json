@@ -34,10 +34,10 @@
       "import": "./dist/types.mjs",
       "require": "./dist/types.cjs"
     },
-    "./config": {
-      "types": "./dist/config.d.mts",
-      "import": "./dist/config.mjs",
-      "require": "./dist/config.cjs"
+    "./client": {
+      "types": "./dist/client.d.mts",
+      "import": "./dist/client.mjs",
+      "require": "./dist/client.cjs"
     }
   },
   "main": "./dist/index.cjs",
@@ -54,7 +54,7 @@
     "typecheck": "tsc --noEmit",
     "lint:fix": "eslint --fix .",
     "ci": "pnpm lint && pnpm build",
-    "release": "pnpm lint && pnpm typecheck && pnpm build && bumpp --commit --push --tag && pnpm publish"
+    "release": "pnpm lint && pnpm typecheck && pnpm build && bumpp --commit --push --tag && pnpm publish && jsr publish"
   },
   "dependencies": {
     "isomorphic-ws": "^5.0.0"
@@ -67,6 +67,7 @@
     "dotenv": "^16.4.7",
     "eslint": "^9.20.1",
     "eslint-plugin-format": "^1.0.1",
+    "jsr": "^0.13.4",
     "lint-staged": "^15.4.3",
     "pkg-pr-new": "^0.0.39",
     "simple-git": "^3.27.0",

@@ -5,7 +5,7 @@ export default defineBuildConfig({
     'src/index',
     'src/http',
     'src/ws',
-    'src/config',
+    'src/client',
     'src/types',
   ],
   clean: true,

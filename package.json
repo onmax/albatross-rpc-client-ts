@@ -21,22 +21,28 @@
   "exports": {
     "./http": {
       "types": "./dist/http.d.mts",
-      "import": "./dist/http.mjs"
+      "import": "./dist/http.mjs",
+      "require": "./dist/http.cjs"
     },
     "./ws": {
       "types": "./dist/ws.d.mts",
-      "import": "./dist/ws.mjs"
+      "import": "./dist/ws.mjs",
+      "require": "./dist/ws.cjs"
     },
     "./types": {
       "types": "./dist/types.d.mts",
-      "import": "./dist/types.mjs"
+      "import": "./dist/types.mjs",
+      "require": "./dist/types.cjs"
     },
     "./config": {
       "types": "./dist/config.d.mts",
-      "import": "./dist/config.mjs"
+      "import": "./dist/config.mjs",
+      "require": "./dist/config.cjs"
     }
   },
-  "types": "./dist/types.d.mts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
   "files": [
     "dist"
   ],

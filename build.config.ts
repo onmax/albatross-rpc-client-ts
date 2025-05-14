@@ -9,4 +9,7 @@ export default defineBuildConfig({
   ],
   clean: true,
   declaration: 'node16',
+  rollup: {
+    emitCJS: true,
+  },
 })

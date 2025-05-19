@@ -38,6 +38,11 @@
       "types": "./dist/client.d.mts",
       "import": "./dist/client.mjs",
       "require": "./dist/client.cjs"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.mts",
+      "import": "./dist/browser.mjs",
+      "require": "./dist/browser.cjs"
     }
   },
   "main": "./dist/index.cjs",

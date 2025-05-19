@@ -18,28 +18,62 @@ import type {
   ValidityStartHeight,
 } from './types'
 
-import { __getAuth, __getBaseUrl } from './client'
+// Dynamically use the right module based on environment
+let __getBaseUrl: () => URL
+let __getAuth: () => any
+
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined'
+
+// Use dynamic imports to load the appropriate module
+if (isBrowser) {
+  import('./browser').then((module) => {
+    __getBaseUrl = module.__getBaseUrl
+    __getAuth = module.__getAuth
+  })
+}
+else {
+  import('./client').then((module) => {
+    __getBaseUrl = module.__getBaseUrl
+    __getAuth = module.__getAuth
+  })
+}
 
 export interface IncludeBody<T extends boolean> { includeBody?: T }
 
 let _idCounter = 0
 
-function base64Encode(input: string): string {
-  // eslint-disable-next-line node/prefer-global/buffer
-  if (globalThis.Buffer)
-    // eslint-disable-next-line node/prefer-global/buffer
-    return Buffer.from(input).toString('base64')
-  return globalThis.btoa(input)
+async function base64Encode(input: string): Promise<string> {
+  if (isBrowser) {
+    return btoa(input)
+  }
+  // Node.js environment
+  const { Buffer } = await import('node:buffer')
+  return Buffer.from(input).toString('base64')
 }
 
 type Res<R> = Promise<HttpRpcResult<R>>
 
 export async function rpcCall<D>(method: string, params: any[] = [], options: HttpOptions = {}): Promise<HttpRpcResult<D>> {
+  // Make sure the imports have resolved
+  if (!__getBaseUrl || !__getAuth) {
+    if (isBrowser) {
+      const module = await import('./browser')
+      __getBaseUrl = module.__getBaseUrl
+      __getAuth = module.__getAuth
+    }
+    else {
+      const module = await import('./client')
+      __getBaseUrl = module.__getBaseUrl
+      __getAuth = module.__getAuth
+    }
+  }
+
   const url = options.url ? new URL(options.url.toString()) : __getBaseUrl()
   const auth = options.auth ?? __getAuth()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (auth?.username && auth.password) {
-    headers.Authorization = `Basic ${base64Encode(`${auth.username}:${auth.password}`)}`
+    headers.Authorization = `Basic ${await base64Encode(`${auth.username}:${auth.password}`)}`
   }
 
   const id = _idCounter++

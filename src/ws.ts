@@ -1,6 +1,23 @@
 import type { Block, CreateStakerLog, CreateValidatorLog, DeactivateValidatorLog, DeleteStakerLog, DeleteValidatorLog, FailedTransactionLog, HtlcCreateLog, HtlcEarlyResolveLog, HtlcRegularTransferLog, HtlcTimeoutResolveLog, JailValidatorLog, Log, LogType, PayFeeLog, PayoutRewardLog, PenalizeLog, ReactivateValidatorLog, RemoveStakeLog, RetireStakeLog, RetireValidatorLog, RevertContractLog, SetActiveStakeLog, StakeLog, StakerFeeDeductionLog, TransferLog, UpdateStakerLog, UpdateValidatorLog, Validator, ValidatorFeeDeductionLog, VestingCreateLog } from './types'
 import WebSocket from 'isomorphic-ws'
-import { __getBaseUrl } from './client'
+
+// Dynamically use the right module based on environment
+let __getBaseUrl: () => URL
+
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined' && typeof window.document !== 'undefined'
+
+// Use dynamic imports to load the appropriate module
+if (isBrowser) {
+  import('./browser').then((module) => {
+    __getBaseUrl = module.__getBaseUrl
+  })
+}
+else {
+  import('./client').then((module) => {
+    __getBaseUrl = module.__getBaseUrl
+  })
+}
 
 /**
  * Stream options and defaults
@@ -61,6 +78,18 @@ const DEFAULT_TIMEOUT = 30_000
 const DEFAULT_RECONNECT = { retries: 3, delay: 1_000, onFailed: () => { } }
 
 export async function rpcSubscribe<T>(method: string, params: any[] = [], options: StreamOptions<T> = {}): Promise<WSSubscription<T>> {
+  // Make sure the imports have resolved
+  if (!__getBaseUrl) {
+    if (isBrowser) {
+      const module = await import('./browser')
+      __getBaseUrl = module.__getBaseUrl
+    }
+    else {
+      const module = await import('./client')
+      __getBaseUrl = module.__getBaseUrl
+    }
+  }
+
   const baseUrl = __getBaseUrl()
   const wsUrl = new URL(baseUrl.toString())
   wsUrl.protocol = wsUrl.protocol.replace(/^http/, 'ws')
@@ -114,23 +143,17 @@ export async function rpcSubscribe<T>(method: string, params: any[] = [], option
 
   async function handleMessage(raw: any): Promise<void> {
     try {
-      // eslint-disable-next-line node/prefer-global/buffer
-      const Buffer = typeof window === 'undefined' ? (await import('node:buffer')).Buffer : globalThis.Buffer
-
-      if (raw instanceof Blob)
-        raw = await raw.arrayBuffer().then(buffer => new TextDecoder().decode(buffer))
-      else if (raw instanceof ArrayBuffer)
+      // Handle different message formats in browser vs Node.js
+      if (raw instanceof Blob) {
+        raw = await raw.text()
+      }
+      else if (raw instanceof ArrayBuffer) {
         raw = new TextDecoder().decode(raw)
-      else if (raw instanceof Buffer)
-        raw = raw.toString()
-
-      if (raw instanceof ArrayBuffer) {
-        if (typeof TextDecoder !== 'undefined') {
-          raw = new TextDecoder().decode(raw)
-        }
-        else {
-          const { Buffer } = await import('node:buffer')
-          raw = Buffer.from(raw as ArrayBuffer).toString()
+      }
+      else if (typeof raw !== 'string') {
+        // If we have a Buffer in Node.js
+        if (!isBrowser && raw.toString) {
+          raw = raw.toString()
         }
       }
 

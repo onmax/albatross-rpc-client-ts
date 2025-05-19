@@ -133,7 +133,12 @@
   InherentType: object
   LogType: object
   RetrieveType: object
-./config:
+./client:
   __getAuth: function
   __getBaseUrl: function
   initRpcClient: function
+./browser:
+  __getAuth: function
+  __getBaseUrl: function
+  initRpcClient: function
+  isBrowser: function

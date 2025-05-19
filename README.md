@@ -65,6 +65,25 @@ const result = await getBlockNumber({
 })
 ```
 
+## Browser Usage
+
+For browser environments, you can use the dedicated browser module which is optimized for browser usage:
+
+```typescript
+import { initRpcClient } from 'nimiq-rpc-client-ts/browser'
+import { getBlockNumber } from 'nimiq-rpc-client-ts/http'
+
+// Initialize with URL for browser environment
+initRpcClient({
+  url: 'https://rpc.nimiq-testnet.com'
+})
+
+// Make API calls as usual
+const [success, error, blockNumber] = await getBlockNumber()
+```
+
+Note: The browser module doesn't support environment variables as they're not available in browser environments.
+
 ## Module Resolution Setup
 
 This library is published as an ESM-only package with subpath exports. To use it properly, make sure your TypeScript project is configured for ESM:

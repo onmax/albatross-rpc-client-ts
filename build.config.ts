@@ -7,6 +7,7 @@ export default defineBuildConfig({
     'src/ws',
     'src/client',
     'src/types',
+    'src/browser',
   ],
   clean: true,
   declaration: 'node16',

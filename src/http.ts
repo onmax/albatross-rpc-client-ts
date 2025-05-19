@@ -35,8 +35,8 @@ function base64Encode(input: string): string {
 type Res<R> = Promise<HttpRpcResult<R>>
 
 export async function rpcCall<D>(method: string, params: any[] = [], options: HttpOptions = {}): Promise<HttpRpcResult<D>> {
-  const url = options.url ? new URL(options.url.toString()) : __getBaseUrl()
-  const auth = options.auth ?? __getAuth()
+  const url = options.url ? new URL(options.url.toString()) : await __getBaseUrl()
+  const auth = options.auth ?? await __getAuth()
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (auth?.username && auth.password) {
     headers.Authorization = `Basic ${base64Encode(`${auth.username}:${auth.password}`)}`

@@ -61,7 +61,7 @@ const DEFAULT_TIMEOUT = 30_000
 const DEFAULT_RECONNECT = { retries: 3, delay: 1_000, onFailed: () => { } }
 
 export async function rpcSubscribe<T>(method: string, params: any[] = [], options: StreamOptions<T> = {}): Promise<WSSubscription<T>> {
-  const baseUrl = __getBaseUrl()
+  const baseUrl = await __getBaseUrl()
   const wsUrl = new URL(baseUrl.toString())
   wsUrl.protocol = wsUrl.protocol.replace(/^http/, 'ws')
   wsUrl.pathname = '/ws'

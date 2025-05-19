@@ -1,5 +1,4 @@
 import type { Auth } from './types'
-import { env } from 'node:process'
 
 let _baseUrl: URL | undefined
 let _auth: Auth | undefined
@@ -9,9 +8,35 @@ const usernameEnvName = 'ALBATROSS_RPC_NODE_USERNAME'
 const passwordEnvName = 'ALBATROSS_RPC_NODE_PASSWORD'
 
 /**
+ * Determines if the code is running in a browser environment.
+ */
+export function inBrowser(): boolean {
+  return typeof window !== 'undefined' && typeof window.document !== 'undefined'
+}
+
+/**
+ * Get environment variables safely across different environments
+ */
+async function getEnvVar(name: string): Promise<string | undefined> {
+  if (inBrowser()) {
+    return undefined
+  }
+
+  try {
+    // Dynamic import for Node.js environment
+    const { env } = await import('node:process')
+    return env[name]
+  }
+  catch {
+    // Silently handle import failures
+    return undefined
+  }
+}
+
+/**
  * Initialize the client-wide URL and auth.
  * Must be called before any RPC or WS call (unless you pass url/auth in options).
- * This is optional if environment variables are set.
+ * This is optional if environment variables are set (Node.js environment only).
  */
 export function initRpcClient(config: { url: string | URL, auth?: Auth }): void {
   _baseUrl = typeof config.url === 'string' ? new URL(config.url) : config.url
@@ -19,20 +44,30 @@ export function initRpcClient(config: { url: string | URL, auth?: Auth }): void 
 }
 
 /** Internal getters; prefixed names discourage direct use */
-export function __getBaseUrl(): URL {
+export async function __getBaseUrl(): Promise<URL> {
   if (_baseUrl)
     return _baseUrl
-  if (env[urlEnvName])
-    return new URL(env[urlEnvName] as string)
-  throw new Error(`RPC client not initialized: either call initRpcClient() or set ${urlEnvName} environment variable`)
+
+  const envUrl = await getEnvVar(urlEnvName)
+  if (envUrl)
+    return new URL(envUrl)
+
+  throw new Error(
+    inBrowser()
+      ? `RPC client not initialized: call initRpcClient() with the API URL in browser environments`
+      : `RPC client not initialized: either call initRpcClient() or set ${urlEnvName} environment variable`,
+  )
 }
 
-export function __getAuth(): Auth | undefined {
+export async function __getAuth(): Promise<Auth | undefined> {
   if (_auth)
     return _auth
 
-  if (env[usernameEnvName] && env[passwordEnvName])
-    return { username: env[usernameEnvName], password: env[passwordEnvName] }
+  const username = await getEnvVar(usernameEnvName)
+  const password = await getEnvVar(passwordEnvName)
+
+  if (username && password)
+    return { username, password }
 
   // auth is optional, so no error
   return undefined

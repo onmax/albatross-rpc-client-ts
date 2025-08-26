@@ -2,7 +2,7 @@
   "name": "nimiq-rpc-client-ts",
   "type": "module",
   "version": "1.0.0-beta.29",
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.15.0",
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",
   "license": "MIT",
@@ -57,27 +57,27 @@
     "release": "pnpm lint && pnpm typecheck && pnpm build && bumpp --commit --push --tag && pnpm publish && jsr publish"
   },
   "dependencies": {
-    "isomorphic-ws": "^5.0.0"
+    "isomorphic-ws": "catalog:"
   },
   "devDependencies": {
-    "@antfu/eslint-config": "^4.2.0",
-    "@changesets/cli": "^2.27.12",
-    "@types/ws": "^8.5.14",
-    "bumpp": "^10.0.3",
-    "dotenv": "^16.4.7",
-    "eslint": "^9.20.1",
-    "eslint-plugin-format": "^1.0.1",
-    "jsr": "^0.13.4",
-    "lint-staged": "^15.4.3",
-    "pkg-pr-new": "^0.0.39",
-    "simple-git": "^3.27.0",
-    "simple-git-hooks": "^2.11.1",
-    "tinyexec": "^1.0.1",
-    "typescript": "^5.7.3",
-    "unbuild": "^3.3.1",
-    "vitest": "^3.0.5",
-    "vitest-package-exports": "^0.1.1",
-    "yaml": "^2.7.1"
+    "@antfu/eslint-config": "catalog:",
+    "@changesets/cli": "catalog:",
+    "@types/ws": "catalog:",
+    "bumpp": "catalog:",
+    "dotenv": "catalog:",
+    "eslint": "catalog:",
+    "eslint-plugin-format": "catalog:",
+    "jsr": "catalog:",
+    "lint-staged": "catalog:",
+    "pkg-pr-new": "catalog:",
+    "simple-git": "catalog:",
+    "simple-git-hooks": "catalog:",
+    "tinyexec": "catalog:",
+    "typescript": "catalog:",
+    "unbuild": "catalog:",
+    "vitest": "catalog:",
+    "vitest-package-exports": "catalog:",
+    "yaml": "catalog:"
   },
   "simple-git-hooks": {
     "pre-commit": "pnpm lint-staged"

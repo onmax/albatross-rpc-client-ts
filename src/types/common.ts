@@ -1,6 +1,6 @@
-export type ValidityStartHeight =
-  | { relativeValidityStartHeight: number }
-  | { absoluteValidityStartHeight: number }
+export type ValidityStartHeight
+  = | { relativeValidityStartHeight: number }
+    | { absoluteValidityStartHeight: number }
 
 export enum HashAlgorithm {
   Blake2b = 1,
@@ -325,10 +325,10 @@ export interface DoubleVoteProof {
   blockNumber: number
 }
 
-export type EquivocationProof =
-  | { type: 'Fork', proof: ForkProof }
-  | { type: 'DoubleProposal', proof: DoubleProposalProof }
-  | { type: 'DoubleVote', proof: DoubleVoteProof }
+export type EquivocationProof
+  = | { type: 'Fork', proof: ForkProof }
+    | { type: 'DoubleProposal', proof: DoubleProposalProof }
+    | { type: 'DoubleVote', proof: DoubleVoteProof }
 
 // Block types
 export interface PartialBlock {

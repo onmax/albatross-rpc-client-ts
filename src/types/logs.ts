@@ -215,34 +215,34 @@ export interface FailedTransactionLog {
   failureReason: string
 }
 
-export type Log =
-  | PayFeeLog
-  | TransferLog
-  | HtlcCreateLog
-  | HtlcTimeoutResolveLog
-  | HtlcRegularTransferLog
-  | HtlcEarlyResolveLog
-  | VestingCreateLog
-  | CreateValidatorLog
-  | UpdateValidatorLog
-  | ValidatorFeeDeductionLog
-  | DeactivateValidatorLog
-  | ReactivateValidatorLog
-  | RetireValidatorLog
-  | DeleteValidatorLog
-  | CreateStakerLog
-  | StakeLog
-  | UpdateStakerLog
-  | SetActiveStakeLog
-  | RetireStakeLog
-  | RemoveStakeLog
-  | DeleteStakerLog
-  | StakerFeeDeductionLog
-  | PayoutRewardLog
-  | PenalizeLog
-  | JailValidatorLog
-  | RevertContractLog
-  | FailedTransactionLog
+export type Log
+  = | PayFeeLog
+    | TransferLog
+    | HtlcCreateLog
+    | HtlcTimeoutResolveLog
+    | HtlcRegularTransferLog
+    | HtlcEarlyResolveLog
+    | VestingCreateLog
+    | CreateValidatorLog
+    | UpdateValidatorLog
+    | ValidatorFeeDeductionLog
+    | DeactivateValidatorLog
+    | ReactivateValidatorLog
+    | RetireValidatorLog
+    | DeleteValidatorLog
+    | CreateStakerLog
+    | StakeLog
+    | UpdateStakerLog
+    | SetActiveStakeLog
+    | RetireStakeLog
+    | RemoveStakeLog
+    | DeleteStakerLog
+    | StakerFeeDeductionLog
+    | PayoutRewardLog
+    | PenalizeLog
+    | JailValidatorLog
+    | RevertContractLog
+    | FailedTransactionLog
 
 export interface TransactionLog {
   hash: string

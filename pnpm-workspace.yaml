@@ -1,0 +1,23 @@
+catalog:
+  '@antfu/eslint-config': ^5.2.1
+  '@changesets/cli': ^2.29.6
+  '@types/ws': ^8.18.1
+  bumpp: ^10.2.3
+  dotenv: ^17.2.1
+  eslint: ^9.34.0
+  eslint-plugin-format: ^1.0.1
+  isomorphic-ws: ^5.0.0
+  jsr: ^0.13.5
+  lint-staged: ^16.1.5
+  pkg-pr-new: ^0.0.57
+  simple-git: ^3.28.0
+  simple-git-hooks: ^2.13.1
+  tinyexec: ^1.0.1
+  typescript: ^5.9.2
+  unbuild: ^3.6.1
+  vitest: ^3.2.4
+  vitest-package-exports: ^0.1.1
+  yaml: ^2.8.1
+onlyBuiltDependencies:
+  - esbuild
+  - simple-git-hooks

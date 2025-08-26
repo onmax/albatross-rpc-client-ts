@@ -1,7 +1,7 @@
 {
   "name": "nimiq-rpc-client-ts",
   "type": "module",
-  "version": "1.0.0-beta.32",
+  "version": "1.0.0-beta.33",
   "packageManager": "pnpm@10.15.0",
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",
@@ -57,7 +57,7 @@
     "release": "pnpm lint && pnpm typecheck && pnpm build && bumpp --commit --push --tag && pnpm publish --tag beta && jsr publish"
   },
   "dependencies": {
-    "isomorphic-ws": "^5.0.0"
+    "@libsql/isomorphic-ws": "^0.1.5"
   },
   "devDependencies": {
     "@antfu/eslint-config": "^5.2.1",

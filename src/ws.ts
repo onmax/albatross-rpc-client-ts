@@ -1,5 +1,6 @@
 import type { Block, CreateStakerLog, CreateValidatorLog, DeactivateValidatorLog, DeleteStakerLog, DeleteValidatorLog, FailedTransactionLog, HtlcCreateLog, HtlcEarlyResolveLog, HtlcRegularTransferLog, HtlcTimeoutResolveLog, JailValidatorLog, Log, LogType, PayFeeLog, PayoutRewardLog, PenalizeLog, ReactivateValidatorLog, RemoveStakeLog, RetireStakeLog, RetireValidatorLog, RevertContractLog, SetActiveStakeLog, StakeLog, StakerFeeDeductionLog, TransferLog, UpdateStakerLog, UpdateValidatorLog, Validator, ValidatorFeeDeductionLog, VestingCreateLog } from './types'
-import { WebSocket } from 'isomorphic-ws'
+// @ts-expect-error - isomorphic-ws has type issues with package.json exports
+import { WebSocket } from '@libsql/isomorphic-ws'
 import { __getBaseUrl } from './client'
 
 /**
@@ -184,9 +185,9 @@ export async function rpcSubscribe<T>(method: string, params: any[] = [], option
           emitter.dispatchEvent(new Event('open'))
           resolve()
         }
-        ws.onmessage = ({ data }) => handleMessage(data)
-        ws.onerror = e => handleError(new Error(String(e)))
-        ws.onclose = (ev) => {
+        ws.onmessage = ({ data }: MessageEvent) => handleMessage(data)
+        ws.onerror = (e: Event) => handleError(new Error(String(e)))
+        ws.onclose = (ev: CloseEvent) => {
           open = false
           emitter.dispatchEvent(new CustomEvent('close', { detail: { code: ev.code, reason: ev.reason } }))
           if (!closed && autoReconnect)

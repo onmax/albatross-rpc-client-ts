@@ -81,10 +81,7 @@ This library includes optional runtime validation using [Valibot](https://valibo
 ### Enabling Validation
 
 ```typescript
-import { initRpcClient } from 'nimiq-rpc-client-ts'
-
-// Or configure per-request
-import { getBlockByNumber } from 'nimiq-rpc-client-ts'
+import { getBlockByNumber, initRpcClient } from 'nimiq-rpc-client-ts'
 
 // Global validation settings
 initRpcClient({
@@ -126,37 +123,29 @@ const transactionJsonSchema = getJsonSchemaFor(TransactionSchema)
 The library includes comprehensive schemas for all Nimiq types:
 
 ```typescript
-// Account types
+// Import all schemas
 import {
+  // Account types
   AccountSchema, // Union of all account types
   BasicAccountSchema,
-  HtlcAccountSchema,
-  StakingAccountSchema,
-  VestingAccountSchema
-} from 'nimiq-rpc-client-ts/schemas'
-
-// Block types
-import {
+  // Block types
   BlockSchema,
-  ElectionMacroBlockSchema,
-  MacroBlockSchema,
-  MicroBlockSchema
-} from 'nimiq-rpc-client-ts/schemas'
-
-// Transaction and related
-import {
-  InherentSchema,
-  StakerSchema,
-  TransactionSchema,
-  ValidatorSchema
-} from 'nimiq-rpc-client-ts/schemas'
-
-// Log types
-import {
+  // Log types
   CreateValidatorLogSchema,
+  ElectionMacroBlockSchema,
+  HtlcAccountSchema,
+  // Transaction and related
+  InherentSchema,
   LogSchema,
+  MacroBlockSchema,
+  MicroBlockSchema,
   PayFeeLogSchema,
-  TransferLogSchema
+  StakerSchema,
+  StakingAccountSchema,
+  TransactionSchema,
+  TransferLogSchema,
+  ValidatorSchema,
+  VestingAccountSchema
   // ... and many more
 } from 'nimiq-rpc-client-ts/schemas'
 ```

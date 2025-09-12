@@ -1,21 +1,27 @@
 #!/usr/bin/env tsx
 /**
  * Schema Validation Script
- * 
+ *
  * This script validates the TypeScript implementation against the OpenRPC schema
- * using GPT-5 for analysis and sends results to Slack.
- * 
+ * using GPT-5 for analysis and creates GitHub issues for problems found.
+ * It can also test HTTP methods against a live Nimiq node.
+ *
  * Environment Variables:
  * - OPENAI_API_KEY: Required for AI validation
- * - SLACK_WEBHOOK_URL: Optional, for Slack notifications
- * - NODE_ENV: When set to 'development', mocks Slack notifications
- * 
+ * - SLACK_WEBHOOK_URL: Optional, for summary notifications
+ * - GITHUB_TOKEN: Required for creating issues (automatically available in GitHub Actions)
+ * - NODE_ENV: When set to 'development', mocks GitHub issue creation
+ * - FORCE_VALIDATION: Set to 'true' to run validation even without changes
+ * - NIMIQ_TEST_URL: URL for testing HTTP methods against live Nimiq node
+ *
  * Usage:
  * - Production: pnpm validate-schema
  * - Development: NODE_ENV=development pnpm validate-schema
+ * - Force run: FORCE_VALIDATION=true pnpm validate-schema
  */
 import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
+import process from 'node:process'
 import { openai } from '@ai-sdk/openai'
 import { generateText } from 'ai'
 import { config } from 'dotenv'
@@ -24,14 +30,51 @@ import { config } from 'dotenv'
 config()
 
 const OPENRPC_SCHEMA_URL = 'https://github.com/nimiq/core-rs-albatross/releases/download/v1.1.1/openrpc-document.json'
+const NIMIQ_TEST_URL = process.env.NIMIQ_TEST_URL
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL
+const GITHUB_TOKEN = process.env.GITHUB_TOKEN
+const FORCE_VALIDATION = process.env.FORCE_VALIDATION === 'true'
 
 interface ValidationResult {
   success: boolean
   errors: string[]
   warnings: string[]
   summary: string
+}
+
+interface GitHubIssue {
+  title: string
+  body: string
+  labels: string[]
+}
+
+interface HttpTestResult {
+  success: boolean
+  methodsTested: number
+  failures: string[]
+  summary: string
+}
+
+async function shouldRunValidation(): Promise<boolean> {
+  if (FORCE_VALIDATION) {
+    console.log('🔄 Force validation enabled')
+    return true
+  }
+
+  // Check if running in GitHub Actions
+  if (!process.env.GITHUB_ACTIONS) {
+    console.log('📍 Running locally - validation enabled')
+    return true
+  }
+
+  // In GitHub Actions, only run on manual trigger or specific conditions
+  const eventName = process.env.GITHUB_EVENT_NAME
+  console.log(`📋 GitHub event: ${eventName}`)
+
+  // Run on workflow_dispatch (manual trigger) or on main branch pushes
+  return eventName === 'workflow_dispatch'
+    || (eventName === 'push' && process.env.GITHUB_REF === 'refs/heads/main')
 }
 
 async function downloadSchema(): Promise<any> {
@@ -63,6 +106,90 @@ async function readCurrentImplementation(): Promise<string> {
   }
 
   return implementation
+}
+
+async function testHttpMethods(schema: any): Promise<HttpTestResult> {
+  console.log('🌐 Testing HTTP methods against live node...')
+
+  const failures: string[] = []
+  let methodsTested = 0
+
+  // Extract methods from OpenRPC schema
+  const methods = schema.methods || []
+  const testMethods = methods.slice(0, 5) // Test first 5 methods as examples
+
+  for (const method of testMethods) {
+    methodsTested++
+    const methodName = method.name
+
+    try {
+      console.log(`  Testing ${methodName}...`)
+
+      // Create a basic test payload
+      const payload = {
+        jsonrpc: '2.0',
+        method: methodName,
+        params: method.params?.length > 0 ? getTestParams(method.params) : [],
+        id: 1,
+      }
+
+      const response = await fetch(NIMIQ_TEST_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(10000), // 10 second timeout
+      })
+
+      if (!response.ok) {
+        failures.push(`${methodName}: HTTP ${response.status} ${response.statusText}`)
+        continue
+      }
+
+      const result = await response.json()
+
+      if (result.error) {
+        // Some errors are expected (like missing parameters), only report serious ones
+        if (result.error.code === -32601) { // Method not found
+          failures.push(`${methodName}: Method not found on server`)
+        }
+        else if (result.error.code === -32700) { // Parse error
+          failures.push(`${methodName}: JSON parse error`)
+        }
+        // Skip parameter errors (-32602) as they're expected with test data
+      }
+      else {
+        console.log(`  ✅ ${methodName}: Success`)
+      }
+    }
+    catch (error) {
+      failures.push(`${methodName}: ${error instanceof Error ? error.message : String(error)}`)
+    }
+  }
+
+  return {
+    success: failures.length === 0,
+    methodsTested,
+    failures,
+    summary: `Tested ${methodsTested} HTTP methods, ${failures.length} failures`,
+  }
+}
+
+function getTestParams(params: any[]): any[] {
+  return params.map((param) => {
+    switch (param.schema?.type) {
+      case 'string':
+        return param.name.includes('address') ? 'NQ07 0000 0000 0000 0000 0000 0000 0000 0000' : 'test'
+      case 'number':
+      case 'integer':
+        return param.name.includes('block') ? 1 : 123
+      case 'boolean':
+        return false
+      default:
+        return null
+    }
+  })
 }
 
 async function validateWithAI(schema: any, implementation: string): Promise<ValidationResult> {
@@ -108,12 +235,12 @@ Be thorough and check every method, parameter, and type definition.`
     })
 
     // Extract JSON from response
-    const jsonMatch = text.match(/```json\s*([\s\S]*?)\s*```/) || text.match(/\{[\s\S]*\}/)
+    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/(\{[\s\S]*?\})/)
     if (!jsonMatch) {
       throw new Error('Could not extract JSON from AI response')
     }
 
-    return JSON.parse(jsonMatch[0].replace(/```json\s*|\s*```/g, ''))
+    return JSON.parse(jsonMatch[1] || jsonMatch[0])
   }
   catch (error) {
     console.error('AI validation failed:', error)
@@ -126,7 +253,75 @@ Be thorough and check every method, parameter, and type definition.`
   }
 }
 
-async function sendSlackNotification(result: ValidationResult, error?: Error): Promise<void> {
+async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
+  const isDev = process.env.NODE_ENV === 'development' || !GITHUB_TOKEN
+  const issues: GitHubIssue[] = []
+  const createdIssues: string[] = []
+
+  // Create issues for errors
+  for (const error of result.errors) {
+    issues.push({
+      title: `Schema Validation Error: ${error.substring(0, 60)}${error.length > 60 ? '...' : ''}`,
+      body: `## Validation Error\n\n${error}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
+      labels: ['bug', 'schema-validation', 'ai-detected'],
+    })
+  }
+
+  // Create issues for warnings (as enhancement requests)
+  for (const warning of result.warnings) {
+    issues.push({
+      title: `Schema Validation Warning: ${warning.substring(0, 60)}${warning.length > 60 ? '...' : ''}`,
+      body: `## Validation Warning\n\n${warning}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
+      labels: ['enhancement', 'schema-validation', 'ai-detected'],
+    })
+  }
+
+  if (isDev) {
+    console.log('🔧 Development mode - mocking GitHub issue creation:')
+    for (const issue of issues) {
+      console.log(`📝 Mock Issue: ${issue.title}`)
+      console.log(`   Labels: ${issue.labels.join(', ')}`)
+      createdIssues.push(`mock-issue-${Math.random().toString(36).substr(2, 9)}`)
+    }
+    return createdIssues
+  }
+
+  if (!GITHUB_TOKEN) {
+    console.log('⚠️  No GitHub token provided, skipping issue creation')
+    return createdIssues
+  }
+
+  const repoInfo = process.env.GITHUB_REPOSITORY || 'onmax/albatross-rpc-client-ts'
+
+  for (const issue of issues) {
+    try {
+      const response = await fetch(`https://api.github.com/repos/${repoInfo}/issues`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `token ${GITHUB_TOKEN}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(issue),
+      })
+
+      if (response.ok) {
+        const createdIssue = await response.json()
+        console.log(`✅ Created issue: ${createdIssue.html_url}`)
+        createdIssues.push(createdIssue.html_url)
+      }
+      else {
+        console.error(`❌ Failed to create issue: ${response.status} ${response.statusText}`)
+      }
+    }
+    catch (error) {
+      console.error('Error creating GitHub issue:', error)
+    }
+  }
+
+  return createdIssues
+}
+
+async function sendSlackNotification(result: ValidationResult, createdIssues: string[], error?: Error): Promise<void> {
   const isDev = process.env.NODE_ENV === 'development' || !SLACK_WEBHOOK_URL
 
   if (isDev) {
@@ -135,8 +330,8 @@ async function sendSlackNotification(result: ValidationResult, error?: Error): P
     console.log({
       success: result.success,
       summary: result.summary,
-      errors: result.errors.map(err => typeof err === 'string' ? err : JSON.stringify(err)),
-      warnings: result.warnings.map(warn => typeof warn === 'string' ? warn : JSON.stringify(warn)),
+      issuesCreated: createdIssues.length,
+      issueUrls: createdIssues,
       ...(error && { systemError: error.message }),
     })
     return
@@ -149,14 +344,7 @@ async function sendSlackNotification(result: ValidationResult, error?: Error): P
 
   const color = result.success ? 'good' : 'danger'
   const title = result.success ? '✅ Schema Validation Passed' : '❌ Schema Validation Failed'
-
-  // Convert objects to strings and limit message length
-  const formatField = (items: any[]): string => {
-    const formatted = items.map(item => typeof item === 'string' ? item : JSON.stringify(item))
-    const joined = formatted.join('\n')
-    // Limit field length to prevent Slack message size issues
-    return joined.length > 2000 ? `${joined.substring(0, 1900)}...\n[Message truncated - ${formatted.length} total items]` : joined
-  }
+  const totalIssues = result.errors.length + result.warnings.length
 
   const payload = {
     attachments: [{
@@ -164,20 +352,19 @@ async function sendSlackNotification(result: ValidationResult, error?: Error): P
       title,
       text: result.summary.length > 500 ? `${result.summary.substring(0, 450)}...` : result.summary,
       fields: [
-        ...(result.errors.length > 0
+        ...(totalIssues > 0
           ? [{
-              title: `Errors (${result.errors.length})`,
-              value: formatField(result.errors),
+              title: `Issues Created (${createdIssues.length})`,
+              value: createdIssues.length > 0
+                ? createdIssues.map(url => `• ${url}`).join('\n')
+                : `${result.errors.length} errors and ${result.warnings.length} warnings detected`,
               short: false,
             }]
-          : []),
-        ...(result.warnings.length > 0
-          ? [{
-              title: `Warnings (${result.warnings.length})`,
-              value: formatField(result.warnings),
+          : [{
+              title: 'Status',
+              value: 'No issues found - schema validation passed! ✨',
               short: false,
-            }]
-          : []),
+            }]),
         ...(error
           ? [{
               title: 'System Error',
@@ -214,6 +401,13 @@ async function main(): Promise<void> {
   try {
     console.log('🚀 Starting schema validation...')
 
+    // Check if validation should run
+    const shouldRun = await shouldRunValidation()
+    if (!shouldRun) {
+      console.log('⏭️  Skipping validation - no trigger conditions met')
+      return
+    }
+
     const [schema, implementation] = await Promise.all([
       downloadSchema(),
       readCurrentImplementation(),
@@ -235,7 +429,39 @@ async function main(): Promise<void> {
       result.warnings.forEach(warning => console.log(`  - ${typeof warning === 'string' ? warning : JSON.stringify(warning, null, 2)}`))
     }
 
-    await sendSlackNotification(result)
+    // Test HTTP methods against live node if URL is provided
+    let httpTestResult: HttpTestResult | null = null
+    if (NIMIQ_TEST_URL) {
+      httpTestResult = await testHttpMethods(schema)
+      console.log(`\n🌐 HTTP Test Results: ${httpTestResult.summary}`)
+
+      if (httpTestResult.failures.length > 0) {
+        console.log('\n❌ HTTP Test Failures:')
+        httpTestResult.failures.forEach(failure => console.log(`  - ${failure}`))
+      }
+    }
+    else {
+      console.log('\n⏭️  Skipping HTTP tests - NIMIQ_TEST_URL not provided')
+    }
+
+    // Create GitHub issues for problems found (both AI validation and HTTP test failures)
+    const allErrors = httpTestResult
+      ? [...result.errors, ...httpTestResult.failures.map(f => `HTTP Test Failure: ${f}`)]
+      : result.errors
+
+    const combinedResult = {
+      ...result,
+      errors: allErrors,
+      summary: httpTestResult
+        ? `${result.summary}. HTTP Tests: ${httpTestResult.summary}`
+        : result.summary,
+      success: httpTestResult ? result.success && httpTestResult.success : result.success,
+    }
+
+    const createdIssues = await createGitHubIssues(combinedResult)
+
+    // Send summary notification to Slack
+    await sendSlackNotification(combinedResult, createdIssues)
 
     process.exit(result.success ? 0 : 1)
   }
@@ -249,7 +475,8 @@ async function main(): Promise<void> {
       summary: 'Schema validation script encountered a fatal error',
     }
 
-    await sendSlackNotification(failureResult, error instanceof Error ? error : new Error(String(error)))
+    const createdIssues = await createGitHubIssues(failureResult)
+    await sendSlackNotification(failureResult, createdIssues, error instanceof Error ? error : new Error(String(error)))
     process.exit(1)
   }
 }

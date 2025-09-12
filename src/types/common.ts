@@ -158,6 +158,10 @@ export interface Transaction {
   networkId: number // Corresponds to u8
 }
 
+export interface ExecutedTransaction extends Transaction {
+  executionResult: boolean
+}
+
 export interface Staker {
   address: string
   balance: number

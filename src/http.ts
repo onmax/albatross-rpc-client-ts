@@ -2,6 +2,7 @@ import type {
   Account,
   Block,
   BlockchainState,
+  ExecutedTransaction,
   HttpOptions,
   HttpRequest,
   HttpRpcResult,
@@ -16,6 +17,8 @@ import type {
   Transaction,
   Validator,
   ValidityStartHeight,
+  WalletAccount,
+  ZKPState,
 } from './types'
 
 import { __getAuth, __getBaseUrl, __getValidation } from './client'
@@ -139,28 +142,28 @@ export function getLatestBlock<T extends boolean = false, R = T extends true ? B
   return rpcCall<R>('getLatestBlock', [includeBody || false], opts)
 }
 
-export interface GetSlotAtParams { blockNumber: number, offsetOpt?: number }
+export interface GetSlotAtParams { blockNumber: number, offsetOpt: number }
 export function getSlotAt<R = Slot>({ blockNumber, offsetOpt }: GetSlotAtParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getSlotAt', [blockNumber, offsetOpt], opts)
 }
 
 export interface GetTransactionByHashParams { hash: string }
-export function getTransactionByHash<R = Transaction>({ hash }: GetTransactionByHashParams, opts?: HttpOptions): Res<R> {
+export function getTransactionByHash<R = ExecutedTransaction>({ hash }: GetTransactionByHashParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionByHash', [hash], opts)
 }
 
 export interface GetTransactionsByBlockNumberParams { blockNumber: number }
-export function getTransactionsByBlockNumber<R = Transaction[]>({ blockNumber }: GetTransactionsByBlockNumberParams, opts?: HttpOptions): Res<R> {
+export function getTransactionsByBlockNumber<R = ExecutedTransaction[]>({ blockNumber }: GetTransactionsByBlockNumberParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionsByBlockNumber', [blockNumber], opts)
 }
 
 export interface GetTransactionsByBatchNumberParams { batchIndex: number }
-export function getTransactionsByBatchNumber<R = Transaction[]>({ batchIndex }: GetTransactionsByBatchNumberParams, opts?: HttpOptions): Res<R> {
+export function getTransactionsByBatchNumber<R = ExecutedTransaction[]>({ batchIndex }: GetTransactionsByBatchNumberParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionsByBatchNumber', [batchIndex], opts)
 }
 
 export interface GetTransactionsByAddressParams { address: string, max?: number, startAt?: string }
-export function getTransactionsByAddress<R = Transaction[]>({ address, max, startAt }: GetTransactionsByAddressParams, opts?: HttpOptions): Res<R> {
+export function getTransactionsByAddress<R = ExecutedTransaction[]>({ address, max, startAt }: GetTransactionsByAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionsByAddress', [address, max, startAt], opts)
 }
 
@@ -192,11 +195,11 @@ export function getActiveValidators<R = Validator[]>(opts?: HttpOptions): Res<R>
   return rpcCall<R>('getActiveValidators', [], opts)
 }
 
-export function getCurrentPenalizedSlots<R = PenalizedSlots[]>(opts?: HttpOptions): Res<R> {
+export function getCurrentPenalizedSlots<R = PenalizedSlots>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getCurrentPenalizedSlots', [], opts)
 }
 
-export function getPreviousPenalizedSlots<R = PenalizedSlots[]>(opts?: HttpOptions): Res<R> {
+export function getPreviousPenalizedSlots<R = PenalizedSlots>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPreviousPenalizedSlots', [], opts)
 }
 
@@ -659,7 +662,7 @@ export async function getMinFeePerByte<R = number>(opts?: HttpOptions): Res<R> {
 }
 
 export interface GetTransactionFromMempoolParams { hash: string }
-export async function getTransactionFromMempool<R = Transaction>({ hash }: GetTransactionFromMempoolParams, opts?: HttpOptions): Res<R> {
+export async function getTransactionFromMempool<R = ExecutedTransaction>({ hash }: GetTransactionFromMempoolParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionFromMempool', [hash], opts)
 }
 
@@ -800,36 +803,15 @@ export function getSupplyAt<R = string>({ blockNumber }: GetSupplyAtParams, opts
 
 // #region ZKP
 
-interface ZKPStateKebab {
-  'latest-header-number': number
-  'latest-block-number': number
-  'latest-proof': string
-}
-
-interface ZKPState {
-  latestHeaderNumber: number
-  latestBlockNumber: number
-  latestProof: string
-}
-
 export async function getZkpState<R = ZKPState>(opts?: HttpOptions): Res<R> {
-  const result = await rpcCall<ZKPStateKebab>('getZkpState', [], opts)
-
-  if (!result[0])
-    return result as unknown as Res<R>
-
-  return [true, undefined, {
-    latestHeaderNumber: result[2]!['latest-header-number'],
-    latestBlockNumber: result[2]!['latest-block-number'],
-    latestProof: result[2]!['latest-proof'],
-  } as R, result[3]]
+  return rpcCall<R>('getZkpState', [], opts)
 }
 
 // #endregion
 
 // #region Wallet
 
-export interface ImportKeyParams { keyData: string, passphrase?: string }
+export interface ImportKeyParams { keyData: string, passphrase: string }
 export function importRawKey<R = string>({ keyData, passphrase }: ImportKeyParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('importRawKey', [keyData, passphrase], opts)
 }
@@ -848,8 +830,8 @@ export function addVotingKey<R = null>({ secretKey }: AddVotingKeyParams, opts?:
   return rpcCall<R>('addVotingKey', [secretKey], opts)
 }
 
-export interface CreateAccountParams { passphrase?: string }
-export function createAccount<R = Account>({ passphrase }: CreateAccountParams, opts?: HttpOptions): Res<R> {
+export interface CreateAccountParams { passphrase: string }
+export function createAccount<R = WalletAccount>({ passphrase }: CreateAccountParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('createAccount', [passphrase], opts)
 }
 
@@ -934,8 +916,8 @@ export function verifySignature<R = boolean>({
 
 export interface UnlockAccountParams {
   address: string
-  passphrase?: string
-  duration?: number
+  passphrase: string
+  duration: number
 }
 export function unlockAccount<R = boolean>({ address, passphrase, duration }: UnlockAccountParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('unlockAccount', [address, passphrase, duration], opts)

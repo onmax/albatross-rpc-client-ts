@@ -1,6 +1,5 @@
 export * from './client'
 export * from './http'
-export { getJsonSchemaFor, toJsonSchemaFromValibot } from './json-schemas'
 export * from './types'
 export type { ValidationOptions } from './types/http'
 export * from './ws'

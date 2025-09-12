@@ -8,6 +8,7 @@ export default defineBuildConfig({
     'src/client',
     'src/types',
     'src/schemas',
+    'src/json-schemas-exported',
   ],
   clean: true,
   declaration: 'node16',

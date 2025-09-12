@@ -43,6 +43,11 @@
       "types": "./dist/schemas.d.mts",
       "import": "./dist/schemas.mjs",
       "require": "./dist/schemas.cjs"
+    },
+    "./json-schemas": {
+      "types": "./dist/json-schemas-exported.d.mts",
+      "import": "./dist/json-schemas-exported.mjs",
+      "require": "./dist/json-schemas-exported.cjs"
     }
   },
   "main": "./dist/index.cjs",

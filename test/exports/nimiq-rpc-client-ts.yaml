@@ -126,13 +126,14 @@
   subscribeForLogsByAddressesAndTypes: function
   subscribeForValidatorElectionByAddress: function
 ./types:
-  AccountType: object
-  BlockSubscriptionType: object
-  BlockType: object
-  HashAlgorithm: object
-  InherentType: object
+  AccountTypeEnum: object
+  BlockSubscriptionTypeEnum: object
+  BlockTypeEnum: object
+  HashAlgorithmEnum: object
+  InherentTypeEnum: object
   LogType: object
-  RetrieveType: object
+  LogTypeEnum: object
+  RetrieveTypeEnum: object
 ./client:
   __getAuth: function
   __getBaseUrl: function
@@ -222,3 +223,42 @@
   VestingCreateLogSchema: object
   WalletAccountSchema: object
   ZKPStateSchema: object
+./json-schemas:
+  AccountJSONSchema: object
+  AccountTypeJSONSchema: object
+  AppliedBlockLogJSONSchema: object
+  AuthJSONSchema: object
+  BasicAccountJSONSchema: object
+  BlockchainStateJSONSchema: object
+  BlockJSONSchema: object
+  BlockLogJSONSchema: object
+  BlockSubscriptionTypeJSONSchema: object
+  BlockTypeJSONSchema: object
+  ElectionMacroBlockJSONSchema: object
+  HashAlgorithmJSONSchema: object
+  HtlcAccountJSONSchema: object
+  InherentJailJSONSchema: object
+  InherentJSONSchema: object
+  InherentPenalizeJSONSchema: object
+  InherentRewardJSONSchema: object
+  InherentTypeJSONSchema: object
+  LogJSONSchema: object
+  MacroBlockJSONSchema: object
+  MempoolInfoJSONSchema: object
+  MicroBlockJSONSchema: object
+  NetworkIdJSONSchema: object
+  PartialBlockJSONSchema: object
+  PartialMacroBlockJSONSchema: object
+  PartialMicroBlockJSONSchema: object
+  PolicyConstantsJSONSchema: object
+  RetrieveTypeJSONSchema: object
+  RevertedBlockLogJSONSchema: object
+  SignatureJSONSchema: object
+  StakerJSONSchema: object
+  StakingAccountJSONSchema: object
+  TransactionJSONSchema: object
+  TransactionLogJSONSchema: object
+  ValidatorJSONSchema: object
+  ValidityStartHeightJSONSchema: object
+  VestingAccountJSONSchema: object
+  WalletAccountJSONSchema: object

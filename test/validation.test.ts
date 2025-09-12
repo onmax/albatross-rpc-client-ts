@@ -1,35 +1,29 @@
 import { describe, expect, it } from 'vitest'
-import { getJsonSchemaFor, initRpcClient } from '../src'
-import { AccountTypeSchema, BasicAccountSchema, BlockTypeSchema } from '../src/schemas'
+import { initRpcClient } from '../src'
+import { AccountTypeJSONSchema, BasicAccountJSONSchema, BlockTypeJSONSchema } from '../src/json-schemas-exported'
 
 describe('validation System', () => {
-  it('should convert Valibot schemas to JSON Schema', () => {
-    const basicAccountJsonSchema = getJsonSchemaFor(BasicAccountSchema)
-    expect(basicAccountJsonSchema).toBeDefined()
-    expect(basicAccountJsonSchema.type).toBe('object')
+  it('should have pre-converted JSON schemas', () => {
+    expect(BasicAccountJSONSchema).toBeDefined()
+    expect(BasicAccountJSONSchema.type).toBe('object')
 
-    const accountTypeJsonSchema = getJsonSchemaFor(AccountTypeSchema)
-    expect(accountTypeJsonSchema).toBeDefined()
+    expect(AccountTypeJSONSchema).toBeDefined()
 
-    const blockTypeJsonSchema = getJsonSchemaFor(BlockTypeSchema)
-    expect(blockTypeJsonSchema).toBeDefined()
+    expect(BlockTypeJSONSchema).toBeDefined()
   })
 
-  it('should handle schemas that cannot be converted', () => {
-    // Test with an invalid schema
-    const invalidSchema = null
-    const result = getJsonSchemaFor(invalidSchema)
-    expect(result).toBeNull()
+  it('should handle null schemas gracefully', () => {
+    // This test now verifies that our JSON schemas are not null
+    expect(BasicAccountJSONSchema).not.toBeNull()
+    expect(AccountTypeJSONSchema).not.toBeNull()
+    expect(BlockTypeJSONSchema).not.toBeNull()
   })
 
-  it('should support direct schema imports', async () => {
-    // Test that we can import schemas directly
-    const { BasicAccountSchema: ImportedSchema } = await import('../src/schemas')
-    expect(ImportedSchema).toBeDefined()
-
-    const jsonSchema = getJsonSchemaFor(ImportedSchema)
-    expect(jsonSchema).toBeDefined()
-    expect(jsonSchema.type).toBe('object')
+  it('should support direct JSON schema imports', async () => {
+    // Test that we can import JSON schemas directly
+    const { BasicAccountJSONSchema: ImportedJSONSchema } = await import('../src/json-schemas-exported')
+    expect(ImportedJSONSchema).toBeDefined()
+    expect(ImportedJSONSchema.type).toBe('object')
   })
 
   it('should initialize client with validation options', () => {

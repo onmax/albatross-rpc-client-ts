@@ -30,9 +30,7 @@ jobs:
           node-version: '20'
 
       - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 10
+        uses: pnpm/action-setup@v3
 
       - name: Install dependencies
         run: pnpm install
@@ -41,7 +39,10 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          NIMIQ_TEST_URL: ${{ secrets.NIMIQ_TEST_URL }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NODE_ENV: ${{ github.event.inputs.environment || 'production' }}
+          FORCE_VALIDATION: 'true'
         run: pnpm validate-schema
 
       - name: Upload validation results

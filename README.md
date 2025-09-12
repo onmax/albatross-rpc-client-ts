@@ -63,6 +63,123 @@ const result = await getBlockNumber({
     password: 'your-password'
   }
 })
+
+// Initialize with validation enabled
+initRpcClient({
+  url: 'https://rpc.nimiq-testnet.com',
+  validation: {
+    validateBody: true, // Enable response validation (default: false)
+    validationLevel: 'error' // 'error' or 'warning' (default: 'error')
+  }
+})
+```
+
+## Response Validation
+
+This library includes optional runtime validation using [Valibot](https://valibot.dev/) schemas that can be converted to JSON Schema format. Validation is **disabled by default** for optimal performance.
+
+### Enabling Validation
+
+```typescript
+import { initRpcClient } from 'nimiq-rpc-client-ts'
+
+// Or configure per-request
+import { getBlockByNumber } from 'nimiq-rpc-client-ts'
+
+// Global validation settings
+initRpcClient({
+  url: 'https://rpc.nimiq-testnet.com',
+  validation: {
+    validateBody: true, // Enable response validation
+    validationLevel: 'error' // Throw errors on validation failure
+  }
+})
+
+const [success, error, block] = await getBlockByNumber(123456, {
+  validation: {
+    validateBody: true,
+    validationLevel: 'warning' // Only log warnings, don't throw
+  }
+})
+```
+
+### Working with Schemas
+
+You can import and use the validation schemas directly:
+
+```typescript
+import { getJsonSchemaFor } from 'nimiq-rpc-client-ts'
+// Import specific schemas
+import { BasicAccountSchema, BlockSchema, TransactionSchema } from 'nimiq-rpc-client-ts/schemas'
+
+// Convert Valibot schema to JSON Schema
+const accountJsonSchema = getJsonSchemaFor(BasicAccountSchema)
+console.log(accountJsonSchema)
+// Output: { type: 'object', properties: { ... }, required: [...] }
+
+// Use for OpenAPI documentation, form generation, etc.
+const transactionJsonSchema = getJsonSchemaFor(TransactionSchema)
+```
+
+### Available Schemas
+
+The library includes comprehensive schemas for all Nimiq types:
+
+```typescript
+// Account types
+import {
+  AccountSchema, // Union of all account types
+  BasicAccountSchema,
+  HtlcAccountSchema,
+  StakingAccountSchema,
+  VestingAccountSchema
+} from 'nimiq-rpc-client-ts/schemas'
+
+// Block types
+import {
+  BlockSchema,
+  ElectionMacroBlockSchema,
+  MacroBlockSchema,
+  MicroBlockSchema
+} from 'nimiq-rpc-client-ts/schemas'
+
+// Transaction and related
+import {
+  InherentSchema,
+  StakerSchema,
+  TransactionSchema,
+  ValidatorSchema
+} from 'nimiq-rpc-client-ts/schemas'
+
+// Log types
+import {
+  CreateValidatorLogSchema,
+  LogSchema,
+  PayFeeLogSchema,
+  TransferLogSchema
+  // ... and many more
+} from 'nimiq-rpc-client-ts/schemas'
+```
+
+### Validation Behavior
+
+- **Disabled by default**: No performance impact when not using validation
+- **Dynamic loading**: Schemas are only loaded when validation is enabled
+- **Graceful degradation**: Falls back to limited schemas if some types can't be converted to JSON Schema
+- **Configurable levels**:
+  - `error`: Throws errors on validation failure (stops execution)
+  - `warning`: Logs warnings but continues with original data
+
+```typescript
+// Error level - will throw on invalid data
+const [success, error, data] = await getAccountByAddress('NQ...', {
+  validation: { validateBody: true, validationLevel: 'error' }
+})
+
+// Warning level - will log warnings but return data anyway
+const [success, error, data] = await getAccountByAddress('NQ...', {
+  validation: { validateBody: true, validationLevel: 'warning' }
+})
 ```
 
 ## Module Resolution Setup
@@ -89,10 +206,13 @@ Import from specific subpaths like this:
 import type { Account, Block } from 'nimiq-rpc-client-ts/types'
 
 // Import configuration utilities
-import { initRpcClient } from 'nimiq-rpc-client-ts/config'
+import { initRpcClient } from 'nimiq-rpc-client-ts/client'
 
 // Import HTTP methods
 import { getAccountByAddress, getBlockNumber } from 'nimiq-rpc-client-ts/http'
+
+// Import validation schemas
+import { BasicAccountSchema, TransactionSchema } from 'nimiq-rpc-client-ts/schemas'
 
 // Import WebSocket methods
 import { subscribeForHeadBlock } from 'nimiq-rpc-client-ts/ws'

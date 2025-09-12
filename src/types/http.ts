@@ -1,5 +1,10 @@
 import type { Auth } from './common'
 
+export interface ValidationOptions {
+  validateBody?: boolean
+  validationLevel?: 'error' | 'warning'
+}
+
 export interface HttpOptions {
   timeout?: number | false
   url?: string | URL
@@ -12,6 +17,10 @@ export interface HttpOptions {
    * Useful if you want to pass custom headers or other options to the request.
    */
   request?: HttpRequest
+  /**
+   * Validation options for response body validation
+   */
+  validation?: ValidationOptions
 }
 
 export interface SendTxOptions extends HttpOptions {

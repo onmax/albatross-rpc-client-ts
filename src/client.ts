@@ -1,7 +1,9 @@
 import type { Auth } from './types'
+import type { ValidationOptions } from './types/http'
 
 let _baseUrl: URL | undefined
 let _auth: Auth | undefined
+let _validation: ValidationOptions = { validateBody: false, validationLevel: 'error' }
 
 const urlEnvName = 'ALBATROSS_RPC_NODE_URL'
 const usernameEnvName = 'ALBATROSS_RPC_NODE_USERNAME'
@@ -34,13 +36,14 @@ async function getEnvVar(name: string): Promise<string | undefined> {
 }
 
 /**
- * Initialize the client-wide URL and auth.
+ * Initialize the client-wide URL, auth, and validation options.
  * Must be called before any RPC or WS call (unless you pass url/auth in options).
  * This is optional if environment variables are set (Node.js environment only).
  */
-export function initRpcClient(config: { url: string | URL, auth?: Auth }): void {
+export function initRpcClient(config: { url: string | URL, auth?: Auth, validation?: ValidationOptions }): void {
   _baseUrl = typeof config.url === 'string' ? new URL(config.url) : config.url
   _auth = config.auth
+  _validation = { ..._validation, ...config.validation }
 }
 
 /** Internal getters; prefixed names discourage direct use */
@@ -71,4 +74,8 @@ export async function __getAuth(): Promise<Auth | undefined> {
 
   // auth is optional, so no error
   return undefined
+}
+
+export function __getValidation(): ValidationOptions {
+  return _validation
 }

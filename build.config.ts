@@ -7,6 +7,7 @@ export default defineBuildConfig({
     'src/ws',
     'src/client',
     'src/types',
+    'src/schemas',
   ],
   clean: true,
   declaration: 'node16',

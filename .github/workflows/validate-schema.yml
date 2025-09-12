@@ -1,10 +1,20 @@
-name: Monthly Schema Validation
+name: Schema Validation
 
 on:
+  workflow_dispatch:
+    description: Manual schema validation trigger
+    inputs:
+      environment:
+        description: Environment mode
+        required: false
+        default: production
+        type: choice
+        options:
+          - production
+          - development
   schedule:
     # Run on the 1st of every month at 9:00 AM UTC
     - cron: '0 9 1 * *'
-  workflow_dispatch: # Allow manual triggering
 
 jobs:
   validate-schema:
@@ -31,6 +41,7 @@ jobs:
         env:
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          NODE_ENV: ${{ github.event.inputs.environment || 'production' }}
         run: pnpm validate-schema
 
       - name: Upload validation results

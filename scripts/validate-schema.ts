@@ -23,8 +23,9 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import process from 'node:process'
 import { openai } from '@ai-sdk/openai'
-import { generateText } from 'ai'
+import { generateObject } from 'ai'
 import { config } from 'dotenv'
+import * as v from 'valibot'
 
 // Load environment variables
 config()
@@ -36,10 +37,16 @@ const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
 const FORCE_VALIDATION = process.env.FORCE_VALIDATION === 'true'
 
+interface ValidationIssue {
+  functionName: string
+  issue: string
+  solution: string
+}
+
 interface ValidationResult {
   success: boolean
-  errors: string[]
-  warnings: string[]
+  errors: ValidationIssue[]
+  warnings: ValidationIssue[]
   summary: string
 }
 
@@ -116,7 +123,19 @@ async function testHttpMethods(schema: any): Promise<HttpTestResult> {
 
   // Extract methods from OpenRPC schema
   const methods = schema.methods || []
-  const testMethods = methods.slice(0, 5) // Test first 5 methods as examples
+  // Filter to READ operations and test more comprehensively
+  const readMethods = methods.filter((method: any) =>
+    method.name && (
+      method.name.startsWith('get')
+      || method.name.startsWith('is')
+      || method.name.startsWith('list')
+      || method.name.includes('mempool')
+      || method.name === 'getPeerCount'
+      || method.name === 'getPeerId'
+      || method.name === 'getPeerList'
+    ),
+  )
+  const testMethods = readMethods.slice(0, 15) // Test up to 15 read methods
 
   for (const method of testMethods) {
     methodsTested++
@@ -192,6 +211,20 @@ function getTestParams(params: any[]): any[] {
   })
 }
 
+// Define the schema for validation issues using Valibot
+const ValidationIssueSchema = v.object({
+  functionName: v.pipe(v.string(), v.description('Name of the RPC method with issues')),
+  issue: v.pipe(v.string(), v.description('Description of the issue')),
+  solution: v.pipe(v.string(), v.description('Suggested solution or improvement')),
+})
+
+const validationSchema = v.object({
+  success: v.pipe(v.boolean(), v.description('True if all methods are correctly implemented')),
+  errors: v.pipe(v.array(ValidationIssueSchema), v.description('Array of critical issues that must be fixed')),
+  warnings: v.pipe(v.array(ValidationIssueSchema), v.description('Array of non-critical issues or improvements')),
+  summary: v.pipe(v.string(), v.description('Brief overview of the validation results')),
+})
+
 async function validateWithAI(schema: any, implementation: string): Promise<ValidationResult> {
   console.log('🤖 Validating with GPT-5...')
 
@@ -199,7 +232,12 @@ async function validateWithAI(schema: any, implementation: string): Promise<Vali
     throw new Error('OPENAI_API_KEY environment variable is required')
   }
 
-  const prompt = `You are a TypeScript code validator. Compare this OpenRPC JSON schema with the TypeScript implementation and validate that:
+  try {
+    const { object } = await generateObject({
+      model: openai('gpt-5', {
+        apiKey: OPENAI_API_KEY,
+      }),
+      prompt: `You are a TypeScript code validator. Compare this OpenRPC JSON schema with the TypeScript implementation and validate that:
 
 1. All RPC methods defined in the schema are implemented
 2. Method signatures match (parameters, return types)
@@ -217,36 +255,22 @@ TypeScript Implementation:
 ${implementation}
 \`\`\`
 
-Please provide a detailed analysis in JSON format with:
-- success: boolean (true if all methods are correctly implemented)
-- errors: array of critical issues that must be fixed
-- warnings: array of non-critical issues or improvements
-- summary: brief overview of the validation results
-
-Be thorough and check every method, parameter, and type definition.`
-
-  try {
-    const { text } = await generateText({
-      model: openai('gpt-5', {
-        apiKey: OPENAI_API_KEY,
-      }),
-      prompt,
+Be thorough and check every method, parameter, and type definition. For each issue found, specify the exact function name, the problem, and a clear solution.`,
+      schema: validationSchema,
       maxTokens: 4000,
     })
 
-    // Extract JSON from response
-    const jsonMatch = text.match(/```json\n([\s\S]*?)\n```/) || text.match(/(\{[\s\S]*?\})/)
-    if (!jsonMatch) {
-      throw new Error('Could not extract JSON from AI response')
-    }
-
-    return JSON.parse(jsonMatch[1] || jsonMatch[0])
+    return object
   }
   catch (error) {
     console.error('AI validation failed:', error)
     return {
       success: false,
-      errors: [`AI validation failed: ${error instanceof Error ? error.message : String(error)}`],
+      errors: [{
+        functionName: 'AI_VALIDATION_ERROR',
+        issue: `AI validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        solution: 'Check OpenAI API key and connectivity, or try running validation again',
+      }],
       warnings: [],
       summary: 'AI validation could not be completed due to an error',
     }
@@ -261,8 +285,8 @@ async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
   // Create issues for errors
   for (const error of result.errors) {
     issues.push({
-      title: `Schema Validation Error: ${error.substring(0, 60)}${error.length > 60 ? '...' : ''}`,
-      body: `## Validation Error\n\n${error}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
+      title: `[${error.functionName}] ${error.issue.substring(0, 80)}${error.issue.length > 80 ? '...' : ''}`,
+      body: `## Schema Validation Error\n\n**Function:** \`${error.functionName}\`\n\n**Issue:**\n${error.issue}\n\n**Suggested Solution:**\n${error.solution}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
       labels: ['bug', 'schema-validation', 'ai-detected'],
     })
   }
@@ -270,8 +294,8 @@ async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
   // Create issues for warnings (as enhancement requests)
   for (const warning of result.warnings) {
     issues.push({
-      title: `Schema Validation Warning: ${warning.substring(0, 60)}${warning.length > 60 ? '...' : ''}`,
-      body: `## Validation Warning\n\n${warning}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
+      title: `[${warning.functionName}] ${warning.issue.substring(0, 80)}${warning.issue.length > 80 ? '...' : ''}`,
+      body: `## Schema Validation Warning\n\n**Function:** \`${warning.functionName}\`\n\n**Issue:**\n${warning.issue}\n\n**Suggested Improvement:**\n${warning.solution}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
       labels: ['enhancement', 'schema-validation', 'ai-detected'],
     })
   }
@@ -421,12 +445,12 @@ async function main(): Promise<void> {
 
     if (result.errors.length > 0) {
       console.log('\n❌ Errors:')
-      result.errors.forEach(error => console.log(`  - ${typeof error === 'string' ? error : JSON.stringify(error, null, 2)}`))
+      result.errors.forEach(error => console.log(`  - [${error.functionName}] ${error.issue}`))
     }
 
     if (result.warnings.length > 0) {
       console.log('\n⚠️  Warnings:')
-      result.warnings.forEach(warning => console.log(`  - ${typeof warning === 'string' ? warning : JSON.stringify(warning, null, 2)}`))
+      result.warnings.forEach(warning => console.log(`  - [${warning.functionName}] ${warning.issue}`))
     }
 
     // Test HTTP methods against live node if URL is provided
@@ -445,13 +469,17 @@ async function main(): Promise<void> {
     }
 
     // Create GitHub issues for problems found (both AI validation and HTTP test failures)
-    const allErrors = httpTestResult
-      ? [...result.errors, ...httpTestResult.failures.map(f => `HTTP Test Failure: ${f}`)]
-      : result.errors
+    const httpErrors: ValidationIssue[] = httpTestResult
+      ? httpTestResult.failures.map(failure => ({
+          functionName: failure.split(':')[0] || 'HTTP_TEST',
+          issue: `HTTP Test Failure: ${failure}`,
+          solution: 'Check RPC endpoint connectivity, method parameters, or server configuration',
+        }))
+      : []
 
-    const combinedResult = {
+    const combinedResult: ValidationResult = {
       ...result,
-      errors: allErrors,
+      errors: [...result.errors, ...httpErrors],
       summary: httpTestResult
         ? `${result.summary}. HTTP Tests: ${httpTestResult.summary}`
         : result.summary,
@@ -470,7 +498,11 @@ async function main(): Promise<void> {
 
     const failureResult: ValidationResult = {
       success: false,
-      errors: [`Script execution failed: ${error instanceof Error ? error.message : String(error)}`],
+      errors: [{
+        functionName: 'SCRIPT_ERROR',
+        issue: `Script execution failed: ${error instanceof Error ? error.message : String(error)}`,
+        solution: 'Check script dependencies, environment variables, and try running again',
+      }],
       warnings: [],
       summary: 'Schema validation script encountered a fatal error',
     }

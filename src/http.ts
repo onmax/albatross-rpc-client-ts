@@ -237,9 +237,9 @@ export function isConsensusEstablished(opts?: HttpOptions): Promise<HttpRpcResul
   return rpcCall<boolean>('isConsensusEstablished', [], opts)
 }
 
-export interface RawTransactionInfoParams { rawTransaction: string }
-export function getRawTransactionInfo({ rawTransaction }: RawTransactionInfoParams, opts?: HttpOptions): Promise<HttpRpcResult<Transaction>> {
-  return rpcCall<Transaction>('getRawTransactionInfo', [rawTransaction], opts)
+export interface RawTransactionInfoParams { rawTx: string }
+export function getRawTransactionInfo({ rawTx }: RawTransactionInfoParams, opts?: HttpOptions): Promise<HttpRpcResult<Transaction>> {
+  return rpcCall<Transaction>('getRawTransactionInfo', [rawTx], opts)
 }
 
 export interface RawTransactionInfoParamsSend { rawTransaction: string }
@@ -397,16 +397,24 @@ export function sendRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHt
   return rpcCall<R>('sendRedeemEarlyHtlcTransaction', [contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee, validity], opts)
 }
 
-export function signRedeemEarlyHtlcTransaction<R = string>(params: RedeemEarlyHtlcTxParams, opts?: HttpOptions): Res<R> {
+export type SignRedeemEarlyHtlcTxParams = {
+  wallet: string
+  contractAddress: string
+  recipient: string
+  value: number
+  fee: number
+} & ValidityStartHeight
+
+export function signRedeemEarlyHtlcTransaction<R = string>(params: SignRedeemEarlyHtlcTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
-  const { contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee } = params
-  return rpcCall<R>('signRedeemEarlyHtlcTransaction', [contractAddress, recipient, htlcSenderSignature, htlcRecipientSignature, value, fee, validity], opts)
+  const { wallet, contractAddress, recipient, value, fee } = params
+  return rpcCall<R>('signRedeemEarlyHtlcTransaction', [wallet, contractAddress, recipient, value, fee, validity], opts)
 }
 
 export type CreateStakeTxParams = {
   senderWallet: string
   stakerWallet: string
-  delegation?: string
+  delegation: string
   value: number
   fee: number
 } & ValidityStartHeight
@@ -445,21 +453,21 @@ export function sendStakeTransaction<R = string>(params: StakeTxParams, opts?: H
 export type UpdateStakeTxParams = {
   senderWallet: string
   stakerWallet: string
-  newDelegation: string | null
-  newInactiveBalance: number
+  newDelegation: string
+  reactivateAllStake: boolean
   fee: number
 } & ValidityStartHeight
 
 export function createUpdateStakerTransaction<R = string>(params: UpdateStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
-  const { senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee } = params
-  return rpcCall<R>('createUpdateStakerTransaction', [senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee, validity], opts)
+  const { senderWallet, stakerWallet, newDelegation, reactivateAllStake, fee } = params
+  return rpcCall<R>('createUpdateStakerTransaction', [senderWallet, stakerWallet, newDelegation, reactivateAllStake, fee, validity], opts)
 }
 
 export function sendUpdateStakerTransaction<R = string>(params: UpdateStakeTxParams, opts?: HttpOptions): Res<R> {
   const validity = getValidityStartHeight(params)
-  const { senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee } = params
-  return rpcCall<R>('sendUpdateStakerTransaction', [senderWallet, stakerWallet, newDelegation, newInactiveBalance, fee, validity], opts)
+  const { senderWallet, stakerWallet, newDelegation, reactivateAllStake, fee } = params
+  return rpcCall<R>('sendUpdateStakerTransaction', [senderWallet, stakerWallet, newDelegation, reactivateAllStake, fee, validity], opts)
 }
 
 export type SetActiveStakeTxParams = {
@@ -484,7 +492,7 @@ export function sendSetActiveStakeTransaction<R = string>(params: SetActiveStake
 export type CreateRetireStakeTxParams = {
   senderWallet: string
   stakerWallet: string
-  retireStake: boolean
+  retireStake: number
   fee: number
 } & ValidityStartHeight
 
@@ -794,9 +802,9 @@ export function getBlockchainState<R = BlockchainState>(opts?: HttpOptions): Res
   return rpcCall<R>('getBlockchainState', [], opts)
 }
 
-export interface GetSupplyAtParams { blockNumber: number }
-export function getSupplyAt<R = string>({ blockNumber }: GetSupplyAtParams, opts?: HttpOptions): Res<R> {
-  return rpcCall<R>('getSupplyAt', [blockNumber], opts)
+export interface GetSupplyAtParams { genesisSupply: number, genesisTime: number, currentTime: number }
+export function getSupplyAt<R = number>({ genesisSupply, genesisTime, currentTime }: GetSupplyAtParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getSupplyAt', [genesisSupply, genesisTime, currentTime], opts)
 }
 
 // #endregion
@@ -902,7 +910,7 @@ export function sign<R = Signature>({
 export interface VerifySignatureParams {
   message: string
   publicKey: string
-  signature: Signature
+  signature: string
   isHex: boolean
 }
 export function verifySignature<R = boolean>({

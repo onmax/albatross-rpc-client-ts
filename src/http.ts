@@ -18,7 +18,8 @@ import type {
   ValidityStartHeight,
 } from './types'
 
-import { __getAuth, __getBaseUrl } from './client'
+import { __getAuth, __getBaseUrl, __getValidation } from './client'
+import { handleValidationResult, validateResponse } from './validation'
 
 export interface IncludeBody<T extends boolean> { includeBody?: T }
 
@@ -37,6 +38,9 @@ type Res<R> = Promise<HttpRpcResult<R>>
 export async function rpcCall<D>(method: string, params: any[] = [], options: HttpOptions = {}): Promise<HttpRpcResult<D>> {
   const url = options.url ? new URL(options.url.toString()) : await __getBaseUrl()
   const auth = options.auth ?? await __getAuth()
+  const globalValidation = __getValidation()
+  const validation = { ...globalValidation, ...options.validation }
+
   const headers: Record<string, string> = { 'Content-Type': 'application/json' }
   if (auth?.username && auth.password) {
     headers.Authorization = `Basic ${base64Encode(`${auth.username}:${auth.password}`)}`
@@ -82,8 +86,26 @@ export async function rpcCall<D>(method: string, params: any[] = [], options: Ht
   if ('error' in json)
     return [false, JSON.stringify(json.error), undefined, { request }]
 
-  if ('result' in json)
-    return [true, undefined, json.result.data, { request, metadata: json.result.metadata }]
+  if ('result' in json) {
+    let responseData = json.result.data
+
+    // Apply validation if enabled
+    if (validation.validateBody) {
+      try {
+        const validationResult = await validateResponse(responseData, method, validation)
+        responseData = handleValidationResult(validationResult, validation, method)
+      }
+      catch (validationError) {
+        if (validation.validationLevel === 'error') {
+          return [false, `Validation error: ${validationError}`, undefined, { request }]
+        }
+        // For warnings, continue with original data
+        console.warn(`Validation warning for ${method}:`, validationError)
+      }
+    }
+
+    return [true, undefined, responseData, { request, metadata: json.result.metadata }]
+  }
 
   return [false, 'Unexpected RPC format', undefined, { request }]
 }

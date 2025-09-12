@@ -1,7 +1,10 @@
 import * as v from 'valibot'
 
 // Common schemas
-export const ValidityStartHeightSchema = v.union([
+export const ValidityStartHeightSchema: v.UnionSchema<[
+  v.ObjectSchema<{ relativeValidityStartHeight: v.NumberSchema<undefined> }, undefined>,
+  v.ObjectSchema<{ absoluteValidityStartHeight: v.NumberSchema<undefined> }, undefined>,
+], undefined> = v.union([
   v.object({
     relativeValidityStartHeight: v.number(),
   }),
@@ -10,13 +13,29 @@ export const ValidityStartHeightSchema = v.union([
   }),
 ])
 
-export const HashAlgorithmSchema = v.picklist([1, 3, 4])
+export const HashAlgorithmSchema: v.PicklistSchema<[1, 3, 4], undefined> = v.picklist([1, 3, 4])
 
-export const AccountTypeSchema = v.picklist(['basic', 'vesting', 'htlc', 'staking'])
+export const AccountTypeSchema: v.PicklistSchema<['basic', 'vesting', 'htlc', 'staking'], undefined> = v.picklist(['basic', 'vesting', 'htlc', 'staking'])
 
-export const InherentTypeSchema = v.picklist(['reward', 'jail', 'penalize'])
+export const InherentTypeSchema: v.PicklistSchema<['reward', 'jail', 'penalize'], undefined> = v.picklist(['reward', 'jail', 'penalize'])
 
-export const PolicyConstantsSchema = v.object({
+export const PolicyConstantsSchema: v.ObjectSchema<{
+  stakingContractAddress: v.StringSchema<undefined>
+  coinbaseAddress: v.StringSchema<undefined>
+  transactionValidityWindow: v.NumberSchema<undefined>
+  maxSizeMicroBody: v.NumberSchema<undefined>
+  version: v.NumberSchema<undefined>
+  slots: v.NumberSchema<undefined>
+  blocksPerBatch: v.NumberSchema<undefined>
+  batchesPerEpoch: v.NumberSchema<undefined>
+  blocksPerEpoch: v.NumberSchema<undefined>
+  validatorDeposit: v.NumberSchema<undefined>
+  minimumStake: v.NumberSchema<undefined>
+  totalSupply: v.NumberSchema<undefined>
+  jailEpochs: v.NumberSchema<undefined>
+  genesisBlockNumber: v.NumberSchema<undefined>
+  blockSeparationTime: v.NumberSchema<undefined>
+}, undefined> = v.object({
   stakingContractAddress: v.string(),
   coinbaseAddress: v.string(),
   transactionValidityWindow: v.number(),
@@ -35,13 +54,26 @@ export const PolicyConstantsSchema = v.object({
 })
 
 // Account schemas
-export const BasicAccountSchema = v.object({
+export const BasicAccountSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'basic', undefined>
+  address: v.StringSchema<undefined>
+  balance: v.NumberSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('basic'),
   address: v.string(),
   balance: v.number(),
 })
 
-export const VestingAccountSchema = v.object({
+export const VestingAccountSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'vesting', undefined>
+  address: v.StringSchema<undefined>
+  balance: v.NumberSchema<undefined>
+  owner: v.StringSchema<undefined>
+  vestingStart: v.NumberSchema<undefined>
+  vestingStepBlocks: v.NumberSchema<undefined>
+  vestingStepAmount: v.NumberSchema<undefined>
+  vestingTotalAmount: v.NumberSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('vesting'),
   address: v.string(),
   balance: v.number(),
@@ -52,7 +84,17 @@ export const VestingAccountSchema = v.object({
   vestingTotalAmount: v.number(),
 })
 
-export const HtlcAccountSchema = v.object({
+export const HtlcAccountSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'htlc', undefined>
+  address: v.StringSchema<undefined>
+  balance: v.NumberSchema<undefined>
+  sender: v.StringSchema<undefined>
+  recipient: v.StringSchema<undefined>
+  hashRoot: v.StringSchema<undefined>
+  hashCount: v.NumberSchema<undefined>
+  timeout: v.NumberSchema<undefined>
+  totalAmount: v.NumberSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('htlc'),
   address: v.string(),
   balance: v.number(),
@@ -64,20 +106,48 @@ export const HtlcAccountSchema = v.object({
   totalAmount: v.number(),
 })
 
-export const StakingAccountSchema = v.object({
+export const StakingAccountSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'staking', undefined>
+  address: v.StringSchema<undefined>
+  balance: v.NumberSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('staking'),
   address: v.string(),
   balance: v.number(),
 })
 
-export const AccountSchema = v.variant('type', [
+export const AccountSchema: v.VariantSchema<'type', [
+  typeof BasicAccountSchema,
+  typeof VestingAccountSchema,
+  typeof HtlcAccountSchema,
+  typeof StakingAccountSchema,
+], undefined> = v.variant('type', [
   BasicAccountSchema,
   VestingAccountSchema,
   HtlcAccountSchema,
   StakingAccountSchema,
 ])
 
-export const TransactionSchema = v.object({
+export const TransactionSchema: v.ObjectSchema<{
+  hash: v.StringSchema<undefined>
+  blockNumber: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  timestamp: v.OptionalSchema<v.BigintSchema<undefined>, undefined>
+  confirmations: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  size: v.NumberSchema<undefined>
+  relatedAddresses: v.SetSchema<v.StringSchema<undefined>, undefined>
+  from: v.StringSchema<undefined>
+  fromType: v.NumberSchema<undefined>
+  to: v.StringSchema<undefined>
+  toType: v.NumberSchema<undefined>
+  value: v.NumberSchema<undefined>
+  fee: v.NumberSchema<undefined>
+  senderData: v.StringSchema<undefined>
+  recipientData: v.StringSchema<undefined>
+  flags: v.NumberSchema<undefined>
+  validityStartHeight: v.NumberSchema<undefined>
+  proof: v.StringSchema<undefined>
+  networkId: v.NumberSchema<undefined>
+}, undefined> = v.object({
   hash: v.string(),
   blockNumber: v.optional(v.number()),
   timestamp: v.optional(v.bigint()),
@@ -98,7 +168,14 @@ export const TransactionSchema = v.object({
   networkId: v.number(),
 })
 
-export const StakerSchema = v.object({
+export const StakerSchema: v.ObjectSchema<{
+  address: v.StringSchema<undefined>
+  balance: v.NumberSchema<undefined>
+  delegation: v.OptionalSchema<v.StringSchema<undefined>, undefined>
+  inactiveBalance: v.NumberSchema<undefined>
+  inactiveFrom: v.NullableSchema<v.NumberSchema<undefined>, undefined>
+  retiredBalance: v.NumberSchema<undefined>
+}, undefined> = v.object({
   address: v.string(),
   balance: v.number(),
   delegation: v.optional(v.string()),
@@ -107,7 +184,18 @@ export const StakerSchema = v.object({
   retiredBalance: v.number(),
 })
 
-export const ValidatorSchema = v.object({
+export const ValidatorSchema: v.ObjectSchema<{
+  address: v.StringSchema<undefined>
+  signingKey: v.StringSchema<undefined>
+  votingKey: v.StringSchema<undefined>
+  rewardAddress: v.StringSchema<undefined>
+  signalData: v.OptionalSchema<v.StringSchema<undefined>, undefined>
+  balance: v.NumberSchema<undefined>
+  numStakers: v.NumberSchema<undefined>
+  retired: v.BooleanSchema<undefined>
+  inactivityFlag: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  jailedFrom: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+}, undefined> = v.object({
   address: v.string(),
   signingKey: v.string(),
   votingKey: v.string(),
@@ -120,20 +208,36 @@ export const ValidatorSchema = v.object({
   jailedFrom: v.optional(v.number()),
 })
 
-export const SlotSchema = v.object({
+export const SlotSchema: v.ObjectSchema<{
+  firstSlotNumber: v.NumberSchema<undefined>
+  numSlots: v.NumberSchema<undefined>
+  validator: v.StringSchema<undefined>
+  publicKey: v.StringSchema<undefined>
+}, undefined> = v.object({
   firstSlotNumber: v.number(),
   numSlots: v.number(),
   validator: v.string(),
   publicKey: v.string(),
 })
 
-export const PenalizedSlotsSchema = v.object({
+export const PenalizedSlotsSchema: v.ObjectSchema<{
+  blockNumber: v.NumberSchema<undefined>
+  disabled: v.ArraySchema<v.NumberSchema<undefined>, undefined>
+}, undefined> = v.object({
   blockNumber: v.number(),
   disabled: v.array(v.number()),
 })
 
 // Inherent schemas
-export const InherentRewardSchema = v.object({
+export const InherentRewardSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'reward', undefined>
+  blockNumber: v.NumberSchema<undefined>
+  blockTime: v.NumberSchema<undefined>
+  validatorAddress: v.StringSchema<undefined>
+  target: v.StringSchema<undefined>
+  value: v.NumberSchema<undefined>
+  hash: v.StringSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('reward'),
   blockNumber: v.number(),
   blockTime: v.number(),
@@ -143,7 +247,13 @@ export const InherentRewardSchema = v.object({
   hash: v.string(),
 })
 
-export const InherentPenalizeSchema = v.object({
+export const InherentPenalizeSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'penalize', undefined>
+  blockNumber: v.NumberSchema<undefined>
+  blockTime: v.NumberSchema<undefined>
+  validatorAddress: v.StringSchema<undefined>
+  offenseEventBlock: v.NumberSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('penalize'),
   blockNumber: v.number(),
   blockTime: v.number(),
@@ -151,7 +261,13 @@ export const InherentPenalizeSchema = v.object({
   offenseEventBlock: v.number(),
 })
 
-export const InherentJailSchema = v.object({
+export const InherentJailSchema: v.ObjectSchema<{
+  type: v.LiteralSchema<'jail', undefined>
+  blockNumber: v.NumberSchema<undefined>
+  blockTime: v.NumberSchema<undefined>
+  validatorAddress: v.StringSchema<undefined>
+  offenseEventBlock: v.NumberSchema<undefined>
+}, undefined> = v.object({
   type: v.literal('jail'),
   blockNumber: v.number(),
   blockTime: v.number(),
@@ -159,13 +275,34 @@ export const InherentJailSchema = v.object({
   offenseEventBlock: v.number(),
 })
 
-export const InherentSchema = v.variant('type', [
+export const InherentSchema: v.VariantSchema<'type', [
+  typeof InherentRewardSchema,
+  typeof InherentPenalizeSchema,
+  typeof InherentJailSchema,
+], undefined> = v.variant('type', [
   InherentRewardSchema,
   InherentPenalizeSchema,
   InherentJailSchema,
 ])
 
-export const MempoolInfoSchema = v.object({
+export const MempoolInfoSchema: v.ObjectSchema<{
+  _0: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _1: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _2: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _5: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _10: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _20: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _50: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _100: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _200: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _500: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _1000: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _2000: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _5000: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  _10000: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  total: v.NumberSchema<undefined>
+  buckets: v.ArraySchema<v.NumberSchema<undefined>, undefined>
+}, undefined> = v.object({
   _0: v.optional(v.number()),
   _1: v.optional(v.number()),
   _2: v.optional(v.number()),
@@ -184,51 +321,85 @@ export const MempoolInfoSchema = v.object({
   buckets: v.array(v.number()),
 })
 
-export const WalletAccountSchema = v.object({
+export const WalletAccountSchema: v.ObjectSchema<{
+  address: v.StringSchema<undefined>
+  publicKey: v.StringSchema<undefined>
+  privateKey: v.StringSchema<undefined>
+}, undefined> = v.object({
   address: v.string(),
   publicKey: v.string(),
   privateKey: v.string(),
 })
 
-export const SignatureSchema = v.object({
+export const SignatureSchema: v.ObjectSchema<{
+  signature: v.StringSchema<undefined>
+  publicKey: v.StringSchema<undefined>
+}, undefined> = v.object({
   signature: v.string(),
   publicKey: v.string(),
 })
 
-export const BlockchainStateSchema = v.object({
+export const BlockchainStateSchema: v.ObjectSchema<{
+  blockNumber: v.NumberSchema<undefined>
+  blockHash: v.StringSchema<undefined>
+}, undefined> = v.object({
   blockNumber: v.number(),
   blockHash: v.string(),
 })
 
-export const AuthSchema = v.object({
+export const AuthSchema: v.ObjectSchema<{
+  username: v.StringSchema<undefined>
+  password: v.StringSchema<undefined>
+}, undefined> = v.object({
   username: v.string(),
   password: v.string(),
 })
 
-export const BlockTypeSchema = v.picklist(['micro', 'macro'])
+export const BlockTypeSchema: v.PicklistSchema<['micro', 'macro'], undefined> = v.picklist(['micro', 'macro'])
 
-export const BlockSubscriptionTypeSchema = v.picklist(['macro', 'micro', 'election'])
+export const BlockSubscriptionTypeSchema: v.PicklistSchema<['macro', 'micro', 'election'], undefined> = v.picklist(['macro', 'micro', 'election'])
 
-export const RetrieveTypeSchema = v.picklist(['full', 'partial', 'hash'])
+export const RetrieveTypeSchema: v.PicklistSchema<['full', 'partial', 'hash'], undefined> = v.picklist(['full', 'partial', 'hash'])
 
-export const NetworkIdSchema = v.picklist([1, 2, 3, 4, 5, 6, 7, 24, 42])
+export const NetworkIdSchema: v.PicklistSchema<[1, 2, 3, 4, 5, 6, 7, 24, 42], undefined> = v.picklist([1, 2, 3, 4, 5, 6, 7, 24, 42])
 
 // Equivocation proof schemas
-export const ForkProofSchema = v.object({
+export const ForkProofSchema: v.ObjectSchema<{
+  blockNumber: v.NumberSchema<undefined>
+  hashes: v.TupleSchema<[v.StringSchema<undefined>, v.StringSchema<undefined>], undefined>
+}, undefined> = v.object({
   blockNumber: v.number(),
   hashes: v.tuple([v.string(), v.string()]),
 })
 
-export const DoubleProposalProofSchema = v.object({
+export const DoubleProposalProofSchema: v.ObjectSchema<{
+  blockNumber: v.NumberSchema<undefined>
+  hashes: v.TupleSchema<[v.StringSchema<undefined>, v.StringSchema<undefined>], undefined>
+}, undefined> = v.object({
   blockNumber: v.number(),
   hashes: v.tuple([v.string(), v.string()]),
 })
 
-export const DoubleVoteProofSchema = v.object({
+export const DoubleVoteProofSchema: v.ObjectSchema<{
+  blockNumber: v.NumberSchema<undefined>
+}, undefined> = v.object({
   blockNumber: v.number(),
 })
 
-export const EquivocationProofSchema = v.variant('type', [
+export const EquivocationProofSchema: v.VariantSchema<'type', [
+  v.ObjectSchema<{
+    type: v.LiteralSchema<'Fork', undefined>
+    proof: typeof ForkProofSchema
+  }, undefined>,
+  v.ObjectSchema<{
+    type: v.LiteralSchema<'DoubleProposal', undefined>
+    proof: typeof DoubleProposalProofSchema
+  }, undefined>,
+  v.ObjectSchema<{
+    type: v.LiteralSchema<'DoubleVote', undefined>
+    proof: typeof DoubleVoteProofSchema
+  }, undefined>,
+], undefined> = v.variant('type', [
   v.object({
     type: v.literal('Fork'),
     proof: ForkProofSchema,
@@ -244,7 +415,22 @@ export const EquivocationProofSchema = v.variant('type', [
 ])
 
 // Block schemas
-export const PartialBlockSchema = v.object({
+export const PartialBlockSchema: v.ObjectSchema<{
+  hash: v.StringSchema<undefined>
+  size: v.NumberSchema<undefined>
+  batch: v.NumberSchema<undefined>
+  version: v.NumberSchema<undefined>
+  number: v.NumberSchema<undefined>
+  timestamp: v.NumberSchema<undefined>
+  parentHash: v.StringSchema<undefined>
+  seed: v.StringSchema<undefined>
+  extraData: v.StringSchema<undefined>
+  stateHash: v.StringSchema<undefined>
+  bodyHash: v.OptionalSchema<v.StringSchema<undefined>, undefined>
+  historyHash: v.StringSchema<undefined>
+  network: typeof NetworkIdSchema
+  transactions: v.OptionalSchema<v.ArraySchema<typeof TransactionSchema, undefined>, undefined>
+}, undefined> = v.object({
   hash: v.string(),
   size: v.number(),
   batch: v.number(),
@@ -261,7 +447,10 @@ export const PartialBlockSchema = v.object({
   transactions: v.optional(v.array(TransactionSchema)),
 })
 
-export const PartialMicroBlockSchema = v.intersect([
+export const PartialMicroBlockSchema: v.IntersectSchema<[
+  typeof PartialBlockSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   PartialBlockSchema,
   v.object({
     type: v.literal('micro'),
@@ -289,7 +478,10 @@ export const PartialMicroBlockSchema = v.intersect([
   }),
 ])
 
-export const MicroBlockSchema = v.intersect([
+export const MicroBlockSchema: v.IntersectSchema<[
+  typeof PartialMicroBlockSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   PartialMicroBlockSchema,
   v.object({
     transactions: v.array(TransactionSchema),
@@ -302,7 +494,10 @@ export const MicroBlockSchema = v.intersect([
   }),
 ])
 
-export const PartialMacroBlockSchema = v.intersect([
+export const PartialMacroBlockSchema: v.IntersectSchema<[
+  typeof PartialBlockSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   PartialBlockSchema,
   v.object({
     type: v.literal('macro'),
@@ -313,7 +508,10 @@ export const PartialMacroBlockSchema = v.intersect([
   }),
 ])
 
-export const MacroBlockSchema = v.intersect([
+export const MacroBlockSchema: v.IntersectSchema<[
+  typeof PartialMacroBlockSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   PartialMacroBlockSchema,
   v.object({
     isElectionBlock: v.literal(false),
@@ -333,7 +531,10 @@ export const MacroBlockSchema = v.intersect([
   }),
 ])
 
-export const ElectionMacroBlockSchema = v.intersect([
+export const ElectionMacroBlockSchema: v.IntersectSchema<[
+  typeof PartialMacroBlockSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   PartialMacroBlockSchema,
   v.object({
     isElectionBlock: v.literal(true),
@@ -344,19 +545,54 @@ export const ElectionMacroBlockSchema = v.intersect([
   }),
 ])
 
-export const BlockSchema = v.union([
+export const BlockSchema: v.UnionSchema<[
+  typeof MicroBlockSchema,
+  typeof MacroBlockSchema,
+  typeof ElectionMacroBlockSchema,
+], undefined> = v.union([
   MicroBlockSchema,
   MacroBlockSchema,
   ElectionMacroBlockSchema,
 ])
 
-export const ZKPStateSchema = v.object({
+export const ZKPStateSchema: v.ObjectSchema<{
+  latestBlock: typeof BlockSchema
+  latestProof: v.OptionalSchema<v.StringSchema<undefined>, undefined>
+}, undefined> = v.object({
   latestBlock: BlockSchema,
   latestProof: v.optional(v.string()),
 })
 
 // Log schemas
-export const LogTypeSchema = v.picklist([
+export const LogTypeSchema: v.PicklistSchema<[
+  'pay-fee',
+  'transfer',
+  'htlc-create',
+  'htlc-timeout-resolve',
+  'htlc-regular-transfer',
+  'htlc-early-resolve',
+  'vesting-create',
+  'create-validator',
+  'update-validator',
+  'validator-fee-deduction',
+  'deactivate-validator',
+  'reactivate-validator',
+  'retire-validator',
+  'delete-validator',
+  'create-staker',
+  'stake',
+  'update-staker',
+  'set-active-stake',
+  'retire-stake',
+  'remove-stake',
+  'delete-staker',
+  'staker-fee-deduction',
+  'payout-reward',
+  'penalize',
+  'jail-validator',
+  'revert-contract',
+  'failed-transaction',
+], undefined> = v.picklist([
   'pay-fee',
   'transfer',
   'htlc-create',
@@ -571,7 +807,7 @@ export const FailedTransactionLogSchema = v.object({
   failureReason: v.string(),
 })
 
-export const LogSchema = v.variant('type', [
+export const LogSchema: v.VariantSchema<'type', any[], undefined> = v.variant('type', [
   PayFeeLogSchema,
   TransferLogSchema,
   HtlcCreateLogSchema,
@@ -601,18 +837,28 @@ export const LogSchema = v.variant('type', [
   FailedTransactionLogSchema,
 ])
 
-export const TransactionLogSchema = v.object({
+export const TransactionLogSchema: v.ObjectSchema<{
+  hash: v.StringSchema<undefined>
+  logs: v.ArraySchema<typeof LogSchema, undefined>
+  failed: v.BooleanSchema<undefined>
+}, undefined> = v.object({
   hash: v.string(),
   logs: v.array(LogSchema),
   failed: v.boolean(),
 })
 
-export const BlockLogSchema = v.object({
+export const BlockLogSchema: v.ObjectSchema<{
+  inherents: v.ArraySchema<typeof LogSchema, undefined>
+  transactions: v.ArraySchema<typeof TransactionLogSchema, undefined>
+}, undefined> = v.object({
   inherents: v.array(LogSchema),
   transactions: v.array(TransactionLogSchema),
 })
 
-export const AppliedBlockLogSchema = v.intersect([
+export const AppliedBlockLogSchema: v.IntersectSchema<[
+  typeof BlockLogSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   BlockLogSchema,
   v.object({
     type: v.literal('applied-block'),
@@ -620,14 +866,20 @@ export const AppliedBlockLogSchema = v.intersect([
   }),
 ])
 
-export const RevertedBlockLogSchema = v.intersect([
+export const RevertedBlockLogSchema: v.IntersectSchema<[
+  typeof BlockLogSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   BlockLogSchema,
   v.object({
     type: v.literal('reverted-block'),
   }),
 ])
 
-export const BlockLogTypeSchema = v.union([
+export const BlockLogTypeSchema: v.UnionSchema<[
+  typeof AppliedBlockLogSchema,
+  typeof RevertedBlockLogSchema,
+], undefined> = v.union([
   AppliedBlockLogSchema,
   RevertedBlockLogSchema,
 ])
@@ -642,7 +894,7 @@ export function RPCDataSchema<T extends v.BaseSchema<any, any, any>, M extends v
 export const BlockLogResponseSchema = RPCDataSchema(BlockLogTypeSchema, BlockchainStateSchema)
 
 // HTTP-specific schemas
-export const HttpOptionsSchema = v.object({
+export const HttpOptionsSchema: v.ObjectSchema<any, undefined> = v.object({
   timeout: v.optional(v.union([v.number(), v.literal(false)])),
   url: v.optional(v.union([v.string(), v.instance(URL)])),
   auth: v.optional(AuthSchema),
@@ -662,14 +914,17 @@ export const HttpOptionsSchema = v.object({
   })),
 })
 
-export const SendTxOptionsSchema = v.intersect([
+export const SendTxOptionsSchema: v.IntersectSchema<[
+  typeof HttpOptionsSchema,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.intersect([
   HttpOptionsSchema,
   v.object({
     waitForConfirmationTimeout: v.optional(v.number()),
   }),
 ])
 
-export const HttpRequestSchema = v.object({
+export const HttpRequestSchema: v.ObjectSchema<any, undefined> = v.object({
   method: v.literal('POST'),
   headers: v.any(),
   body: v.object({
@@ -695,7 +950,12 @@ export function HttpRpcResultSuccessSchema<T extends v.BaseSchema<any, any, any>
   ])
 }
 
-export const HttpRpcResultErrorSchema = v.tuple([
+export const HttpRpcResultErrorSchema: v.TupleSchema<[
+  v.LiteralSchema<false, undefined>,
+  v.StringSchema<undefined>,
+  v.UndefinedSchema<undefined>,
+  v.ObjectSchema<any, undefined>,
+], undefined> = v.tuple([
   v.literal(false),
   v.string(),
   v.undefined(),

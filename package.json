@@ -69,6 +69,7 @@
   },
   "devDependencies": {
     "@ai-sdk/openai": "^2.0.28",
+    "@ai-sdk/valibot": "^1.0.8",
     "@antfu/eslint-config": "^5.2.1",
     "@changesets/cli": "^2.29.6",
     "@types/ws": "^8.18.1",

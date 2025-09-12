@@ -23,7 +23,8 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import process from 'node:process'
 import { openai } from '@ai-sdk/openai'
-import { generateObject, valibotSchema } from 'ai'
+import { valibotSchema } from '@ai-sdk/valibot'
+import { generateObject } from 'ai'
 import { config } from 'dotenv'
 import * as v from 'valibot'
 
@@ -277,26 +278,79 @@ Be thorough and check every method, parameter, and type definition. For each iss
   }
 }
 
+async function fetchExistingAIIssues(): Promise<Set<string>> {
+  const isDev = process.env.NODE_ENV === 'development' || !GITHUB_TOKEN
+  const existingIssues = new Set<string>()
+
+  if (isDev || !GITHUB_TOKEN) {
+    console.log('🔧 Development mode or no GitHub token - skipping existing issues check')
+    return existingIssues
+  }
+
+  try {
+    const repoInfo = process.env.GITHUB_REPOSITORY || 'onmax/albatross-rpc-client-ts'
+    const response = await fetch(`https://api.github.com/repos/${repoInfo}/issues?labels=ai&state=open&per_page=100`, {
+      headers: {
+        'Authorization': `token ${GITHUB_TOKEN}`,
+        'Content-Type': 'application/json',
+      },
+    })
+
+    if (response.ok) {
+      const issues = await response.json()
+      for (const issue of issues) {
+        // Extract function name from title format: [functionName] issue...
+        const titleMatch = issue.title.match(/^\[([^\]]+)\]/)
+        if (titleMatch) {
+          existingIssues.add(titleMatch[1])
+        }
+      }
+      console.log(`📋 Found ${existingIssues.size} existing AI-generated issues`)
+    }
+    else {
+      console.warn(`⚠️  Failed to fetch existing issues: ${response.status} ${response.statusText}`)
+    }
+  }
+  catch (error) {
+    console.warn('⚠️  Error fetching existing issues:', error)
+  }
+
+  return existingIssues
+}
+
 async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
   const isDev = process.env.NODE_ENV === 'development' || !GITHUB_TOKEN
   const issues: GitHubIssue[] = []
   const createdIssues: string[] = []
 
-  // Create issues for errors
+  // Fetch existing AI-generated issues to avoid duplicates
+  const existingIssues = await fetchExistingAIIssues()
+
+  // Create issues for errors (skip if already exists)
   for (const error of result.errors) {
+    if (existingIssues.has(error.functionName)) {
+      console.log(`⏭️  Skipping duplicate error issue for ${error.functionName}`)
+      continue
+    }
+
     issues.push({
       title: `[${error.functionName}] ${error.issue.substring(0, 80)}${error.issue.length > 80 ? '...' : ''}`,
       body: `## Schema Validation Error\n\n**Function:** \`${error.functionName}\`\n\n**Issue:**\n${error.issue}\n\n**Suggested Solution:**\n${error.solution}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
-      labels: ['bug', 'schema-validation', 'ai-detected'],
+      labels: ['bug', 'schema-validation', 'ai-detected', 'ai'],
     })
   }
 
-  // Create issues for warnings (as enhancement requests)
+  // Create issues for warnings (as enhancement requests, skip if already exists)
   for (const warning of result.warnings) {
+    if (existingIssues.has(warning.functionName)) {
+      console.log(`⏭️  Skipping duplicate warning issue for ${warning.functionName}`)
+      continue
+    }
+
     issues.push({
       title: `[${warning.functionName}] ${warning.issue.substring(0, 80)}${warning.issue.length > 80 ? '...' : ''}`,
       body: `## Schema Validation Warning\n\n**Function:** \`${warning.functionName}\`\n\n**Issue:**\n${warning.issue}\n\n**Suggested Improvement:**\n${warning.solution}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
-      labels: ['enhancement', 'schema-validation', 'ai-detected'],
+      labels: ['enhancement', 'schema-validation', 'ai-detected', 'ai'],
     })
   }
 

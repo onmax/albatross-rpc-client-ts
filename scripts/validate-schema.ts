@@ -23,7 +23,7 @@ import * as fs from 'node:fs/promises'
 import * as path from 'node:path'
 import process from 'node:process'
 import { openai } from '@ai-sdk/openai'
-import { generateObject } from 'ai'
+import { generateObject, valibotSchema } from 'ai'
 import { config } from 'dotenv'
 import * as v from 'valibot'
 
@@ -256,7 +256,7 @@ ${implementation}
 \`\`\`
 
 Be thorough and check every method, parameter, and type definition. For each issue found, specify the exact function name, the problem, and a clear solution.`,
-      schema: validationSchema,
+      schema: valibotSchema(validationSchema),
       maxTokens: 4000,
     })
 

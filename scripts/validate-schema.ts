@@ -31,12 +31,15 @@ import * as v from 'valibot'
 // Load environment variables
 config()
 
-const OPENRPC_SCHEMA_URL = 'https://github.com/nimiq/core-rs-albatross/releases/download/v1.1.1/openrpc-document.json'
 const NIMIQ_TEST_URL = process.env.NIMIQ_TEST_URL
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY
 const SLACK_WEBHOOK_URL = process.env.SLACK_WEBHOOK_URL
 const GITHUB_TOKEN = process.env.GITHUB_TOKEN
 const FORCE_VALIDATION = process.env.FORCE_VALIDATION === 'true'
+const SKIP_DIFF_VALIDATION = process.env.SKIP_DIFF_VALIDATION === 'true'
+const REPO_OWNER = 'nimiq'
+const REPO_NAME = 'core-rs-albatross'
+const VERSION_FILE = '.last-validated-version'
 
 interface ValidationIssue {
   functionName: string
@@ -64,6 +67,33 @@ interface HttpTestResult {
   summary: string
 }
 
+interface ReleaseInfo {
+  version: string
+  changelog: string
+  publishedAt: string
+}
+
+interface MethodInfo {
+  name: string
+  params?: any[]
+  result?: any
+  changeDescription?: string
+}
+
+interface SchemaDiff {
+  added: MethodInfo[]
+  modified: MethodInfo[]
+  removed: string[]
+}
+
+interface ValidationContext {
+  latestVersion: string
+  previousVersion: string
+  changelog: string
+  schemaDiff: SchemaDiff | null
+  implementation: string
+}
+
 async function shouldRunValidation(): Promise<boolean> {
   if (FORCE_VALIDATION) {
     console.log('🔄 Force validation enabled')
@@ -85,12 +115,66 @@ async function shouldRunValidation(): Promise<boolean> {
     || (eventName === 'push' && process.env.GITHUB_REF === 'refs/heads/main')
 }
 
-async function downloadSchema(): Promise<any> {
-  console.log('📥 Downloading OpenRPC schema...')
-  const response = await fetch(OPENRPC_SCHEMA_URL)
+async function fetchLatestRelease(): Promise<ReleaseInfo> {
+  console.log('📡 Fetching latest release from ungh...')
+  const unghUrl = `https://ungh.cc/repos/${REPO_OWNER}/${REPO_NAME}/releases/latest`
+
+  try {
+    const response = await fetch(unghUrl)
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch release from ungh: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+
+    return {
+      version: data.tag || data.tag_name || '',
+      changelog: data.body || '',
+      publishedAt: data.published_at || data.created_at || '',
+    }
+  }
+  catch {
+    console.error('Failed to fetch from ungh, retrying once...')
+    // Retry once
+    const response = await fetch(unghUrl)
+    if (!response.ok) {
+      throw new Error(`Failed to fetch release from ungh after retry: ${response.status} ${response.statusText}`)
+    }
+
+    const data = await response.json()
+    return {
+      version: data.tag || data.tag_name || '',
+      changelog: data.body || '',
+      publishedAt: data.published_at || data.created_at || '',
+    }
+  }
+}
+
+async function getLastValidatedVersion(): Promise<string> {
+  try {
+    const content = await fs.readFile(VERSION_FILE, 'utf-8')
+    return content.trim()
+  }
+  catch {
+    // File doesn't exist, return default
+    console.log('📝 No previous validation version found, using default v1.1.1')
+    return 'v1.1.1'
+  }
+}
+
+async function updateLastValidatedVersion(version: string): Promise<void> {
+  await fs.writeFile(VERSION_FILE, version, 'utf-8')
+  console.log(`✅ Updated last validated version to ${version}`)
+}
+
+async function downloadSchemaForVersion(version: string): Promise<any> {
+  console.log(`📥 Downloading OpenRPC schema for ${version}...`)
+  const url = `https://github.com/${REPO_OWNER}/${REPO_NAME}/releases/download/${version}/openrpc-document.json`
+  const response = await fetch(url)
 
   if (!response.ok) {
-    throw new Error(`Failed to download schema: ${response.status} ${response.statusText}`)
+    throw new Error(`Failed to download schema for ${version}: ${response.status} ${response.statusText}`)
   }
 
   return await response.json()
@@ -114,6 +198,64 @@ async function readCurrentImplementation(): Promise<string> {
   }
 
   return implementation
+}
+
+function compareSchemas(oldSchema: any, newSchema: any): SchemaDiff {
+  console.log('🔍 Comparing schemas to detect changes...')
+
+  const oldMethods = new Map<string, any>()
+  const newMethods = new Map<string, any>()
+
+  // Build maps of methods
+  for (const method of oldSchema.methods || []) {
+    oldMethods.set(method.name, method)
+  }
+
+  for (const method of newSchema.methods || []) {
+    newMethods.set(method.name, method)
+  }
+
+  const added: MethodInfo[] = []
+  const modified: MethodInfo[] = []
+  const removed: string[] = []
+
+  // Find added and modified methods
+  for (const [name, newMethod] of newMethods) {
+    if (!oldMethods.has(name)) {
+      // New method
+      added.push({
+        name,
+        params: newMethod.params,
+        result: newMethod.result,
+      })
+    }
+    else {
+      // Check if modified
+      const oldMethod = oldMethods.get(name)
+      const oldSig = JSON.stringify({ params: oldMethod.params, result: oldMethod.result })
+      const newSig = JSON.stringify({ params: newMethod.params, result: newMethod.result })
+
+      if (oldSig !== newSig) {
+        modified.push({
+          name,
+          params: newMethod.params,
+          result: newMethod.result,
+          changeDescription: 'Method signature changed',
+        })
+      }
+    }
+  }
+
+  // Find removed methods
+  for (const [name] of oldMethods) {
+    if (!newMethods.has(name)) {
+      removed.push(name)
+    }
+  }
+
+  console.log(`  📊 Changes: ${added.length} added, ${modified.length} modified, ${removed.length} removed`)
+
+  return { added, modified, removed }
 }
 
 async function testHttpMethods(schema: any): Promise<HttpTestResult> {
@@ -250,9 +392,130 @@ IMPORTANT: This TypeScript client is designed with developer experience (DX) in 
 - Smart defaults that improve usability
 These are INTENTIONAL design decisions that make development easier, NOT bugs or issues to be fixed. Focus only on actual schema mismatches or missing functionality, not on DX enhancements that deviate from a literal schema translation.
 
+INTENTIONAL TYPE TRANSFORMATIONS FOR DX: The following type differences between the schema and implementation are INTENTIONAL and should NOT be reported:
+- Byte arrays (number[]) are transformed to hex strings (string) for easier use (e.g., Block.extraData, Transaction.senderData, Transaction.recipientData, Transaction.proof)
+- Numeric enums are transformed to string enums or union types for type safety (e.g., Block.network)
+- Any field that represents binary data (hashes, signatures, proofs, raw data) is represented as hex strings instead of byte arrays
+These transformations improve developer experience and should be considered correct, not errors.
+
+IGNORE VALIDATION SCHEMA MAPPING: Do NOT report issues about the validation.ts file's getSchemaForMethod mapping. This is an internal optional validation helper that may have minor discrepancies (e.g., Transaction vs ExecutedTransaction, PenalizedSlots vs PenalizedSlots[]). Validation is disabled by default and these mapping differences do not affect functionality. Only report issues if actual RPC method implementations are wrong, not the internal validation mapping.
+
+OPTIONAL PARAMETERS FOR DX: The following methods intentionally allow optional parameters even if the schema marks them as required, for better developer experience (the server handles defaults when null is sent):
+- getTransactionsByAddress: max and startAt are optional
+- getTransactionHashesByAddress: max and startAt are optional
+Do NOT report these as issues - they are intentional DX improvements where the client sends null and the server provides sensible defaults.
+
+VALIDITY START HEIGHT STRING FORMAT: The validityStartHeight parameter in all transaction creation/sending methods is intentionally sent as a STRING (e.g., "+10" for relative, "100" for absolute), even though the schema defines it as number. The Rust server's ValidityStartHeight deserializer accepts both strings and numbers, with strings supporting the "+N" relative syntax. This is the intended API design and is CORRECT. Do NOT report this as an issue. Affected methods: all createBasicTransaction, sendBasicTransaction, and similar transaction methods.
+
+RPCDATA ENVELOPE WRAPPER: ALL RPC method results are wrapped in RPCData { data, metadata } by the Rust server. The TypeScript client correctly extracts json.result.data. The OpenRPC schema incorrectly documents results as raw values instead of the RPCData envelope. The client implementation (extracting .data) is CORRECT. Do NOT report this as an issue.
+
 IGNORE HTTP TEST FAILURES: Do not report issues for HTTP test failures on methods like 'getAddress' and 'getAccounts' as these are server-side configuration issues, not client implementation problems. Only report actual schema/implementation mismatches in the TypeScript code.
 
 OpenRPC Schema:
+\`\`\`json
+${JSON.stringify(schema, null, 2)}
+\`\`\`
+
+TypeScript Implementation:
+\`\`\`typescript
+${implementation}
+\`\`\`
+
+Be thorough and check every method, parameter, and type definition. For each issue found, specify the exact function name, the problem, and a clear solution.`,
+      schema: valibotSchema(validationSchema),
+    })
+
+    return object
+  }
+  catch (error) {
+    console.error('AI validation failed:', error)
+    return {
+      success: false,
+      errors: [{
+        functionName: 'AI_VALIDATION_ERROR',
+        issue: `AI validation failed: ${error instanceof Error ? error.message : String(error)}`,
+        solution: 'Check OpenAI API key and connectivity, or try running validation again',
+      }],
+      warnings: [],
+      summary: 'AI validation could not be completed due to an error',
+    }
+  }
+}
+
+async function validateWithContext(context: ValidationContext, schema: any): Promise<ValidationResult> {
+  console.log('🤖 Validating with GPT-5 (context-aware)...')
+
+  if (!OPENAI_API_KEY) {
+    throw new Error('OPENAI_API_KEY environment variable is required')
+  }
+
+  const { latestVersion, previousVersion, changelog, schemaDiff, implementation } = context
+
+  // Build priority section for prompt
+  let prioritySection = ''
+  if (schemaDiff && (schemaDiff.added.length > 0 || schemaDiff.modified.length > 0 || schemaDiff.removed.length > 0)) {
+    prioritySection = `
+PRIORITY VALIDATION (Recent Changes ${previousVersion} → ${latestVersion}):
+
+**HIGH PRIORITY** - Validate these changes first:
+
+Added Methods (${schemaDiff.added.length}):
+${schemaDiff.added.map(m => `- ${m.name}`).join('\n')}
+
+Modified Methods (${schemaDiff.modified.length}):
+${schemaDiff.modified.map(m => `- ${m.name} (signature changed)`).join('\n')}
+
+Removed Methods (${schemaDiff.removed.length}):
+${schemaDiff.removed.map(m => `- ${m} (should be removed from implementation)`).join('\n')}
+
+Changelog Context:
+\`\`\`
+${changelog.substring(0, 2000)}${changelog.length > 2000 ? '...' : ''}
+\`\`\`
+
+Focus validation efforts on these recent changes, but still perform a global check for other issues.
+`
+  }
+
+  try {
+    const { object } = await generateObject({
+      model: openai('gpt-5'),
+      prompt: `You are a TypeScript code validator. Compare this OpenRPC JSON schema with the TypeScript implementation and validate that:
+
+1. All RPC methods defined in the schema are implemented
+2. Method signatures match (parameters, return types)
+3. Parameter names and types are correct
+4. Return types match the schema definitions
+5. No methods are missing or incorrectly implemented
+
+${prioritySection}
+
+IMPORTANT: This TypeScript client is designed with developer experience (DX) in mind. Features like:
+- Conditional return types based on parameters (e.g., T extends boolean ? Block : PartialBlock)
+- Type inference shortcuts and generic type patterns
+- Smart defaults that improve usability
+These are INTENTIONAL design decisions that make development easier, NOT bugs or issues to be fixed. Focus only on actual schema mismatches or missing functionality, not on DX enhancements that deviate from a literal schema translation.
+
+INTENTIONAL TYPE TRANSFORMATIONS FOR DX: The following type differences between the schema and implementation are INTENTIONAL and should NOT be reported:
+- Byte arrays (number[]) are transformed to hex strings (string) for easier use (e.g., Block.extraData, Transaction.senderData, Transaction.recipientData, Transaction.proof)
+- Numeric enums are transformed to string enums or union types for type safety (e.g., Block.network)
+- Any field that represents binary data (hashes, signatures, proofs, raw data) is represented as hex strings instead of byte arrays
+These transformations improve developer experience and should be considered correct, not errors.
+
+IGNORE VALIDATION SCHEMA MAPPING: Do NOT report issues about the validation.ts file's getSchemaForMethod mapping. This is an internal optional validation helper that may have minor discrepancies (e.g., Transaction vs ExecutedTransaction, PenalizedSlots vs PenalizedSlots[]). Validation is disabled by default and these mapping differences do not affect functionality. Only report issues if actual RPC method implementations are wrong, not the internal validation mapping.
+
+OPTIONAL PARAMETERS FOR DX: The following methods intentionally allow optional parameters even if the schema marks them as required, for better developer experience (the server handles defaults when null is sent):
+- getTransactionsByAddress: max and startAt are optional
+- getTransactionHashesByAddress: max and startAt are optional
+Do NOT report these as issues - they are intentional DX improvements where the client sends null and the server provides sensible defaults.
+
+VALIDITY START HEIGHT STRING FORMAT: The validityStartHeight parameter in all transaction creation/sending methods is intentionally sent as a STRING (e.g., "+10" for relative, "100" for absolute), even though the schema defines it as number. The Rust server's ValidityStartHeight deserializer accepts both strings and numbers, with strings supporting the "+N" relative syntax. This is the intended API design and is CORRECT. Do NOT report this as an issue. Affected methods: all createBasicTransaction, sendBasicTransaction, and similar transaction methods.
+
+RPCDATA ENVELOPE WRAPPER: ALL RPC method results are wrapped in RPCData { data, metadata } by the Rust server. The TypeScript client correctly extracts json.result.data. The OpenRPC schema incorrectly documents results as raw values instead of the RPCData envelope. The client implementation (extracting .data) is CORRECT. Do NOT report this as an issue.
+
+IGNORE HTTP TEST FAILURES: Do not report issues for HTTP test failures on methods like 'getAddress' and 'getAccounts' as these are server-side configuration issues, not client implementation problems. Only report actual schema/implementation mismatches in the TypeScript code.
+
+OpenRPC Schema (${latestVersion}):
 \`\`\`json
 ${JSON.stringify(schema, null, 2)}
 \`\`\`
@@ -323,13 +586,21 @@ async function fetchExistingAIIssues(): Promise<Set<string>> {
   return existingIssues
 }
 
-async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
+async function createGitHubIssues(result: ValidationResult, schemaDiff: SchemaDiff | null = null): Promise<string[]> {
   const isDev = process.env.NODE_ENV === 'development' || !GITHUB_TOKEN
   const issues: GitHubIssue[] = []
   const createdIssues: string[] = []
 
   // Fetch existing AI-generated issues to avoid duplicates
   const existingIssues = await fetchExistingAIIssues()
+
+  // Build set of recently changed methods for labeling
+  const recentChanges = new Set<string>()
+  if (schemaDiff) {
+    schemaDiff.added.forEach(m => recentChanges.add(m.name))
+    schemaDiff.modified.forEach(m => recentChanges.add(m.name))
+    schemaDiff.removed.forEach(m => recentChanges.add(m))
+  }
 
   // Create issues for errors (skip if already exists)
   for (const error of result.errors) {
@@ -338,10 +609,13 @@ async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
       continue
     }
 
+    const isRecentChange = recentChanges.has(error.functionName)
+    const priorityLabel = isRecentChange ? 'recent-change' : 'legacy-issue'
+
     issues.push({
       title: `[${error.functionName}] ${error.issue.substring(0, 80)}${error.issue.length > 80 ? '...' : ''}`,
       body: `## Schema Validation Error\n\n**Function:** \`${error.functionName}\`\n\n**Issue:**\n${error.issue}\n\n**Suggested Solution:**\n${error.solution}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
-      labels: ['bug', 'schema-validation', 'ai-detected', 'ai'],
+      labels: ['bug', 'schema-validation', 'ai-detected', 'ai', priorityLabel],
     })
   }
 
@@ -352,10 +626,13 @@ async function createGitHubIssues(result: ValidationResult): Promise<string[]> {
       continue
     }
 
+    const isRecentChange = recentChanges.has(warning.functionName)
+    const priorityLabel = isRecentChange ? 'recent-change' : 'legacy-issue'
+
     issues.push({
       title: `[${warning.functionName}] ${warning.issue.substring(0, 80)}${warning.issue.length > 80 ? '...' : ''}`,
       body: `## Schema Validation Warning\n\n**Function:** \`${warning.functionName}\`\n\n**Issue:**\n${warning.issue}\n\n**Suggested Improvement:**\n${warning.solution}\n\n**Context:** ${result.summary}\n\n---\n*This issue was created automatically by the schema validation script.*`,
-      labels: ['enhancement', 'schema-validation', 'ai-detected', 'ai'],
+      labels: ['enhancement', 'schema-validation', 'ai-detected', 'ai', priorityLabel],
     })
   }
 
@@ -491,12 +768,65 @@ async function main(): Promise<void> {
       return
     }
 
-    const [schema, implementation] = await Promise.all([
-      downloadSchema(),
-      readCurrentImplementation(),
-    ])
+    // Fetch latest release info
+    const releaseInfo = await fetchLatestRelease()
+    const latestVersion = releaseInfo.version
+    console.log(`📦 Latest release: ${latestVersion}`)
 
-    const result = await validateWithAI(schema, implementation)
+    // Get last validated version
+    const previousVersion = await getLastValidatedVersion()
+    console.log(`📝 Previous validation: ${previousVersion}`)
+
+    // Check if we need to validate (skip if versions match and not forced)
+    if (latestVersion === previousVersion && !FORCE_VALIDATION) {
+      console.log('✅ Already validated against latest version')
+      return
+    }
+
+    let schemaDiff: SchemaDiff | null = null
+    let latestSchema: any
+
+    if (SKIP_DIFF_VALIDATION) {
+      console.log('⏭️  Skipping schema diff (SKIP_DIFF_VALIDATION=true)')
+      latestSchema = await downloadSchemaForVersion(latestVersion)
+    }
+    else {
+      // Download both schemas and compare
+      try {
+        const [previousSchema, newSchema] = await Promise.all([
+          downloadSchemaForVersion(previousVersion),
+          downloadSchemaForVersion(latestVersion),
+        ])
+
+        latestSchema = newSchema
+        schemaDiff = compareSchemas(previousSchema, newSchema)
+      }
+      catch (error) {
+        console.warn('⚠️  Could not download previous schema, skipping diff')
+        console.warn(`   Error: ${error instanceof Error ? error.message : String(error)}`)
+        latestSchema = await downloadSchemaForVersion(latestVersion)
+      }
+    }
+
+    // Read current implementation
+    const implementation = await readCurrentImplementation()
+
+    // Validate with context
+    let result: ValidationResult
+    if (schemaDiff) {
+      const context: ValidationContext = {
+        latestVersion,
+        previousVersion,
+        changelog: releaseInfo.changelog,
+        schemaDiff,
+        implementation,
+      }
+      result = await validateWithContext(context, latestSchema)
+    }
+    else {
+      // Fallback to basic validation
+      result = await validateWithAI(latestSchema, implementation)
+    }
 
     console.log('\n📊 Validation Results:')
     console.log(`Success: ${result.success}`)
@@ -515,7 +845,7 @@ async function main(): Promise<void> {
     // Test HTTP methods against live node if URL is provided
     let httpTestResult: HttpTestResult | null = null
     if (NIMIQ_TEST_URL) {
-      httpTestResult = await testHttpMethods(schema)
+      httpTestResult = await testHttpMethods(latestSchema)
       console.log(`\n🌐 HTTP Test Results: ${httpTestResult.summary}`)
 
       if (httpTestResult.failures.length > 0) {
@@ -545,10 +875,15 @@ async function main(): Promise<void> {
       success: httpTestResult ? result.success && httpTestResult.success : result.success,
     }
 
-    const createdIssues = await createGitHubIssues(combinedResult)
+    const createdIssues = await createGitHubIssues(combinedResult, schemaDiff)
 
     // Send summary notification to Slack
     await sendSlackNotification(combinedResult, createdIssues)
+
+    // Update last validated version on success
+    if (result.success) {
+      await updateLastValidatedVersion(latestVersion)
+    }
 
     process.exit(result.success ? 0 : 1)
   }

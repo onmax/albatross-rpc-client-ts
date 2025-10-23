@@ -209,6 +209,16 @@ export const ValidatorSchema: v.ObjectSchema<{
 })
 
 export const SlotSchema: v.ObjectSchema<{
+  slotNumber: v.NumberSchema<undefined>
+  validator: v.StringSchema<undefined>
+  publicKey: v.StringSchema<undefined>
+}, undefined> = v.object({
+  slotNumber: v.number(),
+  validator: v.string(),
+  publicKey: v.string(),
+})
+
+export const SlotsSchema: v.ObjectSchema<{
   firstSlotNumber: v.NumberSchema<undefined>
   numSlots: v.NumberSchema<undefined>
   validator: v.StringSchema<undefined>
@@ -540,7 +550,7 @@ export const ElectionMacroBlockSchema: v.IntersectSchema<[
     isElectionBlock: v.literal(true),
     transactions: v.array(TransactionSchema),
     interlink: v.array(v.string()),
-    slots: v.array(SlotSchema),
+    slots: v.array(SlotsSchema),
     nextBatchInitialPunishedSet: v.array(v.number()),
   }),
 ])

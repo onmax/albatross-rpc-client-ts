@@ -85,7 +85,6 @@ function getSchemaForMethod(method: string): string | null {
     getPolicyConstants: 'PolicyConstants',
     mempool: 'MempoolInfo',
     getZkpState: 'ZKPState',
-    getBlockchainState: 'BlockchainState',
     sign: 'Signature',
     createAccount: 'Account',
   }

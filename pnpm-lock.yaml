@@ -51,6 +51,9 @@ importers:
       jsr:
         specifier: ^0.13.5
         version: 0.13.5
+      just-diff:
+        specifier: ^6.0.2
+        version: 6.0.2
       lint-staged:
         specifier: ^16.1.5
         version: 16.1.5
@@ -1882,6 +1885,9 @@ packages:
   jsr@0.13.5:
     resolution: {integrity: sha512-qQP20ZcG28pYes7bCq3uuvixl1TL1EpJzwLPfoQadSyWk9j2AID66qhW8+aXpRDRFDvDkXFnONsSRhpnnQAupg==}
     hasBin: true
+
+  just-diff@6.0.2:
+    resolution: {integrity: sha512-S59eriX5u3/QhMNq3v/gm8Kd0w8OS6Tz2FS1NG4blv+z0MuQcBRJyFWjdovM0Rad4/P4aUPFtnkNjMjyMlMSYA==}
 
   keyv@4.5.4:
     resolution: {integrity: sha512-oxVHkHR/EJf2CNXnWxRLW6mg7JyCCUcG0DtEGmL2ctUo1PNTin1PUil+r/+4r5MpVgC/fn1kjsx7mjSujKqIpw==}
@@ -4938,6 +4944,8 @@ snapshots:
     dependencies:
       node-stream-zip: 1.15.0
       semiver: 1.1.0
+
+  just-diff@6.0.2: {}
 
   keyv@4.5.4:
     dependencies:

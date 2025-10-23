@@ -201,6 +201,12 @@ export interface Validator {
 }
 
 export interface Slot {
+  slotNumber: number
+  validator: string
+  publicKey: string
+}
+
+export interface Slots {
   firstSlotNumber: number
   numSlots: number
   validator: string
@@ -413,7 +419,7 @@ export interface ElectionMacroBlock extends PartialMacroBlock {
   isElectionBlock: true
   transactions: Transaction[]
   interlink: string[]
-  slots: Slot[]
+  slots: Slots[]
   nextBatchInitialPunishedSet: number[]
 }
 

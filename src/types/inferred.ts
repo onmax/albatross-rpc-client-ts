@@ -35,6 +35,7 @@ import type {
   RetrieveTypeSchema,
   SignatureSchema,
   SlotSchema,
+  SlotsSchema,
   StakerSchema,
   StakingAccountSchema,
   // Transaction schemas
@@ -85,6 +86,7 @@ export type InherentReward = v.InferOutput<typeof InherentRewardSchema>
 export type InherentPenalize = v.InferOutput<typeof InherentPenalizeSchema>
 export type InherentJail = v.InferOutput<typeof InherentJailSchema>
 export type Slot = v.InferOutput<typeof SlotSchema>
+export type Slots = v.InferOutput<typeof SlotsSchema>
 export type PenalizedSlots = v.InferOutput<typeof PenalizedSlotsSchema>
 export type MempoolInfo = v.InferOutput<typeof MempoolInfoSchema>
 export type Validator = v.InferOutput<typeof ValidatorSchema>

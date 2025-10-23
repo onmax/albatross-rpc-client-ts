@@ -84,6 +84,7 @@
     "eslint": "^9.34.0",
     "eslint-plugin-format": "^1.0.1",
     "jsr": "^0.13.5",
+    "just-diff": "^6.0.2",
     "lint-staged": "^16.1.5",
     "pkg-pr-new": "^0.0.57",
     "simple-git": "^3.28.0",

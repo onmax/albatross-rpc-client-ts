@@ -26,6 +26,7 @@ import { openai } from '@ai-sdk/openai'
 import { valibotSchema } from '@ai-sdk/valibot'
 import { generateObject } from 'ai'
 import { config } from 'dotenv'
+import { diff } from 'just-diff'
 import * as v from 'valibot'
 
 // Load environment variables
@@ -222,7 +223,6 @@ function compareSchemas(oldSchema: any, newSchema: any): SchemaDiff {
   // Find added and modified methods
   for (const [name, newMethod] of newMethods) {
     if (!oldMethods.has(name)) {
-      // New method
       added.push({
         name,
         params: newMethod.params,
@@ -230,12 +230,12 @@ function compareSchemas(oldSchema: any, newSchema: any): SchemaDiff {
       })
     }
     else {
-      // Check if modified
       const oldMethod = oldMethods.get(name)
-      const oldSig = JSON.stringify({ params: oldMethod.params, result: oldMethod.result })
-      const newSig = JSON.stringify({ params: newMethod.params, result: newMethod.result })
+      const methodSignature = { params: oldMethod.params, result: oldMethod.result }
+      const newSignature = { params: newMethod.params, result: newMethod.result }
+      const changes = diff(methodSignature, newSignature)
 
-      if (oldSig !== newSig) {
+      if (changes.length > 0) {
         modified.push({
           name,
           params: newMethod.params,

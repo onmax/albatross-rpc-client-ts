@@ -1,7 +1,6 @@
 import type {
   Account,
   Block,
-  BlockchainState,
   ExecutedTransaction,
   HttpOptions,
   HttpRequest,
@@ -670,7 +669,7 @@ export async function getMinFeePerByte<R = number>(opts?: HttpOptions): Res<R> {
 }
 
 export interface GetTransactionFromMempoolParams { hash: string }
-export async function getTransactionFromMempool<R = ExecutedTransaction>({ hash }: GetTransactionFromMempoolParams, opts?: HttpOptions): Res<R> {
+export async function getTransactionFromMempool<R = Transaction>({ hash }: GetTransactionFromMempoolParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionFromMempool', [hash], opts)
 }
 
@@ -763,11 +762,6 @@ export function isMicroBlockAt<R = boolean>({ blockNumber }: IsMicroBlockAtParam
   return rpcCall<R>('isMicroBlockAt', [blockNumber], opts)
 }
 
-export interface GetFirstBlockOfEpochParams { epochIndex: number }
-export function getFirstBlockOfEpoch<R = number>({ epochIndex }: GetFirstBlockOfEpochParams, opts?: HttpOptions): Res<R> {
-  return rpcCall<R>('getFirstBlockOfEpoch', [epochIndex], opts)
-}
-
 export interface GetBlockAfterReportingWindowParams { blockNumber: number }
 export function getBlockAfterReportingWindow<R = number>({ blockNumber }: GetBlockAfterReportingWindowParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockAfterReportingWindow', [blockNumber], opts)
@@ -793,13 +787,9 @@ export function getMacroBlockOfBatch<R = number>({ batchIndex }: GetMacroBlockOf
   return rpcCall<R>('getMacroBlockOf', [batchIndex], opts)
 }
 
-export interface GetFirstBatchOfEpochParams { epochIndex: number }
-export function getFirstBatchOfEpoch<R = number>({ epochIndex }: GetFirstBatchOfEpochParams, opts?: HttpOptions): Res<R> {
-  return rpcCall<R>('getFirstBatchOfEpoch', [epochIndex], opts)
-}
-
-export function getBlockchainState<R = BlockchainState>(opts?: HttpOptions): Res<R> {
-  return rpcCall<R>('getBlockchainState', [], opts)
+export interface GetFirstBatchOfEpochParams { blockNumber: number }
+export function getFirstBatchOfEpoch<R = boolean>({ blockNumber }: GetFirstBatchOfEpochParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getFirstBatchOfEpoch', [blockNumber], opts)
 }
 
 export interface GetSupplyAtParams { genesisSupply: number, genesisTime: number, currentTime: number }
@@ -831,11 +821,6 @@ export function isAccountImported<R = boolean>({ address }: IsAccountImportedPar
 
 export function listAccounts<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('listAccounts', [], opts)
-}
-
-export interface AddVotingKeyParams { secretKey: string }
-export function addVotingKey<R = null>({ secretKey }: AddVotingKeyParams, opts?: HttpOptions): Res<R> {
-  return rpcCall<R>('addVotingKey', [secretKey], opts)
 }
 
 export interface CreateAccountParams { passphrase: string }

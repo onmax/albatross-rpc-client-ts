@@ -23,7 +23,7 @@ export async function discoverBlockFixtures({ url }: { url: string }): Promise<B
   // Get latest block
   const [isOk1, error1, latestBlock] = await getLatestBlock({ includeBody: false }, { url })
   if (!isOk1 || error1 || !latestBlock) {
-    throw new Error(`Failed to get latest block: ${error1 || 'Unknown error'}`)
+    throw new Error(`Failed to get latest block: ${JSON.stringify(error1) || 'Unknown error'}`)
   }
 
   // Get previous block
@@ -32,13 +32,13 @@ export async function discoverBlockFixtures({ url }: { url: string }): Promise<B
     { url },
   )
   if (!isOk2 || error2 || !previousBlock) {
-    throw new Error(`Failed to get previous block: ${error2 || 'Unknown error'}`)
+    throw new Error(`Failed to get previous block: ${JSON.stringify(error2) || 'Unknown error'}`)
   }
 
   // Get block number
   const [isOk3, error3, blockNumber] = await getBlockNumber({ url })
   if (!isOk3 || error3 || blockNumber === undefined) {
-    throw new Error(`Failed to get block number: ${error3 || 'Unknown error'}`)
+    throw new Error(`Failed to get block number: ${JSON.stringify(error3) || 'Unknown error'}`)
   }
 
   return {
@@ -63,7 +63,7 @@ export interface ValidatorFixtures {
 export async function discoverValidatorFixtures({ url }: { url: string }): Promise<ValidatorFixtures> {
   const [isOk, error, validators] = await getActiveValidators({ url })
   if (!isOk || error || !validators) {
-    throw new Error(`Failed to get active validators: ${error || 'Unknown error'}`)
+    throw new Error(`Failed to get active validators: ${JSON.stringify(error) || 'Unknown error'}`)
   }
 
   if (validators.length === 0) {
@@ -92,7 +92,7 @@ export interface AccountFixtures {
 export async function discoverAccountFixtures({ url }: { url: string }): Promise<AccountFixtures> {
   const [isOk, error, accounts] = await getAccounts({ url })
   if (!isOk || error || !accounts) {
-    throw new Error(`Failed to get accounts: ${error || 'Unknown error'}`)
+    throw new Error(`Failed to get accounts: ${JSON.stringify(error) || 'Unknown error'}`)
   }
 
   if (accounts.length === 0) {

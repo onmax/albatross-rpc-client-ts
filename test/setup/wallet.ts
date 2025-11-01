@@ -63,8 +63,8 @@ export async function fundWalletFromGenesis({
   )
 
   if (!isOk || error) {
-    throw new Error(`Failed to fund wallet: ${error || 'Unknown error'}`)
+    throw new Error(`Failed to fund wallet: ${JSON.stringify(error) || 'Unknown error'}`)
   }
 
-  return txHash
+  return txHash!
 }

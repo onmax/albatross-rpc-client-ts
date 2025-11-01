@@ -126,6 +126,10 @@ export function getEpochNumber<R = number>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getEpochNumber', [], opts)
 }
 
+export function getSyncStatus<R = unknown>(opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getSyncStatus', [], opts)
+}
+
 export interface GetBlockByHashParams<T> { hash: string, includeBody?: T }
 export function getBlockByHash<T extends boolean = false, R = T extends true ? Block : PartialBlock>({ hash, includeBody }: GetBlockByHashParams<T>, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getBlockByHash', [hash, includeBody || false], opts)
@@ -169,6 +173,11 @@ export function getTransactionsByAddress<R = ExecutedTransaction[]>({ address, m
 export interface GetTransactionsHashesByAddressParams { address: string, max?: number, startAt?: string }
 export function getTransactionHashesByAddress<R = string[]>({ address, max, startAt }: GetTransactionsHashesByAddressParams, opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getTransactionHashesByAddress', [address, max, startAt], opts)
+}
+
+export interface GetTransactionReferencesByAddressParams { address: string, max?: number, startAt?: string }
+export function getTransactionReferencesByAddress<R = unknown[]>({ address, max, startAt }: GetTransactionReferencesByAddressParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getTransactionReferencesByAddress', [address, max, startAt], opts)
 }
 
 export interface GetInherentsByBlockNumberParams { blockNumber: number }
@@ -689,6 +698,10 @@ export function getPeerList<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPeerList', [], opts)
 }
 
+export function getNetworkId<R = string>(opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getNetworkId', [], opts)
+}
+
 // #endregion
 
 // #region Policy
@@ -842,6 +855,15 @@ export function getVotingKey<R = string>(opts?: HttpOptions): Res<R> {
 
 export function getVotingKeys<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getVotingKeys', [], opts)
+}
+
+export interface AddVotingKeyParams { secretKey: string }
+export function addVotingKey<R = null>({ secretKey }: AddVotingKeyParams, opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('addVotingKey', [secretKey], opts)
+}
+
+export function getAddressBook<R = unknown>(opts?: HttpOptions): Res<R> {
+  return rpcCall<R>('getAddressBook', [], opts)
 }
 
 export interface IsAccountUnlockedParams { address: string }

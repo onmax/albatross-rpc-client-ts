@@ -413,6 +413,14 @@ RPCDATA ENVELOPE WRAPPER: ALL RPC method results are wrapped in RPCData { data, 
 
 IGNORE HTTP TEST FAILURES: Do not report issues for HTTP test failures on methods like 'getAddress' and 'getAccounts' as these are server-side configuration issues, not client implementation problems. Only report actual schema/implementation mismatches in the TypeScript code.
 
+PARAMETER NAMING FOR DX: TypeScript parameter names may differ from OpenRPC schema for better developer experience. This client uses POSITIONAL parameter arrays in rpcCall(), not named parameters. The TS parameter names are purely for developer experience and do NOT affect the JSON-RPC wire protocol. Examples that are CORRECT and should NOT be flagged:
+- epochIndex (TS) vs epoch (schema) - more descriptive, clarifies it's an index
+- batchIndex (TS) vs batchNumber/batch (schema) - more descriptive, clarifies it's an index
+- validator (TS) vs validatorAddress/validatorWallet (schema) - simpler, cleaner API
+- stakerWallet (TS) vs stakerAddress (schema) - more accurate naming
+- rawTransaction (TS) vs rawTx (schema) - more descriptive, clearer intent
+Only flag parameter issues if the POSITIONAL array order in rpcCall() is incorrect, NOT if TS parameter names differ from schema for DX reasons.
+
 OpenRPC Schema:
 \`\`\`json
 ${JSON.stringify(schema, null, 2)}
@@ -516,6 +524,14 @@ VALIDITY START HEIGHT STRING FORMAT: The validityStartHeight parameter in all tr
 RPCDATA ENVELOPE WRAPPER: ALL RPC method results are wrapped in RPCData { data, metadata } by the Rust server. The TypeScript client correctly extracts json.result.data. The OpenRPC schema incorrectly documents results as raw values instead of the RPCData envelope. The client implementation (extracting .data) is CORRECT. Do NOT report this as an issue.
 
 IGNORE HTTP TEST FAILURES: Do not report issues for HTTP test failures on methods like 'getAddress' and 'getAccounts' as these are server-side configuration issues, not client implementation problems. Only report actual schema/implementation mismatches in the TypeScript code.
+
+PARAMETER NAMING FOR DX: TypeScript parameter names may differ from OpenRPC schema for better developer experience. This client uses POSITIONAL parameter arrays in rpcCall(), not named parameters. The TS parameter names are purely for developer experience and do NOT affect the JSON-RPC wire protocol. Examples that are CORRECT and should NOT be flagged:
+- epochIndex (TS) vs epoch (schema) - more descriptive, clarifies it's an index
+- batchIndex (TS) vs batchNumber/batch (schema) - more descriptive, clarifies it's an index
+- validator (TS) vs validatorAddress/validatorWallet (schema) - simpler, cleaner API
+- stakerWallet (TS) vs stakerAddress (schema) - more accurate naming
+- rawTransaction (TS) vs rawTx (schema) - more descriptive, clearer intent
+Only flag parameter issues if the POSITIONAL array order in rpcCall() is incorrect, NOT if TS parameter names differ from schema for DX reasons.
 
 OpenRPC Schema (${latestVersion}):
 \`\`\`json

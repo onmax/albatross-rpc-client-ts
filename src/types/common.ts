@@ -46,9 +46,14 @@ export interface PolicyConstants {
   maxSizeMicroBody: number
 
   /**
-   * The version number of the policy constants.
+   * The version number of the policy constants (legacy field, may not be present in v1.2.0+).
    */
-  version: number
+  version?: number
+
+  /**
+   * The maximum supported protocol version.
+   */
+  maxSupportedVersion: number
 
   /**
    * The total number of validator slots in the network.
@@ -137,9 +142,19 @@ export interface StakingAccount {
 }
 
 export type Account = BasicAccount | VestingAccount | HtlcAccount | StakingAccount
+
+/**
+ * Transaction information.
+ *
+ * Note: The timestamp field uses bigint for better precision and DX when working with large timestamps.
+ * The OpenRPC schema defines it as number, but this client transforms JSON numbers to bigint internally.
+ */
 export interface Transaction {
   hash: string
   blockNumber?: number // Optional, corresponds to Option<u32>
+  /**
+   * Unix timestamp in milliseconds. Stored as bigint for precision (schema defines as number).
+   */
   timestamp?: bigint // Optional, corresponds to Option<u64>
   confirmations?: number // Optional, corresponds to Option<u32>
   size: number // Corresponds to usize
@@ -246,6 +261,13 @@ export interface InherentJail {
 
 export type Inherent = InherentReward | InherentPenalize | InherentJail
 
+/**
+ * Mempool information with transaction count buckets.
+ *
+ * Note: The OpenRPC schema defines bucket keys as numeric strings ("0", "1", "2", etc.),
+ * but this client uses underscored keys (_0, _1, _2, etc.) for better TypeScript DX.
+ * The server returns numeric string keys which are transformed to underscored keys internally.
+ */
 export interface MempoolInfo {
   _0?: number
   _1?: number

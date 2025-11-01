@@ -24,7 +24,8 @@ export const PolicyConstantsSchema: v.ObjectSchema<{
   coinbaseAddress: v.StringSchema<undefined>
   transactionValidityWindow: v.NumberSchema<undefined>
   maxSizeMicroBody: v.NumberSchema<undefined>
-  version: v.NumberSchema<undefined>
+  version: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  maxSupportedVersion: v.NumberSchema<undefined>
   slots: v.NumberSchema<undefined>
   blocksPerBatch: v.NumberSchema<undefined>
   batchesPerEpoch: v.NumberSchema<undefined>
@@ -40,7 +41,8 @@ export const PolicyConstantsSchema: v.ObjectSchema<{
   coinbaseAddress: v.string(),
   transactionValidityWindow: v.number(),
   maxSizeMicroBody: v.number(),
-  version: v.number(),
+  version: v.optional(v.number()),
+  maxSupportedVersion: v.number(),
   slots: v.number(),
   blocksPerBatch: v.number(),
   batchesPerEpoch: v.number(),

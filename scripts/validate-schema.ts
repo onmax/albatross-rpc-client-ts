@@ -380,47 +380,83 @@ async function validateWithAI(schema: any, implementation: string): Promise<Vali
   try {
     const { object } = await generateObject({
       model: openai('gpt-5'),
-      prompt: `You are a TypeScript code validator. Compare this OpenRPC JSON schema with the TypeScript implementation and validate that:
+      prompt: `<role>
+You are a TypeScript RPC client validator. Your task is to compare an OpenRPC schema with its TypeScript implementation and identify actual bugs—NOT developer experience (DX) enhancements.
+</role>
 
-1. All RPC methods defined in the schema are implemented
+<task>
+Validate that the TypeScript implementation correctly implements the OpenRPC schema by checking:
+1. All RPC methods from the schema are implemented
 2. Method signatures match (parameters, return types)
-3. Parameter names and types are correct
-4. Return types match the schema definitions
-5. No methods are missing or incorrectly implemented
+3. Positional parameter arrays are in correct order
+4. Return types align with schema definitions
 
-IMPORTANT: This TypeScript client is designed with developer experience (DX) in mind. Features like:
+Report ONLY genuine bugs where functionality is broken or missing. Do NOT report DX improvements as issues.
+</task>
+
+<dx_exceptions>
+This TypeScript client prioritizes developer experience. The following patterns are INTENTIONAL and CORRECT—do not flag them:
+
+<type_transformations>
+- Byte arrays (number[]) → hex strings (string) for easier use
+  Examples: Block.extraData, Transaction.senderData, Transaction.recipientData, Transaction.proof
+- Numeric enums → string enums or union types for type safety
+  Example: Block.network
+- Binary data fields → hex strings instead of byte arrays
+  Examples: hashes, signatures, proofs, raw data
+</type_transformations>
+
+<parameter_naming>
+TypeScript parameter names may differ from schema for better DX. This client uses POSITIONAL parameter arrays in rpcCall(), NOT named parameters. Parameter names are purely for developer experience and do NOT affect the JSON-RPC wire protocol.
+
+Acceptable name differences (do NOT flag):
+- epochIndex (TS) vs epoch (schema) — more descriptive
+- batchIndex (TS) vs batchNumber/batch (schema) — clarifies it's an index
+- validator (TS) vs validatorAddress/validatorWallet (schema) — simpler API
+- stakerWallet (TS) vs stakerAddress (schema) — more accurate
+- rawTransaction (TS) vs rawTx (schema) — more descriptive
+
+ONLY flag if the positional array order in rpcCall() is incorrect.
+</parameter_naming>
+
+<optional_parameters>
+These methods intentionally allow optional parameters even when schema marks as required (server provides defaults):
+- getTransactionsByAddress: max, startAt
+- getTransactionHashesByAddress: max, startAt
+</optional_parameters>
+
+<advanced_types>
 - Conditional return types based on parameters (e.g., T extends boolean ? Block : PartialBlock)
-- Type inference shortcuts and generic type patterns
-- Smart defaults that improve usability
-These are INTENTIONAL design decisions that make development easier, NOT bugs or issues to be fixed. Focus only on actual schema mismatches or missing functionality, not on DX enhancements that deviate from a literal schema translation.
+- Type inference shortcuts and generic patterns
+- Smart defaults for improved usability
+</advanced_types>
 
-INTENTIONAL TYPE TRANSFORMATIONS FOR DX: The following type differences between the schema and implementation are INTENTIONAL and should NOT be reported:
-- Byte arrays (number[]) are transformed to hex strings (string) for easier use (e.g., Block.extraData, Transaction.senderData, Transaction.recipientData, Transaction.proof)
-- Numeric enums are transformed to string enums or union types for type safety (e.g., Block.network)
-- Any field that represents binary data (hashes, signatures, proofs, raw data) is represented as hex strings instead of byte arrays
-These transformations improve developer experience and should be considered correct, not errors.
+<special_cases>
+1. validityStartHeight: Sent as STRING ("+10" for relative, "100" for absolute) even though schema says number. Rust server accepts both formats. This is CORRECT.
 
-IGNORE VALIDATION SCHEMA MAPPING: Do NOT report issues about the validation.ts file's getSchemaForMethod mapping. This is an internal optional validation helper that may have minor discrepancies (e.g., Transaction vs ExecutedTransaction, PenalizedSlots vs PenalizedSlots[]). Validation is disabled by default and these mapping differences do not affect functionality. Only report issues if actual RPC method implementations are wrong, not the internal validation mapping.
+2. RPCData envelope: ALL results wrapped in RPCData { data, metadata } by server. Client correctly extracts json.result.data. Schema incorrectly documents raw values. Client implementation is CORRECT.
 
-OPTIONAL PARAMETERS FOR DX: The following methods intentionally allow optional parameters even if the schema marks them as required, for better developer experience (the server handles defaults when null is sent):
-- getTransactionsByAddress: max and startAt are optional
-- getTransactionHashesByAddress: max and startAt are optional
-Do NOT report these as issues - they are intentional DX improvements where the client sends null and the server provides sensible defaults.
+3. validation.ts mapping: Internal optional helper with minor discrepancies (e.g., Transaction vs ExecutedTransaction). Validation disabled by default. Do NOT report unless actual RPC methods are wrong.
 
-VALIDITY START HEIGHT STRING FORMAT: The validityStartHeight parameter in all transaction creation/sending methods is intentionally sent as a STRING (e.g., "+10" for relative, "100" for absolute), even though the schema defines it as number. The Rust server's ValidityStartHeight deserializer accepts both strings and numbers, with strings supporting the "+N" relative syntax. This is the intended API design and is CORRECT. Do NOT report this as an issue. Affected methods: all createBasicTransaction, sendBasicTransaction, and similar transaction methods.
+4. HTTP test failures: Server-side issues for methods like getAddress, getAccounts. Do NOT report unless TypeScript implementation is wrong.
+</special_cases>
+</dx_exceptions>
 
-RPCDATA ENVELOPE WRAPPER: ALL RPC method results are wrapped in RPCData { data, metadata } by the Rust server. The TypeScript client correctly extracts json.result.data. The OpenRPC schema incorrectly documents results as raw values instead of the RPCData envelope. The client implementation (extracting .data) is CORRECT. Do NOT report this as an issue.
+<validation_rules>
+Focus validation on:
+1. Missing RPC methods that exist in schema
+2. Incorrect positional parameter order
+3. Type mismatches that break functionality
+4. Missing required fields (not DX-enhanced optional ones)
 
-IGNORE HTTP TEST FAILURES: Do not report issues for HTTP test failures on methods like 'getAddress' and 'getAccounts' as these are server-side configuration issues, not client implementation problems. Only report actual schema/implementation mismatches in the TypeScript code.
+Do NOT report:
+1. DX-optimized parameter names
+2. Type transformations listed in <dx_exceptions>
+3. Advanced TypeScript patterns for better DX
+4. Server-side or test infrastructure issues
+</validation_rules>
 
-PARAMETER NAMING FOR DX: TypeScript parameter names may differ from OpenRPC schema for better developer experience. This client uses POSITIONAL parameter arrays in rpcCall(), not named parameters. The TS parameter names are purely for developer experience and do NOT affect the JSON-RPC wire protocol. Examples that are CORRECT and should NOT be flagged:
-- epochIndex (TS) vs epoch (schema) - more descriptive, clarifies it's an index
-- batchIndex (TS) vs batchNumber/batch (schema) - more descriptive, clarifies it's an index
-- validator (TS) vs validatorAddress/validatorWallet (schema) - simpler, cleaner API
-- stakerWallet (TS) vs stakerAddress (schema) - more accurate naming
-- rawTransaction (TS) vs rawTx (schema) - more descriptive, clearer intent
-Only flag parameter issues if the POSITIONAL array order in rpcCall() is incorrect, NOT if TS parameter names differ from schema for DX reasons.
-
+<input_data>
 OpenRPC Schema:
 \`\`\`json
 ${JSON.stringify(schema, null, 2)}
@@ -430,8 +466,14 @@ TypeScript Implementation:
 \`\`\`typescript
 ${implementation}
 \`\`\`
+</input_data>
 
-Be thorough and check every method, parameter, and type definition. For each issue found, specify the exact function name, the problem, and a clear solution.`,
+<output_instructions>
+For each genuine issue found:
+1. Specify exact function name
+2. Describe the actual problem (not DX choice)
+3. Provide clear solution
+</output_instructions>`,
       schema: valibotSchema(validationSchema),
     })
 
@@ -465,74 +507,112 @@ async function validateWithContext(context: ValidationContext, schema: any): Pro
   let prioritySection = ''
   if (schemaDiff && (schemaDiff.added.length > 0 || schemaDiff.modified.length > 0 || schemaDiff.removed.length > 0)) {
     prioritySection = `
-PRIORITY VALIDATION (Recent Changes ${previousVersion} → ${latestVersion}):
+<priority_validation>
+Recent schema changes detected (${previousVersion} → ${latestVersion}). Validate these first:
 
-**HIGH PRIORITY** - Validate these changes first:
-
-Added Methods (${schemaDiff.added.length}):
+<added_methods count="${schemaDiff.added.length}">
 ${schemaDiff.added.map(m => `- ${m.name}`).join('\n')}
+</added_methods>
 
-Modified Methods (${schemaDiff.modified.length}):
+<modified_methods count="${schemaDiff.modified.length}">
 ${schemaDiff.modified.map(m => `- ${m.name} (signature changed)`).join('\n')}
+</modified_methods>
 
-Removed Methods (${schemaDiff.removed.length}):
+<removed_methods count="${schemaDiff.removed.length}">
 ${schemaDiff.removed.map(m => `- ${m} (should be removed from implementation)`).join('\n')}
+</removed_methods>
 
-Changelog Context:
-\`\`\`
+<changelog>
 ${changelog.substring(0, 2000)}${changelog.length > 2000 ? '...' : ''}
-\`\`\`
+</changelog>
 
-Focus validation efforts on these recent changes, but still perform a global check for other issues.
+Prioritize validation of these recent changes, then perform global validation for other potential issues.
+</priority_validation>
 `
   }
 
   try {
     const { object } = await generateObject({
       model: openai('gpt-5'),
-      prompt: `You are a TypeScript code validator. Compare this OpenRPC JSON schema with the TypeScript implementation and validate that:
+      prompt: `<role>
+You are a TypeScript RPC client validator. Your task is to compare an OpenRPC schema with its TypeScript implementation and identify actual bugs—NOT developer experience (DX) enhancements.
+</role>
 
-1. All RPC methods defined in the schema are implemented
+<task>
+Validate that the TypeScript implementation correctly implements the OpenRPC schema by checking:
+1. All RPC methods from the schema are implemented
 2. Method signatures match (parameters, return types)
-3. Parameter names and types are correct
-4. Return types match the schema definitions
-5. No methods are missing or incorrectly implemented
+3. Positional parameter arrays are in correct order
+4. Return types align with schema definitions
+
+Report ONLY genuine bugs where functionality is broken or missing. Do NOT report DX improvements as issues.
+</task>
 
 ${prioritySection}
 
-IMPORTANT: This TypeScript client is designed with developer experience (DX) in mind. Features like:
+<dx_exceptions>
+This TypeScript client prioritizes developer experience. The following patterns are INTENTIONAL and CORRECT—do not flag them:
+
+<type_transformations>
+- Byte arrays (number[]) → hex strings (string) for easier use
+  Examples: Block.extraData, Transaction.senderData, Transaction.recipientData, Transaction.proof
+- Numeric enums → string enums or union types for type safety
+  Example: Block.network
+- Binary data fields → hex strings instead of byte arrays
+  Examples: hashes, signatures, proofs, raw data
+</type_transformations>
+
+<parameter_naming>
+TypeScript parameter names may differ from schema for better DX. This client uses POSITIONAL parameter arrays in rpcCall(), NOT named parameters. Parameter names are purely for developer experience and do NOT affect the JSON-RPC wire protocol.
+
+Acceptable name differences (do NOT flag):
+- epochIndex (TS) vs epoch (schema) — more descriptive
+- batchIndex (TS) vs batchNumber/batch (schema) — clarifies it's an index
+- validator (TS) vs validatorAddress/validatorWallet (schema) — simpler API
+- stakerWallet (TS) vs stakerAddress (schema) — more accurate
+- rawTransaction (TS) vs rawTx (schema) — more descriptive
+
+ONLY flag if the positional array order in rpcCall() is incorrect.
+</parameter_naming>
+
+<optional_parameters>
+These methods intentionally allow optional parameters even when schema marks as required (server provides defaults):
+- getTransactionsByAddress: max, startAt
+- getTransactionHashesByAddress: max, startAt
+</optional_parameters>
+
+<advanced_types>
 - Conditional return types based on parameters (e.g., T extends boolean ? Block : PartialBlock)
-- Type inference shortcuts and generic type patterns
-- Smart defaults that improve usability
-These are INTENTIONAL design decisions that make development easier, NOT bugs or issues to be fixed. Focus only on actual schema mismatches or missing functionality, not on DX enhancements that deviate from a literal schema translation.
+- Type inference shortcuts and generic patterns
+- Smart defaults for improved usability
+</advanced_types>
 
-INTENTIONAL TYPE TRANSFORMATIONS FOR DX: The following type differences between the schema and implementation are INTENTIONAL and should NOT be reported:
-- Byte arrays (number[]) are transformed to hex strings (string) for easier use (e.g., Block.extraData, Transaction.senderData, Transaction.recipientData, Transaction.proof)
-- Numeric enums are transformed to string enums or union types for type safety (e.g., Block.network)
-- Any field that represents binary data (hashes, signatures, proofs, raw data) is represented as hex strings instead of byte arrays
-These transformations improve developer experience and should be considered correct, not errors.
+<special_cases>
+1. validityStartHeight: Sent as STRING ("+10" for relative, "100" for absolute) even though schema says number. Rust server accepts both formats. This is CORRECT.
 
-IGNORE VALIDATION SCHEMA MAPPING: Do NOT report issues about the validation.ts file's getSchemaForMethod mapping. This is an internal optional validation helper that may have minor discrepancies (e.g., Transaction vs ExecutedTransaction, PenalizedSlots vs PenalizedSlots[]). Validation is disabled by default and these mapping differences do not affect functionality. Only report issues if actual RPC method implementations are wrong, not the internal validation mapping.
+2. RPCData envelope: ALL results wrapped in RPCData { data, metadata } by server. Client correctly extracts json.result.data. Schema incorrectly documents raw values. Client implementation is CORRECT.
 
-OPTIONAL PARAMETERS FOR DX: The following methods intentionally allow optional parameters even if the schema marks them as required, for better developer experience (the server handles defaults when null is sent):
-- getTransactionsByAddress: max and startAt are optional
-- getTransactionHashesByAddress: max and startAt are optional
-Do NOT report these as issues - they are intentional DX improvements where the client sends null and the server provides sensible defaults.
+3. validation.ts mapping: Internal optional helper with minor discrepancies (e.g., Transaction vs ExecutedTransaction). Validation disabled by default. Do NOT report unless actual RPC methods are wrong.
 
-VALIDITY START HEIGHT STRING FORMAT: The validityStartHeight parameter in all transaction creation/sending methods is intentionally sent as a STRING (e.g., "+10" for relative, "100" for absolute), even though the schema defines it as number. The Rust server's ValidityStartHeight deserializer accepts both strings and numbers, with strings supporting the "+N" relative syntax. This is the intended API design and is CORRECT. Do NOT report this as an issue. Affected methods: all createBasicTransaction, sendBasicTransaction, and similar transaction methods.
+4. HTTP test failures: Server-side issues for methods like getAddress, getAccounts. Do NOT report unless TypeScript implementation is wrong.
+</special_cases>
+</dx_exceptions>
 
-RPCDATA ENVELOPE WRAPPER: ALL RPC method results are wrapped in RPCData { data, metadata } by the Rust server. The TypeScript client correctly extracts json.result.data. The OpenRPC schema incorrectly documents results as raw values instead of the RPCData envelope. The client implementation (extracting .data) is CORRECT. Do NOT report this as an issue.
+<validation_rules>
+Focus validation on:
+1. Missing RPC methods that exist in schema
+2. Incorrect positional parameter order
+3. Type mismatches that break functionality
+4. Missing required fields (not DX-enhanced optional ones)
 
-IGNORE HTTP TEST FAILURES: Do not report issues for HTTP test failures on methods like 'getAddress' and 'getAccounts' as these are server-side configuration issues, not client implementation problems. Only report actual schema/implementation mismatches in the TypeScript code.
+Do NOT report:
+1. DX-optimized parameter names
+2. Type transformations listed in <dx_exceptions>
+3. Advanced TypeScript patterns for better DX
+4. Server-side or test infrastructure issues
+</validation_rules>
 
-PARAMETER NAMING FOR DX: TypeScript parameter names may differ from OpenRPC schema for better developer experience. This client uses POSITIONAL parameter arrays in rpcCall(), not named parameters. The TS parameter names are purely for developer experience and do NOT affect the JSON-RPC wire protocol. Examples that are CORRECT and should NOT be flagged:
-- epochIndex (TS) vs epoch (schema) - more descriptive, clarifies it's an index
-- batchIndex (TS) vs batchNumber/batch (schema) - more descriptive, clarifies it's an index
-- validator (TS) vs validatorAddress/validatorWallet (schema) - simpler, cleaner API
-- stakerWallet (TS) vs stakerAddress (schema) - more accurate naming
-- rawTransaction (TS) vs rawTx (schema) - more descriptive, clearer intent
-Only flag parameter issues if the POSITIONAL array order in rpcCall() is incorrect, NOT if TS parameter names differ from schema for DX reasons.
-
+<input_data>
 OpenRPC Schema (${latestVersion}):
 \`\`\`json
 ${JSON.stringify(schema, null, 2)}
@@ -542,8 +622,14 @@ TypeScript Implementation:
 \`\`\`typescript
 ${implementation}
 \`\`\`
+</input_data>
 
-Be thorough and check every method, parameter, and type definition. For each issue found, specify the exact function name, the problem, and a clear solution.`,
+<output_instructions>
+For each genuine issue found:
+1. Specify exact function name
+2. Describe the actual problem (not DX choice)
+3. Provide clear solution
+</output_instructions>`,
       schema: valibotSchema(validationSchema),
     })
 

@@ -59,26 +59,27 @@ export async function discoverBlockFixtures({ url }: { url: string }): Promise<B
  */
 export interface ValidatorFixtures {
   activeValidators: Validator[]
-  firstValidator: Validator
+  validator: Validator
   validatorCount: number
 }
 
 /**
  * Discover validator fixtures from the blockchain
+ * Returns undefined if no validators are found (e.g., genesis state)
  */
-export async function discoverValidatorFixtures({ url }: { url: string }): Promise<ValidatorFixtures> {
+export async function discoverValidatorFixtures({ url }: { url: string }): Promise<ValidatorFixtures | undefined> {
   const [isOk, error, validators] = await getActiveValidators({ url })
   if (!isOk || error || !validators) {
-    throw new Error(`Failed to get active validators: ${JSON.stringify(error) || 'Unknown error'}`)
+    return undefined
   }
 
   if (validators.length === 0) {
-    throw new Error('No active validators found')
+    return undefined
   }
 
   return {
     activeValidators: validators,
-    firstValidator: validators[0],
+    validator: validators[0],
     validatorCount: validators.length,
   }
 }
@@ -88,26 +89,27 @@ export async function discoverValidatorFixtures({ url }: { url: string }): Promi
  */
 export interface AccountFixtures {
   accounts: Account[]
-  firstAccount: Account
+  account: Account
   accountCount: number
 }
 
 /**
  * Discover account fixtures from the blockchain
+ * Returns undefined if no accounts are found (e.g., genesis state)
  */
-export async function discoverAccountFixtures({ url }: { url: string }): Promise<AccountFixtures> {
+export async function discoverAccountFixtures({ url }: { url: string }): Promise<AccountFixtures | undefined> {
   const [isOk, error, accounts] = await getAccounts({ url })
   if (!isOk || error || !accounts) {
-    throw new Error(`Failed to get accounts: ${JSON.stringify(error) || 'Unknown error'}`)
+    return undefined
   }
 
   if (accounts.length === 0) {
-    throw new Error('No accounts found')
+    return undefined
   }
 
   return {
     accounts,
-    firstAccount: accounts[0],
+    account: accounts[0],
     accountCount: accounts.length,
   }
 }

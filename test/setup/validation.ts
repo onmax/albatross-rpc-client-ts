@@ -4,11 +4,11 @@ import { safeParse } from 'valibot'
 /**
  * Assert RPC call succeeded
  */
-export function expectRpcSuccess<T>(result: [boolean, Error | undefined, T | undefined]): asserts result is [true, undefined, T] {
+export function expectRpcSuccess<T>(result: [boolean, string | undefined, T | undefined, ...any[]]): asserts result is [true, undefined, T, ...any[]] {
   const [isOk, error, data] = result
 
   if (!isOk || error) {
-    throw new Error(`RPC call failed: ${error?.message || 'Unknown error'}`)
+    throw new Error(`RPC call failed: ${error || 'Unknown error'}`)
   }
 
   if (data === undefined) {

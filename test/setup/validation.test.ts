@@ -15,7 +15,7 @@ describe('validation Helpers', () => {
     const successResult: [boolean, undefined, number] = [true, undefined, 42]
     expect(() => expectRpcSuccess(successResult)).not.toThrow()
 
-    const errorResult: [boolean, Error, undefined] = [false, new Error('fail'), undefined]
+    const errorResult: [boolean, string, undefined] = [false, 'fail', undefined]
     expect(() => expectRpcSuccess(errorResult)).toThrow('RPC call failed')
   })
 

@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { getBlockNumber } from '../src/http'
 import { TEST_CONFIG } from './setup/config'
 
-describe('Smoke Test - Local Node Connectivity', () => {
+describe('smoke Test - Local Node Connectivity', () => {
   it('should connect to local node and get block number', async () => {
     // Call getBlockNumber with local RPC URL
     const [isOk, error, blockNumber] = await getBlockNumber({

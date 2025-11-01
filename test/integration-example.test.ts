@@ -17,12 +17,13 @@ describe('integration Example - Using All Utilities', () => {
     expectValidHash(previousBlock.hash)
 
     // Query block by discovered hash
-    const [isOk, error, block] = await getBlockByHash(
+    const blockResult = await getBlockByHash(
       { hash: latestBlock.hash, includeBody: false },
       { url: TEST_CONFIG.RPC_URL },
     )
 
-    expectRpcSuccess([isOk, error, block])
+    expectRpcSuccess(blockResult)
+    const [, , block] = blockResult
     expect(block.number).toBe(latestBlock.number)
   }, 10000)
 

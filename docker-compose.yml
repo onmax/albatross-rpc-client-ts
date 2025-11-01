@@ -1,8 +1,9 @@
-version: '3.8'
-
 networks:
   nimiq-devnet:
     driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
 
 services:
   # Seed node for peer discovery

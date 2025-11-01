@@ -27,16 +27,28 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Create Nimiq config for devnet
+        run: |
+          mkdir -p nimiq-data
+          cat > nimiq-data/client.toml << 'EOF'
+          [consensus]
+          network = "dev-albatross"
+
+          [rpc-server]
+          bind = "0.0.0.0:8648"
+          EOF
+          echo "Created client.toml with dev-albatross network"
+
       - name: Pull Nimiq Docker image
-        run: docker pull maestroi/nimiq-albatross:latest
+        run: docker pull ghcr.io/nimiq/core-rs-albatross:latest
 
       - name: Start Nimiq node in Docker
         run: |
           docker run -d \
             --name nimiq-node \
+            -v $(pwd)/nimiq-data:/home/nimiq/.nimiq \
             -p 8648:8648 \
-            maestroi/nimiq-albatross:latest \
-            --network dev-albatross
+            ghcr.io/nimiq/core-rs-albatross:latest
 
           echo "Started Nimiq node in Docker"
           sleep 5

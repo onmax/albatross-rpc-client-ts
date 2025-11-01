@@ -84,6 +84,7 @@ jobs:
         env:
           TEST_RPC_URL: http://127.0.0.1:8648
           TEST_WS_URL: ws://127.0.0.1:8648/ws
+          ALBATROSS_RPC_NODE_URL: http://127.0.0.1:8648
 
       - name: Show node logs on failure
         if: failure()

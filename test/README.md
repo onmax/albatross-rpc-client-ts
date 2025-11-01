@@ -51,6 +51,58 @@ Tests use environment variables for RPC endpoints:
 - `TEST_RPC_URL` - HTTP RPC endpoint (default: `http://127.0.0.1:8648`)
 - `TEST_WS_URL` - WebSocket endpoint (default: `ws://127.0.0.1:8648/ws`)
 
+## Test Utilities
+
+### Wallet Utilities (`test/setup/wallet.ts`)
+
+Generate and fund test wallets:
+
+```typescript
+import { fundWalletFromGenesis, generateTestWallet } from './setup/wallet'
+
+// Generate random wallet
+const wallet = generateTestWallet()
+
+// Fund from genesis account
+const txHash = await fundWalletFromGenesis({
+  toAddress: wallet.address,
+  amount: 1000000, // 1000 NIM in Luna
+  url: TEST_CONFIG.RPC_URL,
+})
+```
+
+### Fixture Discovery (`test/setup/fixtures.ts`)
+
+Query blockchain for test data:
+
+```typescript
+import { discoverBlockFixtures, discoverValidatorFixtures } from './setup/fixtures'
+
+// Get latest block and previous block
+const { latestBlock, previousBlock } = await discoverBlockFixtures({ url: TEST_CONFIG.RPC_URL })
+
+// Get active validators
+const { activeValidators, firstValidator } = await discoverValidatorFixtures({ url: TEST_CONFIG.RPC_URL })
+```
+
+### Validation Helpers (`test/setup/validation.ts`)
+
+Reusable assertion helpers:
+
+```typescript
+import { expectRpcSuccess, expectSchemaValid, expectValidHash } from './setup/validation'
+
+// Assert RPC success
+const [isOk, error, data] = await getBlockNumber({ url })
+expectRpcSuccess([isOk, error, data])
+
+// Assert valid hash
+expectValidHash(block.hash)
+
+// Assert schema validation
+expectSchemaValid(BlockSchema, blockData)
+```
+
 ## Troubleshooting
 
 ### Node won't start

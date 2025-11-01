@@ -1,4 +1,7 @@
 dist/
 node_modules/
 .env
-.worktrees/nimiq-data/
+.worktrees/
+test-network/
+test-report.md
+test-results.txt

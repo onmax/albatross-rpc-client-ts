@@ -1,0 +1,118 @@
+version: '3.8'
+
+networks:
+  nimiq-devnet:
+    driver: bridge
+
+services:
+  # Seed node for peer discovery
+  seed:
+    image: ghcr.io/nimiq/core-rs-albatross:latest
+    container_name: nimiq-seed
+    networks:
+      nimiq-devnet:
+        ipv4_address: 172.20.0.10
+    volumes:
+      - ./test-network/seed:/home/nimiq/.nimiq
+    ports:
+      - '8648:8648'
+    command: >
+      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      [consensus]
+      network = \"dev-albatross\"
+
+      [rpc-server]
+      bind = \"0.0.0.0\"
+      port = 8648
+      EOF
+      && exec /usr/local/bin/nimiq-client"
+
+  # Validator 1
+  validator1:
+    image: ghcr.io/nimiq/core-rs-albatross:latest
+    container_name: nimiq-validator1
+    depends_on:
+      - seed
+    networks:
+      nimiq-devnet:
+        ipv4_address: 172.20.0.11
+    volumes:
+      - ./test-network/validator1:/home/nimiq/.nimiq
+    command: >
+      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      [consensus]
+      network = \"dev-albatross\"
+      sync_mode = \"full\"
+
+      [network]
+      seed_nodes = [
+        { address = \"/ip4/172.20.0.10/tcp/8443/ws\" }
+      ]
+
+      [validator]
+      automatic_reactivate = true
+      validator_address = \"NQ70 JM4N PU3R Y2U2 9RGX ABJE VKA4 4TBB HKF1\"
+      signing_key = \"81def5effc93ae283b5acfa466d0a544218b1bf3c3558f6cf6403bd9aed14dee\"
+      voting_key = \"c8512dc4a69729170fe2ac5cf6c9b25322fa974ceee569b5d4f86a5238a51de896deb5e6998d59f90944aad3e47e676433d13137b1bb0cffeeb158ce5594c937294a8330475b79a2463fa752b1fc851e42383175a7f05b0183475da14129013e5b437436f6705ef9e4509391663806ff62e7abf8a49e583c3a5741e2272f014f50f686f2181849f05d43d82ed5d62f69a427529b4f981ce582ad811565db5e1b18c6b7a6bf6664c6d54eaf7fd7424fd6a92f13543568681a4115b15204003f3efe58109efd1af4c591bb3984aac1e74eee4ddd5f5f4900d62feb2ac1e046ccf52c66d8526c69a6ca72823dcf3e060d7e488f7aded41d6f94bc9876a4083d243cff5fa6e4758674270d18ec9c32fbd553049bd0394da82cfa7a69390600\"
+      EOF
+      && exec /usr/local/bin/nimiq-client"
+
+  # Validator 2
+  validator2:
+    image: ghcr.io/nimiq/core-rs-albatross:latest
+    container_name: nimiq-validator2
+    depends_on:
+      - seed
+    networks:
+      nimiq-devnet:
+        ipv4_address: 172.20.0.12
+    volumes:
+      - ./test-network/validator2:/home/nimiq/.nimiq
+    command: >
+      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      [consensus]
+      network = \"dev-albatross\"
+      sync_mode = \"full\"
+
+      [network]
+      seed_nodes = [
+        { address = \"/ip4/172.20.0.10/tcp/8443/ws\" }
+      ]
+
+      [validator]
+      automatic_reactivate = true
+      validator_address = \"NQ83 P1EH GRM8 HUE8 GS7L CBST UVDS 778L HEX4\"
+      signing_key = \"418afdd60f6eb413de7e8048ed4e8cae8d0e4e3b2425f70986fe4779431e6120\"
+      voting_key = \"800175c3c6bccd475ca8d9ce28aa2adf01fbcc23054834b8104524b2f671eaa4a87134d525ca6e87b071ee1fe0be4f4b4840e427f1c38352a68f63fe6ec1647532236d9e5189610d8adbbb6fbca31b0d17d159091365cfc541d1717c3f900164d6c6ef3fcdbe887e2e12754e90393d74ff66c1d6096e35cc13f7581bbdf3b4c9d7b1d608753a7fa9ce24889b3f2a246af60c80b2e39aafd09ee2db11442587c1365bb0ba7cfa88db9a72d3be9ce02411a908b7739e47cbee2d6bd053c401fcb664c002001228c8c19c46a21abb4a820f3c1dc4f2bb28f02ed5fcbb39e26de63bca58f34c4f7c82b9bbb9d4dea570cbbdfbdb764d9e8dc1b82c228021e3363678aa6fd81d92d5e533fb2731002a736df191b61e5c83bea25102c38b0980\"
+      EOF
+      && exec /usr/local/bin/nimiq-client"
+
+  # Validator 3
+  validator3:
+    image: ghcr.io/nimiq/core-rs-albatross:latest
+    container_name: nimiq-validator3
+    depends_on:
+      - seed
+    networks:
+      nimiq-devnet:
+        ipv4_address: 172.20.0.13
+    volumes:
+      - ./test-network/validator3:/home/nimiq/.nimiq
+    command: >
+      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      [consensus]
+      network = \"dev-albatross\"
+      sync_mode = \"full\"
+
+      [network]
+      seed_nodes = [
+        { address = \"/ip4/172.20.0.10/tcp/8443/ws\" }
+      ]
+
+      [validator]
+      automatic_reactivate = true
+      validator_address = \"NQ79 F94K NYV6 3V7D 68X6 FXAD 4PCM XMQR PP4U\"
+      signing_key = \"ee1424f128e4b8ae9a4951b7fb4717fa94cd9c74f29dbffdf591cdedbe149a8d\"
+      voting_key = \"fcdd7c2a13dfa03fb29ea92c8edbd4315055d84114f75a3bc36fc311e6eae698e9cc5d6c7e1e4a4a0f937a694fa666e47eb6f1a21d44a4f9b69f2acf6f25e3289d77c3bb3caab154dee0e263ec79c0a263e5c84c45c7e2d84c8f7f96f356015be91276a5d6e4923009ccc42fff3474b51609f31dff4410b25017a265dc350c698a06597391fb67a15003df808da1cdf70aa313c80cae0e793c6289d7e420ab4084acf32d531ebf2eafbe73e6b2ab923f3589efc75ba8e9bb0c62a7e11e00116e3f1a4164540b01073decb05ca56c83ec6eacb4af0234910b1b0133f06556003601e5e00d25d905c68c9fb95e3c28859cadd49b23a2a1b5606d63de7b2f1b8806badef3fb188d9be4cb9215926762b6cf0743d44c8790544f0a77be2701\"
+      EOF
+      && exec /usr/local/bin/nimiq-client"

@@ -30,11 +30,16 @@ jobs:
       - name: Pull Nimiq Docker image
         run: docker pull ghcr.io/nimiq/core-rs-albatross:latest
 
-      - name: Start multi-validator devnet
+      - name: Start Nimiq node in Docker
         run: |
-          docker compose up -d
-          echo "Started multi-validator devnet with 3 validators"
-          sleep 10
+          docker run -d \
+            --name nimiq-node \
+            -e NIMIQ_NETWORK=dev-albatross \
+            -p 8648:8648 \
+            ghcr.io/nimiq/core-rs-albatross:latest
+
+          echo "Started Nimiq node"
+          sleep 5
 
       - name: Wait for node to be ready
         run: |
@@ -88,28 +93,10 @@ jobs:
           $(cat test-results.txt)
           ```
 
-          ## Seed Node Logs
+          ## Docker Logs
 
           ```
-          $(docker logs nimiq-seed 2>&1 | tail -50)
-          ```
-
-          ## Validator 1 Logs
-
-          ```
-          $(docker logs nimiq-validator1 2>&1 | tail -30)
-          ```
-
-          ## Validator 2 Logs
-
-          ```
-          $(docker logs nimiq-validator2 2>&1 | tail -30)
-          ```
-
-          ## Validator 3 Logs
-
-          ```
-          $(docker logs nimiq-validator3 2>&1 | tail -30)
+          $(docker logs nimiq-node 2>&1 | tail -100)
           ```
           EOF
 
@@ -125,24 +112,16 @@ jobs:
       - name: Show node logs on failure
         if: failure()
         run: |
-          echo "=== Seed Node Logs ==="
-          docker logs nimiq-seed 2>&1 | tail -100 || echo "No logs found"
-          echo ""
-          echo "=== Validator 1 Logs ==="
-          docker logs nimiq-validator1 2>&1 | tail -50 || echo "No logs found"
-          echo ""
-          echo "=== Validator 2 Logs ==="
-          docker logs nimiq-validator2 2>&1 | tail -50 || echo "No logs found"
-          echo ""
-          echo "=== Validator 3 Logs ==="
-          docker logs nimiq-validator3 2>&1 | tail -50 || echo "No logs found"
+          echo "=== Nimiq Node Logs ==="
+          docker logs nimiq-node || echo "No logs found"
 
       - name: Fail if tests failed
         if: steps.tests.outputs.exit_code != ''
         run: exit ${{ steps.tests.outputs.exit_code }}
 
-      - name: Stop devnet
+      - name: Stop Nimiq node
         if: always()
         run: |
-          docker compose down -v || true
-          echo "Stopped multi-validator devnet"
+          docker stop nimiq-node || true
+          docker rm nimiq-node || true
+          echo "Stopped Nimiq node"

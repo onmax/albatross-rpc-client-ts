@@ -27,52 +27,19 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Setup Rust
-        uses: dtolnay/rust-toolchain@stable
+      - name: Pull Nimiq Docker image
+        run: docker pull maestroi/nimiq-albatross:latest
 
-      - name: Cache Cargo dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.cargo/bin/
-            ~/.cargo/registry/index/
-            ~/.cargo/registry/cache/
-            ~/.cargo/git/db/
-            core-rs-albatross/target/
-          key: ${{ runner.os }}-cargo-${{ github.run_id }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
-
-      - name: Clone core-rs-albatross
+      - name: Start Nimiq node in Docker
         run: |
-          git clone https://github.com/nimiq/core-rs-albatross.git
-          cd core-rs-albatross
-          echo "Current commit: $(git rev-parse HEAD)"
+          docker run -d \
+            --name nimiq-node \
+            -p 8648:8648 \
+            maestroi/nimiq-albatross:latest \
+            --network dev-albatross
 
-      - name: Build Nimiq node
-        run: |
-          cd core-rs-albatross
-          cargo build --release
-
-      - name: Start Nimiq node in background
-        run: |
-          cd core-rs-albatross
-          # Start node with test configuration
-          # Use devnet for fast block times and instant setup
-          nohup cargo run --release -- \
-            --network dev-albatross \
-            --rpc-enabled \
-            --rpc-address 127.0.0.1:8648 \
-            > nimiq-node.log 2>&1 &
-
-          echo $! > nimiq-node.pid
-          echo "Started Nimiq node with PID: $(cat nimiq-node.pid)"
-
-          # Give node a moment to initialize
-          sleep 2
-
-          # Show initial logs
-          tail -20 nimiq-node.log || true
+          echo "Started Nimiq node in Docker"
+          sleep 5
 
       - name: Wait for node to be ready
         run: |
@@ -95,8 +62,8 @@ jobs:
           done
 
           echo "❌ Node did not become ready in time"
-          echo "=== Node logs ==="
-          cat core-rs-albatross/nimiq-node.log
+          echo "=== Docker logs ==="
+          docker logs nimiq-node
           exit 1
 
       - name: Run smoke test
@@ -109,12 +76,11 @@ jobs:
         if: failure()
         run: |
           echo "=== Nimiq Node Logs ==="
-          cat core-rs-albatross/nimiq-node.log || echo "No logs found"
+          docker logs nimiq-node || echo "No logs found"
 
       - name: Stop Nimiq node
         if: always()
         run: |
-          if [ -f core-rs-albatross/nimiq-node.pid ]; then
-            kill $(cat core-rs-albatross/nimiq-node.pid) || true
-            echo "Stopped Nimiq node"
-          fi
+          docker stop nimiq-node || true
+          docker rm nimiq-node || true
+          echo "Stopped Nimiq node"

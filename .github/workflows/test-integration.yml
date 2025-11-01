@@ -30,15 +30,9 @@ jobs:
       - name: Pull Nimiq Docker image
         run: docker pull ghcr.io/nimiq/core-rs-albatross:latest
 
-      - name: Start Nimiq node in Docker
+      - name: Start Nimiq node
         run: |
-          docker run -d \
-            --name nimiq-node \
-            -p 8648:8648 \
-            ghcr.io/nimiq/core-rs-albatross:latest \
-            --network=dev-albatross \
-            --rpc-server
-
+          docker compose up -d
           echo "Started Nimiq node"
           sleep 5
 
@@ -123,6 +117,5 @@ jobs:
       - name: Stop Nimiq node
         if: always()
         run: |
-          docker stop nimiq-node || true
-          docker rm nimiq-node || true
+          docker compose down || true
           echo "Stopped Nimiq node"

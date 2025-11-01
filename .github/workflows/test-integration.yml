@@ -30,11 +30,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Setup Rust
-        uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          profile: minimal
-          override: true
+        uses: dtolnay/rust-toolchain@stable
 
       - name: Cache Cargo dependencies
         uses: actions/cache@v3
@@ -45,7 +41,7 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             albatross-rpc-rust/target/
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          key: ${{ runner.os }}-cargo-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 

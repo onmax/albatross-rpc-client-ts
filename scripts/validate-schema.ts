@@ -128,11 +128,12 @@ async function fetchLatestRelease(): Promise<ReleaseInfo> {
     }
 
     const data = await response.json()
+    const release = data.release || data
 
     return {
-      version: data.tag || data.tag_name || '',
-      changelog: data.body || '',
-      publishedAt: data.published_at || data.created_at || '',
+      version: release.tag || release.tag_name || '',
+      changelog: release.markdown || release.body || '',
+      publishedAt: release.publishedAt || release.published_at || release.createdAt || release.created_at || '',
     }
   }
   catch {
@@ -144,10 +145,11 @@ async function fetchLatestRelease(): Promise<ReleaseInfo> {
     }
 
     const data = await response.json()
+    const release = data.release || data
     return {
-      version: data.tag || data.tag_name || '',
-      changelog: data.body || '',
-      publishedAt: data.published_at || data.created_at || '',
+      version: release.tag || release.tag_name || '',
+      changelog: release.markdown || release.body || '',
+      publishedAt: release.publishedAt || release.published_at || release.createdAt || release.created_at || '',
     }
   }
 }

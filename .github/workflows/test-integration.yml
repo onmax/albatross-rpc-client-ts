@@ -80,17 +80,57 @@ jobs:
           exit 1
 
       - name: Run integration tests
-        run: pnpm test:integration
+        id: tests
+        continue-on-error: true
+        run: |
+          pnpm test:integration --reporter=verbose > test-results.txt 2>&1 || echo "exit_code=$?" >> $GITHUB_OUTPUT
         env:
           TEST_RPC_URL: http://127.0.0.1:8648
           TEST_WS_URL: ws://127.0.0.1:8648/ws
           ALBATROSS_RPC_NODE_URL: http://127.0.0.1:8648
+
+      - name: Generate test report
+        if: always()
+        run: |
+          cat > test-report.md << 'EOF'
+          # Integration Test Report
+
+          **Workflow:** ${{ github.workflow }}
+          **Run:** ${{ github.run_number }}
+          **Commit:** ${{ github.sha }}
+          **Branch:** ${{ github.ref_name }}
+
+          ## Test Results
+
+          ```
+          $(cat test-results.txt)
+          ```
+
+          ## Docker Logs
+
+          ```
+          $(docker logs nimiq-node 2>&1 | tail -100)
+          ```
+          EOF
+
+      - name: Upload test report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-report
+          path: |
+            test-report.md
+            test-results.txt
 
       - name: Show node logs on failure
         if: failure()
         run: |
           echo "=== Nimiq Node Logs ==="
           docker logs nimiq-node || echo "No logs found"
+
+      - name: Fail if tests failed
+        if: steps.tests.outputs.exit_code != ''
+        run: exit ${{ steps.tests.outputs.exit_code }}
 
       - name: Stop Nimiq node
         if: always()

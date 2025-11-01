@@ -11,11 +11,17 @@ describe('fixture Discovery', () => {
     const fixtures = await discoverBlockFixtures({ url: TEST_CONFIG.RPC_URL })
 
     expect(fixtures.latestBlock).toBeDefined()
-    expect(fixtures.latestBlock.number).toBeGreaterThan(0)
+    expect(fixtures.latestBlock.number).toBeGreaterThanOrEqual(0)
     expect(fixtures.latestBlock.hash).toMatch(/^[0-9a-f]{64}$/i)
 
     expect(fixtures.previousBlock).toBeDefined()
-    expect(fixtures.previousBlock.number).toBe(fixtures.latestBlock.number - 1)
+    // Previous block is either (latest - 1) or genesis if latest is genesis
+    if (fixtures.latestBlock.number > 0) {
+      expect(fixtures.previousBlock.number).toBe(fixtures.latestBlock.number - 1)
+    }
+    else {
+      expect(fixtures.previousBlock.number).toBe(fixtures.latestBlock.number)
+    }
   }, 10000)
 
   it('should discover validator fixtures', async () => {

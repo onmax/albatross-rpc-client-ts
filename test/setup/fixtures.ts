@@ -26,19 +26,27 @@ export async function discoverBlockFixtures({ url }: { url: string }): Promise<B
     throw new Error(`Failed to get latest block: ${JSON.stringify(error1) || 'Unknown error'}`)
   }
 
-  // Get previous block
-  const [isOk2, error2, previousBlock] = await getBlockByNumber(
-    { blockNumber: latestBlock.number - 1, includeBody: false },
-    { url },
-  )
-  if (!isOk2 || error2 || !previousBlock) {
-    throw new Error(`Failed to get previous block: ${JSON.stringify(error2) || 'Unknown error'}`)
-  }
-
   // Get block number
   const [isOk3, error3, blockNumber] = await getBlockNumber({ url })
   if (!isOk3 || error3 || blockNumber === undefined) {
     throw new Error(`Failed to get block number: ${JSON.stringify(error3) || 'Unknown error'}`)
+  }
+
+  // Get previous block - handle case where latest is genesis
+  let previousBlock: PartialBlock
+  if (latestBlock.number > 0) {
+    const [isOk2, error2, prevBlock] = await getBlockByNumber(
+      { blockNumber: latestBlock.number - 1, includeBody: false },
+      { url },
+    )
+    if (!isOk2 || error2 || !prevBlock) {
+      throw new Error(`Failed to get previous block: ${JSON.stringify(error2) || 'Unknown error'}`)
+    }
+    previousBlock = prevBlock
+  }
+  else {
+    // Latest is genesis, use it as previous too
+    previousBlock = latestBlock
   }
 
   return {

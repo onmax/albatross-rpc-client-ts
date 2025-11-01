@@ -10,6 +10,7 @@ services:
   seed:
     image: ghcr.io/nimiq/core-rs-albatross:latest
     container_name: nimiq-seed
+    user: root
     networks:
       nimiq-devnet:
         ipv4_address: 172.20.0.10
@@ -30,6 +31,7 @@ services:
   validator1:
     image: ghcr.io/nimiq/core-rs-albatross:latest
     container_name: nimiq-validator1
+    user: root
     depends_on:
       - seed
     networks:
@@ -58,6 +60,7 @@ services:
   validator2:
     image: ghcr.io/nimiq/core-rs-albatross:latest
     container_name: nimiq-validator2
+    user: root
     depends_on:
       - seed
     networks:
@@ -86,6 +89,7 @@ services:
   validator3:
     image: ghcr.io/nimiq/core-rs-albatross:latest
     container_name: nimiq-validator3
+    user: root
     depends_on:
       - seed
     networks:

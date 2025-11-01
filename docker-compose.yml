@@ -9,8 +9,8 @@ services:
       - /bin/sh
       - -c
       - |
-        mkdir -p /home/nimiq/.nimiq
-        cat > /home/nimiq/.nimiq/client.toml <<EOF
+        mkdir -p /root/.nimiq
+        cat > /root/.nimiq/client.toml <<EOF
         [consensus]
         network = "dev-albatross"
 

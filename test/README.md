@@ -17,10 +17,6 @@ The smoke test validates basic connectivity to a local Nimiq node.
    cargo build --release
    ```
 
-   ```
-
-   ```
-
 2. Start the node:
 
    ```bash
@@ -32,7 +28,7 @@ The smoke test validates basic connectivity to a local Nimiq node.
 
 3. In a new terminal, run the smoke test:
    ```bash
-   cd /path/to/albatross-rpc-client-ts
+   cd albatross-rpc-client-ts  # or wherever you cloned this repo
    pnpm test:smoke
    ```
 

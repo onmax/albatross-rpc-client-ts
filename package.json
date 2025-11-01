@@ -59,6 +59,8 @@
   "scripts": {
     "dev": "unbuild --stub",
     "test": "vitest run",
+    "test:smoke": "vitest run test/smoke.test.ts",
+    "test:integration": "vitest run test/**/*.test.ts",
     "build": "unbuild",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",

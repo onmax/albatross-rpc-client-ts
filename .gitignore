@@ -2,3 +2,6 @@ dist/
 node_modules/
 .env
 .worktrees/
+test-network/
+test-report.md
+test-results.txt

@@ -191,23 +191,23 @@ export const ValidatorSchema: v.ObjectSchema<{
   signingKey: v.StringSchema<undefined>
   votingKey: v.StringSchema<undefined>
   rewardAddress: v.StringSchema<undefined>
-  signalData: v.OptionalSchema<v.StringSchema<undefined>, undefined>
+  signalData: v.NullishSchema<v.StringSchema<undefined>, undefined>
   balance: v.NumberSchema<undefined>
   numStakers: v.NumberSchema<undefined>
   retired: v.BooleanSchema<undefined>
-  inactivityFlag: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
-  jailedFrom: v.OptionalSchema<v.NumberSchema<undefined>, undefined>
+  inactivityFlag: v.NullishSchema<v.NumberSchema<undefined>, undefined>
+  jailedFrom: v.NullishSchema<v.NumberSchema<undefined>, undefined>
 }, undefined> = v.object({
   address: v.string(),
   signingKey: v.string(),
   votingKey: v.string(),
   rewardAddress: v.string(),
-  signalData: v.optional(v.string()),
+  signalData: v.nullish(v.string()),
   balance: v.number(),
   numStakers: v.number(),
   retired: v.boolean(),
-  inactivityFlag: v.optional(v.number()),
-  jailedFrom: v.optional(v.number()),
+  inactivityFlag: v.nullish(v.number()),
+  jailedFrom: v.nullish(v.number()),
 })
 
 export const SlotSchema: v.ObjectSchema<{

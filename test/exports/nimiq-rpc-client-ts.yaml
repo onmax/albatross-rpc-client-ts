@@ -24,6 +24,7 @@
   getAccounts: function
   getActiveValidators: function
   getAddress: function
+  getAddressBook: function
   getBatchAt: function
   getBatchIndexAt: function
   getBatchNumber: function
@@ -31,7 +32,6 @@
   getBlockAfterReportingWindow: function
   getBlockByHash: function
   getBlockByNumber: function
-  getBlockchainState: function
   getBlockNumber: function
   getCurrentPenalizedSlots: function
   getElectionBlockAfter: function
@@ -44,7 +44,6 @@
   getFirstBatchOfEpoch: function
   getFirstBlockOf: function
   getFirstBlockOfBatch: function
-  getFirstBlockOfEpoch: function
   getInherentsByBatchNumber: function
   getInherentsByBlockNumber: function
   getLastElectionBlock: function
@@ -55,6 +54,7 @@
   getMacroBlockOf: function
   getMacroBlockOfBatch: function
   getMinFeePerByte: function
+  getNetworkId: function
   getPeerCount: function
   getPeerId: function
   getPeerList: function
@@ -66,9 +66,11 @@
   getStakerByAddress: function
   getStakersByValidatorAddress: function
   getSupplyAt: function
+  getSyncStatus: function
   getTransactionByHash: function
   getTransactionFromMempool: function
   getTransactionHashesByAddress: function
+  getTransactionReferencesByAddress: function
   getTransactionsByAddress: function
   getTransactionsByBatchNumber: function
   getTransactionsByBlockNumber: function
@@ -207,6 +209,7 @@
   SetActiveStakeLogSchema: object
   SignatureSchema: object
   SlotSchema: object
+  SlotsSchema: object
   StakeLogSchema: object
   StakerFeeDeductionLogSchema: object
   StakerSchema: object

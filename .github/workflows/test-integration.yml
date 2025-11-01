@@ -34,9 +34,10 @@ jobs:
         run: |
           docker run -d \
             --name nimiq-node \
-            -e NIMIQ_NETWORK=dev-albatross \
             -p 8648:8648 \
-            ghcr.io/nimiq/core-rs-albatross:latest
+            ghcr.io/nimiq/core-rs-albatross:latest \
+            --network=dev-albatross \
+            --rpc-server
 
           echo "Started Nimiq node"
           sleep 5

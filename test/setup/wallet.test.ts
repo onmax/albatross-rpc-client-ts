@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { TEST_CONFIG } from './config'
 import { fundWalletFromGenesis, generateTestWallet } from './wallet'
 
-describe('wallet Utilities', () => {
+describe('Wallet Utilities', () => {
   it('should generate a random test wallet', () => {
     const wallet1 = generateTestWallet()
     const wallet2 = generateTestWallet()

@@ -5,7 +5,7 @@ import { discoverBlockFixtures } from './setup/fixtures'
 import { expectRpcSuccess, expectValidHash } from './setup/validation'
 import { fundWalletFromGenesis, generateTestWallet } from './setup/wallet'
 
-describe('integration Example - Using All Utilities', () => {
+describe('Integration Example - Using All Utilities', () => {
   it('should demonstrate fixture discovery and validation', async () => {
     // Discover block fixtures
     const { latestBlock, previousBlock } = await discoverBlockFixtures({

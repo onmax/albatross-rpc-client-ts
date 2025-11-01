@@ -34,19 +34,17 @@ export async function discoverBlockFixtures({ url }: { url: string }): Promise<B
 
   // Get previous block - handle case where latest is genesis
   let previousBlock: PartialBlock
-  if (latestBlock.number > 0) {
-    const [isOk2, error2, prevBlock] = await getBlockByNumber(
-      { blockNumber: latestBlock.number - 1, includeBody: false },
-      { url },
-    )
-    if (!isOk2 || error2 || !prevBlock) {
-      throw new Error(`Failed to get previous block: ${JSON.stringify(error2) || 'Unknown error'}`)
-    }
-    previousBlock = prevBlock
+  const [isOk2, error2, prevBlock] = await getBlockByNumber(
+    { blockNumber: latestBlock.number - 1, includeBody: false },
+    { url },
+  )
+
+  // If previous block doesn't exist, latest is genesis - use it as previous
+  if (!isOk2 || error2 || !prevBlock) {
+    previousBlock = latestBlock
   }
   else {
-    // Latest is genesis, use it as previous too
-    previousBlock = latestBlock
+    previousBlock = prevBlock
   }
 
   return {

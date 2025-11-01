@@ -1,0 +1,126 @@
+# .github/workflows/test-integration.yml
+name: Integration Tests
+
+on:
+  push:
+    branches: [main, test/**]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test-with-local-node:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout RPC client
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Setup Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache Cargo dependencies
+        uses: actions/cache@v3
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            albatross-rpc-rust/target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+          restore-keys: |
+            ${{ runner.os }}-cargo-
+
+      - name: Clone albatross-rpc-rust
+        run: |
+          git clone https://github.com/nimiq/albatross-rpc-rust.git
+          cd albatross-rpc-rust
+          echo "Current commit: $(git rev-parse HEAD)"
+
+      - name: Build Nimiq node
+        run: |
+          cd albatross-rpc-rust
+          cargo build --release
+
+      - name: Start Nimiq node in background
+        run: |
+          cd albatross-rpc-rust
+          # Start node with test configuration
+          # Use devnet for fast block times and instant setup
+          nohup cargo run --release -- \
+            --network dev-albatross \
+            --rpc-enabled \
+            --rpc-address 127.0.0.1:8648 \
+            > nimiq-node.log 2>&1 &
+
+          echo $! > nimiq-node.pid
+          echo "Started Nimiq node with PID: $(cat nimiq-node.pid)"
+
+          # Give node a moment to initialize
+          sleep 2
+
+          # Show initial logs
+          tail -20 nimiq-node.log || true
+
+      - name: Wait for node to be ready
+        run: |
+          echo "Waiting for node to be ready..."
+          timeout=60
+          elapsed=0
+
+          while [ $elapsed -lt $timeout ]; do
+            if curl -s -X POST http://127.0.0.1:8648 \
+              -H "Content-Type: application/json" \
+              -d '{"jsonrpc":"2.0","method":"getBlockNumber","params":[],"id":1}' \
+              | grep -q "result"; then
+              echo "✅ Node is ready!"
+              exit 0
+            fi
+
+            echo "Waiting... ($elapsed seconds)"
+            sleep 1
+            elapsed=$((elapsed + 1))
+          done
+
+          echo "❌ Node did not become ready in time"
+          echo "=== Node logs ==="
+          cat albatross-rpc-rust/nimiq-node.log
+          exit 1
+
+      - name: Run smoke test
+        run: pnpm test test/smoke.test.ts
+        env:
+          TEST_RPC_URL: http://127.0.0.1:8648
+          TEST_WS_URL: ws://127.0.0.1:8648/ws
+
+      - name: Show node logs on failure
+        if: failure()
+        run: |
+          echo "=== Nimiq Node Logs ==="
+          cat albatross-rpc-rust/nimiq-node.log || echo "No logs found"
+
+      - name: Stop Nimiq node
+        if: always()
+        run: |
+          if [ -f albatross-rpc-rust/nimiq-node.pid ]; then
+            kill $(cat albatross-rpc-rust/nimiq-node.pid) || true
+            echo "Stopped Nimiq node"
+          fi

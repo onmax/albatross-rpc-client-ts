@@ -13,7 +13,7 @@ export interface TestWallet {
 /**
  * Generate a random test wallet
  *
- * Note: For local devnet testing, we use simple deterministic addresses
+ * Note: For local devnet testing, we use random addresses
  * based on random hex strings. In production, this would use proper
  * Nimiq key derivation.
  */
@@ -53,17 +53,18 @@ export async function fundWalletFromGenesis({
 }): Promise<string> {
   const [isOk, error, txHash] = await createTransaction(
     {
-      from: GENESIS_ACCOUNT.address,
-      to: toAddress,
+      wallet: GENESIS_ACCOUNT.address,
+      recipient: toAddress,
       value: amount,
       fee: 0, // Devnet allows zero fees
+      relativeValidityStartHeight: 0,
     },
     { url },
   )
 
   if (!isOk || error) {
-    throw new Error(`Failed to fund wallet: ${error?.message || 'Unknown error'}`)
+    throw new Error(`Failed to fund wallet: ${error || 'Unknown error'}`)
   }
 
-  return txHash!
+  return txHash
 }

@@ -35,7 +35,8 @@ jobs:
           network = "dev-albatross"
 
           [rpc-server]
-          bind = "0.0.0.0:8648"
+          bind = "0.0.0.0"
+          port = 8648
           EOF
           echo "Created client.toml with dev-albatross network"
 

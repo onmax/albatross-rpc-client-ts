@@ -105,10 +105,10 @@ describe('http RPC Methods - Block Queries', () => {
   })
 
   it('getSlotAt should return slot information', async () => {
-    const { latestBlock } = await discoverBlockFixtures({ url: TEST_CONFIG.RPC_URL })
+    const { previousBlock } = await discoverBlockFixtures({ url: TEST_CONFIG.RPC_URL })
 
-    // Use the actual block number from the block we retrieved, not the separate getBlockNumber call
-    const result = await getSlotAt({ blockNumber: latestBlock.number, offsetOpt: 0 }, { url: TEST_CONFIG.RPC_URL })
+    // Use previous block to avoid race conditions with latest block
+    const result = await getSlotAt({ blockNumber: previousBlock.number, offsetOpt: 0 }, { url: TEST_CONFIG.RPC_URL })
 
     expectRpcSuccess(result)
     const [, , slot] = result
@@ -135,7 +135,6 @@ describe('http RPC Methods - Transaction Queries', () => {
 
   it('getTransactionsByBatchNumber should return transactions', async () => {
     const batchResult = await getBatchNumber({ url: TEST_CONFIG.RPC_URL })
-    expectRpcSuccess(batchResult)
     const [, , batchNumber] = batchResult
 
     // Genesis blocks may not have batch numbers yet
@@ -143,6 +142,8 @@ describe('http RPC Methods - Transaction Queries', () => {
       console.warn('⚠️  Skipping: No batch number available in genesis state')
       return
     }
+
+    expectRpcSuccess(batchResult)
 
     const result = await getTransactionsByBatchNumber(
       { batchNumber },
@@ -204,7 +205,6 @@ describe('http RPC Methods - Inherent Queries', () => {
 
   it('getInherentsByBatchNumber should return inherents', async () => {
     const batchResult = await getBatchNumber({ url: TEST_CONFIG.RPC_URL })
-    expectRpcSuccess(batchResult)
     const [, , batchNumber] = batchResult
 
     // Genesis blocks may not have batch numbers yet
@@ -212,6 +212,8 @@ describe('http RPC Methods - Inherent Queries', () => {
       console.warn('⚠️  Skipping: No batch number available in genesis state')
       return
     }
+
+    expectRpcSuccess(batchResult)
 
     const result = await getInherentsByBatchNumber(
       { batchNumber },

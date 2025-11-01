@@ -27,18 +27,25 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Create Nimiq config for devnet
+      - name: Create Nimiq config for devnet with validator
         run: |
           mkdir -p nimiq-data
           cat > nimiq-data/client.toml << 'EOF'
           [consensus]
           network = "dev-albatross"
+          sync_mode = "full"
 
           [rpc-server]
           bind = "0.0.0.0"
           port = 8648
+
+          [validator]
+          automatic_reactivate = true
+          validator_address = "NQ70 JM4N PU3R Y2U2 9RGX ABJE VKA4 4TBB HKF1"
+          signing_key = "81def5effc93ae283b5acfa466d0a544218b1bf3c3558f6cf6403bd9aed14dee"
+          voting_key = "c8512dc4a69729170fe2ac5cf6c9b25322fa974ceee569b5d4f86a5238a51de896deb5e6998d59f90944aad3e47e676433d13137b1bb0cffeeb158ce5594c937294a8330475b79a2463fa752b1fc851e42383175a7f05b0183475da14129013e5b437436f6705ef9e4509391663806ff62e7abf8a49e583c3a5741e2272f014f50f686f2181849f05d43d82ed5d62f69a427529b4f981ce582ad811565db5e1b18c6b7a6bf6664c6d54eaf7fd7424fd6a92f13543568681a4115b15204003f3efe58109efd1af4c591bb3984aac1e74eee4ddd5f5f4900d62feb2ac1e046ccf52c66d8526c69a6ca72823dcf3e060d7e488f7aded41d6f94bc9876a4083d243cff5fa6e4758674270d18ec9c32fbd553049bd0394da82cfa7a69390600"
           EOF
-          echo "Created client.toml with dev-albatross network"
+          echo "Created client.toml with dev-albatross validator config"
 
       - name: Pull Nimiq Docker image
         run: docker pull ghcr.io/nimiq/core-rs-albatross:latest

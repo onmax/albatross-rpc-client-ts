@@ -13,12 +13,10 @@ services:
     networks:
       nimiq-devnet:
         ipv4_address: 172.20.0.10
-    volumes:
-      - ./test-network/seed:/home/nimiq/.nimiq
     ports:
       - '8648:8648'
     command: >
-      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      sh -c "mkdir -p /home/nimiq/.nimiq && cat > /home/nimiq/.nimiq/client.toml << 'EOF'
       [consensus]
       network = \"dev-albatross\"
 
@@ -37,10 +35,8 @@ services:
     networks:
       nimiq-devnet:
         ipv4_address: 172.20.0.11
-    volumes:
-      - ./test-network/validator1:/home/nimiq/.nimiq
     command: >
-      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      sh -c "mkdir -p /home/nimiq/.nimiq && cat > /home/nimiq/.nimiq/client.toml << 'EOF'
       [consensus]
       network = \"dev-albatross\"
       sync_mode = \"full\"
@@ -67,10 +63,8 @@ services:
     networks:
       nimiq-devnet:
         ipv4_address: 172.20.0.12
-    volumes:
-      - ./test-network/validator2:/home/nimiq/.nimiq
     command: >
-      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      sh -c "mkdir -p /home/nimiq/.nimiq && cat > /home/nimiq/.nimiq/client.toml << 'EOF'
       [consensus]
       network = \"dev-albatross\"
       sync_mode = \"full\"
@@ -97,10 +91,8 @@ services:
     networks:
       nimiq-devnet:
         ipv4_address: 172.20.0.13
-    volumes:
-      - ./test-network/validator3:/home/nimiq/.nimiq
     command: >
-      sh -c "cat > /home/nimiq/.nimiq/client.toml << 'EOF'
+      sh -c "mkdir -p /home/nimiq/.nimiq && cat > /home/nimiq/.nimiq/client.toml << 'EOF'
       [consensus]
       network = \"dev-albatross\"
       sync_mode = \"full\"

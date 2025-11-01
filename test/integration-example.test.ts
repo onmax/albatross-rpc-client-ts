@@ -39,16 +39,26 @@ describe('integration Example - Using All Utilities', () => {
 
     expectValidHash(txHash)
 
-    // Wait for transaction to be processed
-    await new Promise(resolve => setTimeout(resolve, 2000))
+    // Wait for transaction to be processed (poll for balance)
+    let account: any
+    for (let i = 0; i < 10; i++) {
+      const [isOk, _error, acc] = await getAccountByAddress(
+        { address: wallet.address },
+        { url: TEST_CONFIG.RPC_URL },
+      )
 
-    // Verify wallet was funded
-    const [isOk, error, account] = await getAccountByAddress(
-      { address: wallet.address },
-      { url: TEST_CONFIG.RPC_URL },
-    )
+      if (isOk && acc && acc.balance > 0) {
+        account = acc
+        break
+      }
 
-    expectRpcSuccess([isOk, error, account])
-    expect(account.balance).toBeGreaterThan(0)
+      await new Promise(resolve => setTimeout(resolve, 1000))
+    }
+
+    if (!account) {
+      throw new Error('Transaction not confirmed after 10 attempts')
+    }
+
+    expect(account.balance).toBeGreaterThanOrEqual(1000000)
   }, 30000)
 })

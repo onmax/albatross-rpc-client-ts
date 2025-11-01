@@ -8,12 +8,12 @@ The smoke test validates basic connectivity to a local Nimiq node.
 
 **Prerequisites:**
 
-1. Clone and build albatross-rpc-rust:
+1. Clone and build core-rs-albatross:
 
    ```bash
    cd ~
-   git clone https://github.com/nimiq/albatross-rpc-rust.git
-   cd albatross-rpc-rust
+   git clone https://github.com/nimiq/core-rs-albatross.git
+   cd core-rs-albatross
    cargo build --release
    ```
 
@@ -38,7 +38,7 @@ Tests run automatically in GitHub Actions when you push to `main` or branches pr
 
 The workflow:
 
-1. Clones albatross-rpc-rust
+1. Clones core-rs-albatross
 2. Builds the node (with Cargo caching)
 3. Starts it in background
 4. Runs smoke test

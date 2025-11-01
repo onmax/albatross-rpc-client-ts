@@ -40,25 +40,25 @@ jobs:
             ~/.cargo/registry/index/
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
-            albatross-rpc-rust/target/
+            core-rs-albatross/target/
           key: ${{ runner.os }}-cargo-${{ github.run_id }}
           restore-keys: |
             ${{ runner.os }}-cargo-
 
-      - name: Clone albatross-rpc-rust
+      - name: Clone core-rs-albatross
         run: |
-          git clone https://github.com/nimiq/albatross-rpc-rust.git
-          cd albatross-rpc-rust
+          git clone https://github.com/nimiq/core-rs-albatross.git
+          cd core-rs-albatross
           echo "Current commit: $(git rev-parse HEAD)"
 
       - name: Build Nimiq node
         run: |
-          cd albatross-rpc-rust
+          cd core-rs-albatross
           cargo build --release
 
       - name: Start Nimiq node in background
         run: |
-          cd albatross-rpc-rust
+          cd core-rs-albatross
           # Start node with test configuration
           # Use devnet for fast block times and instant setup
           nohup cargo run --release -- \
@@ -98,7 +98,7 @@ jobs:
 
           echo "❌ Node did not become ready in time"
           echo "=== Node logs ==="
-          cat albatross-rpc-rust/nimiq-node.log
+          cat core-rs-albatross/nimiq-node.log
           exit 1
 
       - name: Run smoke test
@@ -111,12 +111,12 @@ jobs:
         if: failure()
         run: |
           echo "=== Nimiq Node Logs ==="
-          cat albatross-rpc-rust/nimiq-node.log || echo "No logs found"
+          cat core-rs-albatross/nimiq-node.log || echo "No logs found"
 
       - name: Stop Nimiq node
         if: always()
         run: |
-          if [ -f albatross-rpc-rust/nimiq-node.pid ]; then
-            kill $(cat albatross-rpc-rust/nimiq-node.pid) || true
+          if [ -f core-rs-albatross/nimiq-node.pid ]; then
+            kill $(cat core-rs-albatross/nimiq-node.pid) || true
             echo "Stopped Nimiq node"
           fi

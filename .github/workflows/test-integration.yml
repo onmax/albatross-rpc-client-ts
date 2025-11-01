@@ -79,8 +79,8 @@ jobs:
           docker logs nimiq-node
           exit 1
 
-      - name: Run smoke test
-        run: pnpm test test/smoke.test.ts
+      - name: Run integration tests
+        run: pnpm test:integration
         env:
           TEST_RPC_URL: http://127.0.0.1:8648
           TEST_WS_URL: ws://127.0.0.1:8648/ws

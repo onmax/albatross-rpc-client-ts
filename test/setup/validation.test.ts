@@ -3,9 +3,11 @@ import { BasicAccountSchema } from '../../src/schemas'
 import {
   expectRpcSuccess,
   expectSchemaValid,
+  expectSequentialBlocks,
   expectValidAddress,
   expectValidBlockNumber,
   expectValidHash,
+  expectValidTimestamp,
 } from './validation'
 
 describe('validation Helpers', () => {
@@ -49,5 +51,22 @@ describe('validation Helpers', () => {
 
     // This will throw if schema validation fails
     expect(() => expectSchemaValid(BasicAccountSchema, validAccount)).not.toThrow()
+  })
+
+  it('expectValidTimestamp should validate timestamp range', () => {
+    const recentTimestamp = Date.now() - 1000 // 1 second ago
+    expect(() => expectValidTimestamp(recentTimestamp)).not.toThrow()
+
+    const oldTimestamp = Date.now() - 90000000 // >24 hours ago
+    expect(() => expectValidTimestamp(oldTimestamp)).toThrow('away from now')
+  })
+
+  it('expectSequentialBlocks should validate block sequence', () => {
+    const block1 = { number: 100 }
+    const block2 = { number: 101 }
+    expect(() => expectSequentialBlocks(block1, block2)).not.toThrow()
+
+    const nonSequential = { number: 103 }
+    expect(() => expectSequentialBlocks(block1, nonSequential)).toThrow('not sequential')
   })
 })

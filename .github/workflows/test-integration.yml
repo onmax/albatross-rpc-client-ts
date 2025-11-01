@@ -32,7 +32,7 @@ jobs:
 
       - name: Start multi-validator devnet
         run: |
-          docker-compose up -d
+          docker compose up -d
           echo "Started multi-validator devnet with 3 validators"
           sleep 10
 
@@ -144,5 +144,5 @@ jobs:
       - name: Stop devnet
         if: always()
         run: |
-          docker-compose down -v || true
+          docker compose down -v || true
           echo "Stopped multi-validator devnet"

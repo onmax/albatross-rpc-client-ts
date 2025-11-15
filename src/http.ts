@@ -255,7 +255,14 @@ export function sendRawTransaction<R = string>({ rawTransaction }: RawTransactio
   return rpcCall<R>('sendRawTransaction', [rawTransaction], opts)
 }
 
-export type TransactionParams = { wallet: string, recipient: string, value: number, fee: number, data?: string } & ValidityStartHeight
+export type TransactionParams = {
+  wallet: string
+  recipient: string
+  value: number
+  fee: number
+  /** Hex-encoded string (not UTF-8). Convert with Buffer.from("text").toString("hex") */
+  data?: string
+} & ValidityStartHeight
 
 export function createTransaction<R = string>(params: TransactionParams, opts?: HttpOptions): Res<R> {
   const { wallet, recipient, value, fee, data } = params
@@ -541,6 +548,7 @@ export type NewValidatorTxParams = {
   signingSecretKey: string
   votingSecretKey: string
   rewardAddress: string
+  /** Hex-encoded string (not UTF-8). Convert with Buffer.from("text").toString("hex") */
   signalData: string
   fee: number
 } & ValidityStartHeight
@@ -563,6 +571,7 @@ export type UpdateValidatorTxParams = {
   newSigningSecretKey: string | null
   newVotingSecretKey: string | null
   newRewardAddress: string | null
+  /** Hex-encoded string (not UTF-8). Convert with Buffer.from("text").toString("hex") */
   newSignalData: string | null
   fee: number
 } & ValidityStartHeight

@@ -24,6 +24,7 @@ import * as path from 'node:path'
 import process from 'node:process'
 import { openai } from '@ai-sdk/openai'
 import { valibotSchema } from '@ai-sdk/valibot'
+import { encode as toToon } from '@toon-format/toon'
 import { generateObject } from 'ai'
 import { config } from 'dotenv'
 import { diff } from 'just-diff'
@@ -457,9 +458,9 @@ Do NOT report:
 </validation_rules>
 
 <input_data>
-OpenRPC Schema:
-\`\`\`json
-${JSON.stringify(schema, null, 2)}
+OpenRPC Schema (TOON format):
+\`\`\`toon
+${toToon(schema)}
 \`\`\`
 
 TypeScript Implementation:
@@ -613,9 +614,9 @@ Do NOT report:
 </validation_rules>
 
 <input_data>
-OpenRPC Schema (${latestVersion}):
-\`\`\`json
-${JSON.stringify(schema, null, 2)}
+OpenRPC Schema (${latestVersion}, TOON format):
+\`\`\`toon
+${toToon(schema)}
 \`\`\`
 
 TypeScript Implementation:

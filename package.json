@@ -79,6 +79,7 @@
     "@ai-sdk/valibot": "^1.0.8",
     "@antfu/eslint-config": "^5.2.1",
     "@changesets/cli": "^2.29.6",
+    "@toon-format/toon": "^1.2.0",
     "@types/ws": "^8.18.1",
     "ai": "^5.0.41",
     "bumpp": "^10.2.3",

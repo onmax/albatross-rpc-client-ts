@@ -30,6 +30,9 @@ importers:
       '@changesets/cli':
         specifier: ^2.29.6
         version: 2.29.6(@types/node@24.3.0)
+      '@toon-format/toon':
+        specifier: ^1.2.0
+        version: 1.2.0
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
@@ -802,6 +805,9 @@ packages:
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
     peerDependencies:
       eslint: '>=9.0.0'
+
+  '@toon-format/toon@1.2.0':
+    resolution: {integrity: sha512-aWSBChpKZnXX46zDPbfj25jzyXf46DK7goMoKxaVTldxtqgtdVS0xp3T3wCVDzDfgAsAKTOX1/aL6hE4T9RmEQ==}
 
   '@types/chai@5.2.2':
     resolution: {integrity: sha512-8kB30R7Hwqf40JPiKhVzodJs2Qc1ZJ5zuT3uzw5Hq/dhNCl3G3l83jfpdI1e20BP348+fV7VIL/+FxaXkqBmWg==}
@@ -3759,6 +3765,8 @@ snapshots:
       espree: 10.4.0
       estraverse: 5.3.0
       picomatch: 4.0.3
+
+  '@toon-format/toon@1.2.0': {}
 
   '@types/chai@5.2.2':
     dependencies:

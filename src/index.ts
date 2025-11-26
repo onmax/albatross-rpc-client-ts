@@ -1,5 +1,6 @@
 export * from './client'
 export * from './http'
+export * from './schemas'
 export * from './types'
 export type { ValidationOptions } from './types/http'
 export * from './ws'

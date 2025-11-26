@@ -19,6 +19,7 @@
   ],
   "sideEffects": false,
   "exports": {
+    ".": { "types": "./dist/index.d.mts", "import": "./dist/index.mjs", "require": "./dist/index.cjs" },
     "./http": {
       "types": "./dist/http.d.mts",
       "import": "./dist/http.mjs",

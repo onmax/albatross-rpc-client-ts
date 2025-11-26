@@ -66,43 +66,29 @@ export const BasicAccountSchema: v.ObjectSchema<{
   balance: v.number(),
 })
 
-export const VestingAccountSchema: v.ObjectSchema<{
-  type: v.LiteralSchema<'vesting', undefined>
-  address: v.StringSchema<undefined>
-  balance: v.NumberSchema<undefined>
-  owner: v.StringSchema<undefined>
-  vestingStart: v.NumberSchema<undefined>
-  vestingStepBlocks: v.NumberSchema<undefined>
-  vestingStepAmount: v.NumberSchema<undefined>
-  vestingTotalAmount: v.NumberSchema<undefined>
-}, undefined> = v.object({
+export const VestingAccountSchema = v.object({
   type: v.literal('vesting'),
   address: v.string(),
   balance: v.number(),
   owner: v.string(),
-  vestingStart: v.number(),
-  vestingStepBlocks: v.number(),
+  vestingStartTime: v.number(),
+  vestingTimeStep: v.number(),
   vestingStepAmount: v.number(),
   vestingTotalAmount: v.number(),
 })
 
-export const HtlcAccountSchema: v.ObjectSchema<{
-  type: v.LiteralSchema<'htlc', undefined>
-  address: v.StringSchema<undefined>
-  balance: v.NumberSchema<undefined>
-  sender: v.StringSchema<undefined>
-  recipient: v.StringSchema<undefined>
-  hashRoot: v.StringSchema<undefined>
-  hashCount: v.NumberSchema<undefined>
-  timeout: v.NumberSchema<undefined>
-  totalAmount: v.NumberSchema<undefined>
-}, undefined> = v.object({
+export const HashRootSchema = v.object({
+  algorithm: v.picklist(['blake2b', 'sha256', 'sha512']),
+  hash: v.string(),
+})
+
+export const HtlcAccountSchema = v.object({
   type: v.literal('htlc'),
   address: v.string(),
   balance: v.number(),
   sender: v.string(),
   recipient: v.string(),
-  hashRoot: v.string(),
+  hashRoot: HashRootSchema,
   hashCount: v.number(),
   timeout: v.number(),
   totalAmount: v.number(),

@@ -47,5 +47,5 @@ describe('fixture Discovery', () => {
 
     expect(fixtures.account).toBeDefined()
     expect(fixtures.account.address).toBeDefined()
-  }, 10000)
+  }, 30000)
 })

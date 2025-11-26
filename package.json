@@ -1,7 +1,7 @@
 {
   "name": "nimiq-rpc-client-ts",
   "type": "module",
-  "version": "1.0.0-beta.37",
+  "version": "1.0.0-beta.38",
   "packageManager": "pnpm@10.15.0",
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",
@@ -19,7 +19,11 @@
   ],
   "sideEffects": false,
   "exports": {
-    ".": { "types": "./dist/index.d.mts", "import": "./dist/index.mjs", "require": "./dist/index.cjs" },
+    ".": {
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
+    },
     "./http": {
       "types": "./dist/http.d.mts",
       "import": "./dist/http.mjs",

@@ -1,7 +1,7 @@
 {
   "name": "nimiq-rpc-client-ts",
   "type": "module",
-  "version": "1.0.0-beta.35",
+  "version": "1.0.0-beta.36",
   "packageManager": "pnpm@10.15.0",
   "description": "A Nimiq RPC client for TypeScript",
   "author": "onmax",
@@ -96,7 +96,7 @@
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",
     "unbuild": "^3.6.1",
-    "vitest": "^3.2.4",
+    "vitest": "^4.0.14",
     "vitest-package-exports": "^0.1.1",
     "yaml": "^2.8.1"
   },

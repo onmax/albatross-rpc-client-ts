@@ -387,7 +387,7 @@ export interface PartialMicroBlock extends PartialBlock {
     validator: string
     publicKey: string
   }
-  justification: {
+  justification?: {
     micro: string
   } | {
     skip: {
@@ -443,6 +443,15 @@ export interface ElectionMacroBlock extends PartialMacroBlock {
   interlink: string[]
   slots: Slots[]
   nextBatchInitialPunishedSet: number[]
+  lostRewardSet: number[]
+  disabledSet: number[]
+  justification?: {
+    round: number
+    sig: {
+      signature: { signature: string }
+      signers: number[]
+    }
+  }
 }
 
 export type Block = MicroBlock | MacroBlock | ElectionMacroBlock

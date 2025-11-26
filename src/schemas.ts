@@ -471,7 +471,7 @@ export const PartialMicroBlockSchema: v.IntersectSchema<[
       validator: v.string(),
       publicKey: v.string(),
     }),
-    justification: v.union([
+    justification: v.optional(v.union([
       v.object({
         micro: v.string(),
       }),
@@ -483,7 +483,7 @@ export const PartialMicroBlockSchema: v.IntersectSchema<[
           }),
         }),
       }),
-    ]),
+    ])),
     equivocationProofs: v.optional(v.array(EquivocationProofSchema)),
     epoch: v.number(),
     parentElectionHash: v.undefined(),
@@ -554,6 +554,15 @@ export const ElectionMacroBlockSchema: v.IntersectSchema<[
     interlink: v.array(v.string()),
     slots: v.array(SlotsSchema),
     nextBatchInitialPunishedSet: v.array(v.number()),
+    lostRewardSet: v.array(v.number()),
+    disabledSet: v.array(v.number()),
+    justification: v.optional(v.object({
+      round: v.number(),
+      sig: v.object({
+        signature: v.object({ signature: v.string() }),
+        signers: v.array(v.number()),
+      }),
+    })),
   }),
 ])
 

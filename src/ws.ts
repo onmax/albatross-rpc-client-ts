@@ -1,7 +1,13 @@
 import type { Block, CreateStakerLog, CreateValidatorLog, DeactivateValidatorLog, DeleteStakerLog, DeleteValidatorLog, FailedTransactionLog, HtlcCreateLog, HtlcEarlyResolveLog, HtlcRegularTransferLog, HtlcTimeoutResolveLog, JailValidatorLog, Log, LogType, PayFeeLog, PayoutRewardLog, PenalizeLog, ReactivateValidatorLog, RemoveStakeLog, RetireStakeLog, RetireValidatorLog, RevertContractLog, SetActiveStakeLog, StakeLog, StakerFeeDeductionLog, TransferLog, UpdateStakerLog, UpdateValidatorLog, Validator, ValidatorFeeDeductionLog, VestingCreateLog } from './types'
-// @ts-expect-error - isomorphic-ws has type issues with package.json exports
-import { WebSocket } from '@libsql/isomorphic-ws'
 import { __getBaseUrl } from './client'
+
+// Use native WebSocket if available (browser, CF Workers, Deno, Bun), fallback to isomorphic-ws for Node.js
+function getWebSocket(): typeof globalThis.WebSocket {
+  if (globalThis.WebSocket)
+    return globalThis.WebSocket
+  // eslint-disable-next-line ts/no-require-imports
+  return require('@libsql/isomorphic-ws').WebSocket
+}
 
 /**
  * Stream options and defaults
@@ -178,6 +184,7 @@ export async function rpcSubscribe<T>(method: string, params: any[] = [], option
   function connect(): Promise<void> {
     return new Promise((resolve) => {
       if (!ws) {
+        const WebSocket = getWebSocket()
         ws = new WebSocket(wsUrl.href)
         ws.onopen = () => {
           open = true

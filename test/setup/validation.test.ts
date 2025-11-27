@@ -1,5 +1,7 @@
+import type { HttpRpcResult } from '../../src/types'
 import { describe, expect, it } from 'vitest'
 import { BasicAccountSchema } from '../../src/schemas'
+import { createIsomorphicDestructurable } from '../../src/utils'
 import {
   expectRpcSuccess,
   expectSchemaValid,
@@ -12,10 +14,11 @@ import {
 
 describe('validation Helpers', () => {
   it('expectRpcSuccess should validate RPC success', () => {
-    const successResult: [boolean, undefined, number] = [true, undefined, 42]
+    const meta = { request: {} as any }
+    const successResult = createIsomorphicDestructurable({ success: true as const, error: undefined, data: 42, metadata: meta }, [true, undefined, 42, meta] as const) as HttpRpcResult<number>
     expect(() => expectRpcSuccess(successResult)).not.toThrow()
 
-    const errorResult: [boolean, string, undefined] = [false, 'fail', undefined]
+    const errorResult = createIsomorphicDestructurable({ success: false as const, error: 'fail', data: undefined, metadata: meta }, [false, 'fail', undefined, meta] as const) as HttpRpcResult<number>
     expect(() => expectRpcSuccess(errorResult)).toThrow('RPC call failed')
   })
 

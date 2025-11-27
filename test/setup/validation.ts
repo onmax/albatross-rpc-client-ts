@@ -1,13 +1,14 @@
 import type { BaseIssue, BaseSchema } from 'valibot'
+import type { HttpRpcResult, HttpRpcResultSuccess } from '../../src/types'
 import { safeParse } from 'valibot'
 
 /**
- * Assert RPC call succeeded
+ * Assert RPC call succeeded (supports both array and object destructuring)
  */
-export function expectRpcSuccess<T>(result: [boolean, string | undefined, T | undefined, ...any[]]): asserts result is [true, undefined, T, ...any[]] {
-  const [isOk, error, data] = result
+export function expectRpcSuccess<T>(result: HttpRpcResult<T>): asserts result is HttpRpcResultSuccess<T> {
+  const { success, error, data } = result
 
-  if (!isOk || error) {
+  if (!success || error) {
     throw new Error(`RPC call failed: ${error || 'Unknown error'}`)
   }
 

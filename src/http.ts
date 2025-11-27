@@ -21,6 +21,7 @@ import type {
 } from './types'
 
 import { __getAuth, __getBaseUrl, __getValidation } from './client'
+import { createIsomorphicDestructurable } from './utils'
 import { handleValidationResult, validateResponse } from './validation'
 
 export interface IncludeBody<T extends boolean> { includeBody?: T }
@@ -74,19 +75,26 @@ export async function rpcCall<D>(method: string, params: any[] = [], options: Ht
   catch (e: any) {
     clearTimeout(timeoutId)
     const error = JSON.stringify(e)
-    return [false, error, undefined, { request }]
+    const meta = { request }
+    return createIsomorphicDestructurable({ success: false as const, error, data: undefined, metadata: meta }, [false, error, undefined, meta] as const)
   }
   clearTimeout(timeoutId)
   if (!res.ok) {
     const error = `HTTP error ${res.status}: ${res.statusText}`
-    return [false, error, undefined, { request }]
+    const meta = { request }
+    return createIsomorphicDestructurable({ success: false as const, error, data: undefined, metadata: meta }, [false, error, undefined, meta] as const)
   }
   const json = await res.json().catch(() => null)
-  if (!json)
-    return [false, 'Invalid JSON response', undefined, { request }]
+  if (!json) {
+    const meta = { request }
+    return createIsomorphicDestructurable({ success: false as const, error: 'Invalid JSON response', data: undefined, metadata: meta }, [false, 'Invalid JSON response', undefined, meta] as const)
+  }
 
-  if ('error' in json)
-    return [false, JSON.stringify(json.error), undefined, { request }]
+  if ('error' in json) {
+    const error = JSON.stringify(json.error)
+    const meta = { request }
+    return createIsomorphicDestructurable({ success: false as const, error, data: undefined, metadata: meta }, [false, error, undefined, meta] as const)
+  }
 
   if ('result' in json) {
     let responseData = json.result.data
@@ -99,17 +107,21 @@ export async function rpcCall<D>(method: string, params: any[] = [], options: Ht
       }
       catch (validationError) {
         if (validation.validationLevel === 'error') {
-          return [false, `Validation error: ${validationError}`, undefined, { request }]
+          const error = `Validation error: ${validationError}`
+          const meta = { request }
+          return createIsomorphicDestructurable({ success: false as const, error, data: undefined, metadata: meta }, [false, error, undefined, meta] as const)
         }
         // For warnings, continue with original data
         console.warn(`Validation warning for ${method}:`, validationError)
       }
     }
 
-    return [true, undefined, responseData, { request, metadata: json.result.metadata }]
+    const meta = { request, metadata: json.result.metadata }
+    return createIsomorphicDestructurable({ success: true as const, error: undefined, data: responseData, metadata: meta }, [true, undefined, responseData, meta] as const)
   }
 
-  return [false, 'Unexpected RPC format', undefined, { request }]
+  const meta = { request }
+  return createIsomorphicDestructurable({ success: false as const, error: 'Unexpected RPC format', data: undefined, metadata: meta }, [false, 'Unexpected RPC format', undefined, meta] as const)
 }
 
 // #region Blockchain

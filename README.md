@@ -11,10 +11,13 @@ import * as rpc from 'nimiq-rpc-client-ts'
 
 rpc.initRpcClient({ url: 'https://rpc.nimiq-testnet.com' })
 
-// HTTP - returns [success, error, data, metadata]
+// HTTP - supports both array and object destructuring
+// See: https://antfu.me/posts/destructuring-with-object-or-array
 const [ok, err, block] = await rpc.getBlockNumber()
-if (!ok)
-  console.error(err)
+const { success, error, data } = await rpc.getBlockNumber()
+
+if (!success)
+  console.error(error)
 
 // WebSocket subscription
 const sub = await rpc.subscribeForHeadBlock(true, { autoReconnect: true })
@@ -58,10 +61,20 @@ const [ok, err, result] = await rpc.getBlockNumber({
 
 ## HTTP Options
 
-All HTTP methods return `[success, error, data, metadata]`. The last parameter is always an options object:
+All HTTP methods return an [isomorphic destructurable](https://antfu.me/posts/destructuring-with-object-or-array) result supporting both patterns:
 
 ```typescript
-const [ok, err, block] = await rpc.getBlockByNumber({ blockNumber: 123 }, {
+// Array destructuring
+const [ok, err, block, meta] = await rpc.getBlockByNumber({ blockNumber: 123 })
+
+// Object destructuring
+const { success, error, data, metadata } = await rpc.getBlockByNumber({ blockNumber: 123 })
+```
+
+The last parameter is always an options object:
+
+```typescript
+const { success, data } = await rpc.getBlockByNumber({ blockNumber: 123 }, {
   url: new URL('...'), // Override URL
   auth: { username, password }, // Override auth
   validation: { validateBody: true, validationLevel: 'warning' } // Per-request validation

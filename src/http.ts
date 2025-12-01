@@ -719,7 +719,7 @@ export function getPeerList<R = string[]>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getPeerList', [], opts)
 }
 
-export function getNetworkId<R = string>(opts?: HttpOptions): Res<R> {
+export function getNetworkId<R = number>(opts?: HttpOptions): Res<R> {
   return rpcCall<R>('getNetworkId', [], opts)
 }
 

@@ -173,7 +173,8 @@ export interface Transaction {
   networkId: number // Corresponds to u8
 }
 
-export interface ExecutedTransaction extends Transaction {
+export interface ExecutedTransaction {
+  transaction: Transaction
   executionResult: boolean
 }
 
@@ -377,7 +378,7 @@ export interface PartialBlock {
   bodyHash?: string
   historyHash: string
   network: NetworkId
-  transactions?: Transaction[]
+  transactions?: ExecutedTransaction[]
 }
 
 export interface PartialMicroBlock extends PartialBlock {
@@ -403,7 +404,7 @@ export interface PartialMicroBlock extends PartialBlock {
 }
 
 export interface MicroBlock extends PartialMicroBlock {
-  transactions: Transaction[]
+  transactions: ExecutedTransaction[]
   isElectionBlock?: undefined
   lostRewardSet?: number[]
   disabledSet?: number[]
@@ -422,7 +423,7 @@ export interface PartialMacroBlock extends PartialBlock {
 
 export interface MacroBlock extends PartialMacroBlock {
   isElectionBlock: false
-  transactions: Transaction[]
+  transactions: ExecutedTransaction[]
   lostRewardSet: number[]
   disabledSet: number[]
   justification?: {
@@ -439,7 +440,7 @@ export interface MacroBlock extends PartialMacroBlock {
 
 export interface ElectionMacroBlock extends PartialMacroBlock {
   isElectionBlock: true
-  transactions: Transaction[]
+  transactions: ExecutedTransaction[]
   interlink: string[]
   slots: Slots[]
   nextBatchInitialPunishedSet: number[]

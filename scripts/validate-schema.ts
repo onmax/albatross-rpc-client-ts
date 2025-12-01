@@ -424,6 +424,7 @@ ONLY flag if the positional array order in rpcCall() is incorrect.
 These methods intentionally allow optional parameters even when schema marks as required (server provides defaults):
 - getTransactionsByAddress: max, startAt
 - getTransactionHashesByAddress: max, startAt
+- getTransactionReferencesByAddress: max, startAt
 </optional_parameters>
 
 <advanced_types>
@@ -580,6 +581,7 @@ ONLY flag if the positional array order in rpcCall() is incorrect.
 These methods intentionally allow optional parameters even when schema marks as required (server provides defaults):
 - getTransactionsByAddress: max, startAt
 - getTransactionHashesByAddress: max, startAt
+- getTransactionReferencesByAddress: max, startAt
 </optional_parameters>
 
 <advanced_types>
@@ -962,22 +964,13 @@ async function main(): Promise<void> {
       console.log('\n⏭️  Skipping HTTP tests - NIMIQ_TEST_URL not provided')
     }
 
-    // Create GitHub issues for problems found (both AI validation and HTTP test failures)
-    const httpErrors: ValidationIssue[] = httpTestResult
-      ? httpTestResult.failures.map(failure => ({
-          functionName: failure.split(':')[0] || 'HTTP_TEST',
-          issue: `HTTP Test Failure: ${failure}`,
-          solution: 'Check RPC endpoint connectivity, method parameters, or server configuration',
-        }))
-      : []
-
+    // Create GitHub issues for AI validation problems only
+    // HTTP test failures are logged but NOT created as issues (they're server/infra issues, not client bugs)
     const combinedResult: ValidationResult = {
       ...result,
-      errors: [...result.errors, ...httpErrors],
       summary: httpTestResult
         ? `${result.summary}. HTTP Tests: ${httpTestResult.summary}`
         : result.summary,
-      success: httpTestResult ? result.success && httpTestResult.success : result.success,
     }
 
     const createdIssues = await createGitHubIssues(combinedResult, schemaDiff)
